@@ -1,0 +1,19 @@
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include "Resources.h"
+
+RESOURCE_REPLACE(OP2SHRES.DLL, 213) DIALOG 0, 0, 258, 190
+STYLE WS_POPUP | WS_CAPTION
+EXSTYLE WS_EX_WINDOWEDGE
+CAPTION "ABOUT OUTPOST 2..."
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "&OK",                                                                1, BUTTON,  BS_DEFPUSHBUTTON                  | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 83, 169,  90, 14, 0x00000004
+   CONTROL "",                                                                1074, LISTBOX, LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_CHILD | WS_VISIBLE | WS_TABSTOP,  7,  63, 244, 95, 0x00000204
+   CONTROL "Outpost 2 Development Team",                                        -1, STATIC,  SS_LEFT                           | WS_CHILD | WS_VISIBLE | WS_GROUP,    7,  50, 244, 12, 0x00000004
+   CONTROL STRINGIFY(Outpost 2 - OP2_VERSION_TRIPLE),                         1075, STATIC,  SS_CENTER                         | WS_CHILD | WS_VISIBLE | WS_GROUP,   69,   7, 120, 15, 0x00000004
+   CONTROL "Copyright © 1997, Activision Publishing, Inc.",                     -1, STATIC,  SS_CENTER                         | WS_CHILD | WS_VISIBLE | WS_GROUP,    7,  20, 244, 13, 0x00000004
+   CONTROL "with unofficial modifications 2002 - 2020, The Outpost Universe",   -1, STATIC,  SS_CENTER                         | WS_CHILD | WS_VISIBLE | WS_GROUP,    7,  31, 244, 13, 0x00000004
+}

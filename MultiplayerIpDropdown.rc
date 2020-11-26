@@ -1,0 +1,20 @@
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include "Resources.h"
+
+RESOURCE_REPLACE(OUT2RES.DLL, 2010) DIALOG 0, 0, 232, 98
+STYLE DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "FIND GAME SESSION"
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "OK",                                            1, BUTTON,   BS_DEFPUSHBUTTON   | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                          30,  76,  72,  14
+   CONTROL "",                                           1005, BUTTON,   BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE,                                       11,  53,  12,  10
+   CONTROL "",                                           1007, BUTTON,   BS_AUTORADIOBUTTON | WS_CHILD | WS_VISIBLE,                                       11,  23,  11,   8
+   CONTROL "",                                           1008, COMBOBOX, CBS_DROPDOWN       | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_TABSTOP, 41,  33, 132, 140
+   CONTROL "Look for sessions by:",                        -1, STATIC,   SS_LEFT            | WS_CHILD | WS_VISIBLE | WS_GROUP,                             7,   7, 128,  12
+   CONTROL "Network - Broadcasting on the local network.", -1, STATIC,   SS_LEFT            | WS_CHILD | WS_VISIBLE | WS_GROUP,                            25,  53, 200,  11
+   CONTROL "Internet - Looking at the IP address:",        -1, STATIC,   SS_LEFT            | WS_CHILD | WS_VISIBLE | WS_GROUP,                            25,  22, 202,  11
+   CONTROL "CANCEL",                                        2, BUTTON,   BS_PUSHBUTTON      | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                          130, 76,  72,  14
+}

@@ -1,0 +1,266 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-Analyze|Win32">
+      <Configuration>Debug-Analyze</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{A81DE2B7-D413-4D50-AE1B-10F51D6C4AD0}</ProjectGuid>
+    <RootNamespace>Patcher3</RootNamespace>
+    <ProjectName>OpuPatch</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Analyze|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Analyze|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Analyze|Win32'">
+    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level2</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\;.\imported\capstone\include;..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>.\imported\capstone\capstone.lib;..\Lib\op2.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <BaseAddress>0x16000000</BaseAddress>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-1.3.0.8\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-RtPatch\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(TargetFileName)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Analyze|Win32'">
+    <ClCompile>
+      <WarningLevel>Level2</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\;.\imported\capstone\include;..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnablePREfast>true</EnablePREfast>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>.\imported\capstone\capstone.lib;..\Lib\op2.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <BaseAddress>0x16000000</BaseAddress>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-1.3.0.8\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-RtPatch\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(TargetFileName)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level2</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\;.\imported\capstone\include;..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>_HAS_EXCEPTIONS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>.\imported\capstone\capstone.lib;..\Lib\op2.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <BaseAddress>0x16000000</BaseAddress>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-1.3.0.8\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-RtPatch\$(TargetFileName)"
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(TargetFileName)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Library Include="imported\capstone\capstone.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="imported\capstone\LICENSE.TXT" />
+    <Text Include="imported\capstone\LICENSE_LLVM.TXT" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Library.h" />
+    <ClInclude Include="imported\capstone\include\capstone.h" />
+    <ClInclude Include="imported\capstone\include\platform.h" />
+    <ClInclude Include="imported\capstone\include\x86.h" />
+    <ClInclude Include="Patcher.h" />
+    <ClInclude Include="PatcherUtil.h" />
+    <ClInclude Include="Patches.h" />
+    <ClInclude Include="Resources.h" />
+    <ClInclude Include="Tethys\API\Enumerators.h" />
+    <ClInclude Include="Tethys\API\GameMap.h" />
+    <ClInclude Include="Tethys\API\Location.h" />
+    <ClInclude Include="Tethys\API\MissionScript.h" />
+    <ClInclude Include="Tethys\API\Player.h" />
+    <ClInclude Include="Tethys\API\ScGroup.h" />
+    <ClInclude Include="Tethys\API\ScStub.h" />
+    <ClInclude Include="Tethys\API\TethysGame.h" />
+    <ClInclude Include="Tethys\API\Trigger.h" />
+    <ClInclude Include="Tethys\API\Unit.h" />
+    <ClInclude Include="Tethys\API\UnitBlock.h" />
+    <ClInclude Include="Tethys\Common\Memory.h" />
+    <ClInclude Include="Tethys\Common\Types.h" />
+    <ClInclude Include="Tethys\Common\Util.h" />
+    <ClInclude Include="Tethys\Common\WinTypes.h" />
+    <ClInclude Include="Tethys\Game\BlightLavaManager.h" />
+    <ClInclude Include="Tethys\Game\CommandPacket.h" />
+    <ClInclude Include="Tethys\Game\GameImpl.h" />
+    <ClInclude Include="Tethys\Game\GameStartInfo.h" />
+    <ClInclude Include="Tethys\Game\MissionDLL.h" />
+    <ClInclude Include="Tethys\Game\MapImpl.h" />
+    <ClInclude Include="Tethys\Game\MapObject.h" />
+    <ClInclude Include="Tethys\Game\MapObjectType.h" />
+    <ClInclude Include="Tethys\Game\MoraleManager.h" />
+    <ClInclude Include="Tethys\Game\PathFinder.h" />
+    <ClInclude Include="Tethys\Game\PlayerImpl.h" />
+    <ClInclude Include="Tethys\Game\Random.h" />
+    <ClInclude Include="Tethys\Game\Research.h" />
+    <ClInclude Include="Tethys\Game\ScBase.h" />
+    <ClInclude Include="Tethys\Game\Sheet.h" />
+    <ClInclude Include="Tethys\Game\TApp.h" />
+    <ClInclude Include="Tethys\Game\TubeConnection.h" />
+    <ClInclude Include="Tethys\Game\UnitGroup.h" />
+    <ClInclude Include="Tethys\Network\GurManager.h" />
+    <ClInclude Include="Tethys\Network\NetGameProtocol.h" />
+    <ClInclude Include="Tethys\Network\NetGameSession.h" />
+    <ClInclude Include="Tethys\Network\NetTransportLayer.h" />
+    <ClInclude Include="Tethys\Network\Packet.h" />
+    <ClInclude Include="Tethys\Resource\CConfig.h" />
+    <ClInclude Include="Tethys\Resource\Font.h" />
+    <ClInclude Include="Tethys\Resource\GFXBitmap.h" />
+    <ClInclude Include="Tethys\Resource\GFXPalette.h" />
+    <ClInclude Include="Tethys\Resource\GFXSurface.h" />
+    <ClInclude Include="Tethys\Resource\LocalizedStrings.h" />
+    <ClInclude Include="Tethys\Resource\CodecStream.h" />
+    <ClInclude Include="Tethys\Resource\ResManager.h" />
+    <ClInclude Include="Tethys\Resource\SoundID.h" />
+    <ClInclude Include="Tethys\Resource\SoundManager.h" />
+    <ClInclude Include="Tethys\Resource\SpriteManager.h" />
+    <ClInclude Include="Tethys\Resource\StreamIO.h" />
+    <ClInclude Include="Tethys\Resource\TextStream.h" />
+    <ClInclude Include="Tethys\Resource\VolStream.h" />
+    <ClInclude Include="Tethys\UI\CommandPane.h" />
+    <ClInclude Include="Tethys\UI\GameFrame.h" />
+    <ClInclude Include="Tethys\UI\DetailPane.h" />
+    <ClInclude Include="Tethys\UI\Filter.h" />
+    <ClInclude Include="Tethys\UI\IWnd.h" />
+    <ClInclude Include="Tethys\UI\MiniMapPane.h" />
+    <ClInclude Include="Tethys\UI\MsgBoxDialog.h" />
+    <ClInclude Include="Tethys\UI\MultiplayerDialogs.h" />
+    <ClInclude Include="Tethys\UI\FileDialog.h" />
+    <ClInclude Include="Tethys\UI\UICommand.h" />
+    <ClInclude Include="Tethys\UI\UICommandID.h" />
+    <ClInclude Include="Tethys\UI\UIElement.h" />
+    <ClInclude Include="Tethys\UI\UIState.h" />
+    <ClInclude Include="Util.h" />
+    <ClInclude Include="Version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="Misc.cpp" />
+    <ClCompile Include="Mod.cpp" />
+    <ClCompile Include="Netplay.cpp" />
+    <ClCompile Include="Patcher.cpp" />
+    <ClCompile Include="Stream.cpp" />
+    <ClCompile Include="UserInterface.cpp" />
+    <ClCompile Include="ScStub.cpp" />
+    <ClCompile Include="Map.cpp" />
+    <ClCompile Include="Units.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AboutDialog.rc" />
+    <ResourceCompile Include="Icon.rc" />
+    <ResourceCompile Include="MainMenu.rc" />
+    <ResourceCompile Include="MultiplayerIpDropdown.rc" />
+    <ResourceCompile Include="MultiplayerLobby.rc" />
+    <ResourceCompile Include="MultiplayerMethodMenu.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Op2Icon.ico" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

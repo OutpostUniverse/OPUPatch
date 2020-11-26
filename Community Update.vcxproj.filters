@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Patcher">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Patcher\Imported">
+      <UniqueIdentifier>{cafdd63e-77e8-4be4-a2a9-9fe3262aabb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Patcher\Imported\Capstone">
+      <UniqueIdentifier>{2868049f-67c6-4651-b88a-cef8f728c02b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Patcher\Imported\Capstone\include">
+      <UniqueIdentifier>{b6d93a21-25ef-4685-8b86-d1ff4ade4e6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Patches">
+      <UniqueIdentifier>{6720a07c-80e4-4b86-99e0-fca9de91f587}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mod">
+      <UniqueIdentifier>{91cddb9b-8232-4c48-a1e9-3320aa175400}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{d0fbd1bc-63a4-4349-b34e-596c3769ed33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{168d7ffa-0b8d-423b-b8cb-05ea931a4bff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tethys">
+      <UniqueIdentifier>{e28c8cfb-b907-42b6-b8b9-558549bd262b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tethys\Common">
+      <UniqueIdentifier>{6fe88bb9-78c7-4f5b-8635-d5386d677d1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tethys\Game">
+      <UniqueIdentifier>{45378170-6755-4af4-b33b-12e51d5037bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tethys\Network">
+      <UniqueIdentifier>{c6f3bbb2-4fab-43dd-ba59-80c0caff54d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tethys\Resource">
+      <UniqueIdentifier>{c27a1b0b-7fa0-44d0-a2b4-06017ab34812}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tethys\UI">
+      <UniqueIdentifier>{04c201ee-52ec-443b-8698-692808c459dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tethys\API">
+      <UniqueIdentifier>{86e6d8a8-df83-4381-92b2-fd791654d195}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="imported\capstone\capstone.lib">
+      <Filter>Patcher\Imported\Capstone</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="imported\capstone\LICENSE.TXT">
+      <Filter>Patcher\Imported\Capstone</Filter>
+    </Text>
+    <Text Include="imported\capstone\LICENSE_LLVM.TXT">
+      <Filter>Patcher\Imported\Capstone</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="imported\capstone\include\capstone.h">
+      <Filter>Patcher\Imported\Capstone\include</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\capstone\include\platform.h">
+      <Filter>Patcher\Imported\Capstone\include</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\capstone\include\x86.h">
+      <Filter>Patcher\Imported\Capstone\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher.h">
+      <Filter>Patcher</Filter>
+    </ClInclude>
+    <ClInclude Include="PatcherUtil.h">
+      <Filter>Patcher</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Version.h">
+      <Filter>Mod</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Library.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Common\Types.h">
+      <Filter>Tethys\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Common\WinTypes.h">
+      <Filter>Tethys\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Common\Memory.h">
+      <Filter>Tethys\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\GameStartInfo.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\MapObject.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\MapObjectType.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\PathFinder.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\Research.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\ScBase.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\BlightLavaManager.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\CommandPacket.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Network\NetGameProtocol.h">
+      <Filter>Tethys\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Network\NetGameSession.h">
+      <Filter>Tethys\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Network\NetTransportLayer.h">
+      <Filter>Tethys\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Network\Packet.h">
+      <Filter>Tethys\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Network\GurManager.h">
+      <Filter>Tethys\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\LocalizedStrings.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\ResManager.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\SoundID.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\CConfig.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\GFXBitmap.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\GFXPalette.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\GFXSurface.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\StreamIO.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\IWnd.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\MiniMapPane.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\UICommandID.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\UIElement.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\UIState.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\CommandPane.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\DetailPane.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\Filter.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\TethysGame.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\Trigger.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\Unit.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\UnitBlock.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\Enumerators.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\GameMap.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\Location.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\MissionScript.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\Player.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\ScGroup.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\ScStub.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Common\Util.h">
+      <Filter>Tethys\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\SoundManager.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\SpriteManager.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\TApp.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\Random.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\Sheet.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\UnitGroup.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\Font.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\UICommand.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\CodecStream.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\VolStream.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\MultiplayerDialogs.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\MsgBoxDialog.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\PlayerImpl.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\MapImpl.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\TubeConnection.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\TextStream.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\GameImpl.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\GameFrame.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\MoraleManager.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\FileDialog.h">
+      <Filter>Tethys\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\MissionDLL.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Patcher.cpp">
+      <Filter>Patcher</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod.cpp">
+      <Filter>Mod</Filter>
+    </ClCompile>
+    <ClCompile Include="Map.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="ScStub.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Netplay.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Units.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Stream.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AboutDialog.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="Icon.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="MainMenu.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="MultiplayerIpDropdown.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="MultiplayerLobby.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="MultiplayerMethodMenu.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Op2Icon.ico">
+      <Filter>Resources</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

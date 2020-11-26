@@ -1,0 +1,71 @@
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include "Resources.h"
+
+RESOURCE_REPLACE(OUT2RES.DLL, 196) DIALOG 0, 0, 421, 271
+STYLE DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "GAME SETTINGS"
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+FONT 8, "MS Sans Serif"
+{
+   CONTROL "CANCEL",           1090, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                                 250, 253,  68, 14
+   CONTROL "START",            1045, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                   100, 253,  68, 14
+   CONTROL "",               -25533, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               154,  39,   9, 10
+   CONTROL "",               -25532, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               231,  39,   9, 10
+   CONTROL "",               -25535, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               96,  38,  46, 85
+   CONTROL "Name",               -1, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                        16,  20,  76,  8
+   CONTROL "Color",              -1, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                         103,  20,  28,  8
+   CONTROL "",               -25530, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               154,  54,   9, 10
+   CONTROL "",               -25529, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               231,  54,   9, 10
+   CONTROL "",               -25528, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               96,  53,  46, 85
+   CONTROL "",               -25525, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               154,  69,   9, 10
+   CONTROL "",               -25524, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               231,  69,   9, 10
+   CONTROL "",               -25523, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               96,  68,  46, 85
+   CONTROL "",               -25520, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               154,  84,   9, 10
+   CONTROL "",               -25519, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               231,  84,   9, 10
+   CONTROL "",               -25518, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               96,  83,  46, 85
+   CONTROL "",               -25506, EDIT,     ES_LEFT | ES_MULTILINE | ES_WANTRETURN | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_BORDER | WS_TABSTOP,               36, 234, 380, 14
+   CONTROL "",               -25505, EDIT,     ES_LEFT | ES_MULTILINE | ES_READONLY | ES_WANTRETURN | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_TABSTOP,   8, 132, 408, 98
+   CONTROL "EJECT",            1046, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                   252,  38,  52, 14
+   CONTROL "EJECT",            1047, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                   252,  53,  52, 14
+   CONTROL "EJECT",            1048, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                   252,  68,  52, 14
+   CONTROL "EJECT",            1049, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                   252,  83,  52, 14
+   CONTROL "Eden",               -1, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                         148,  20,  20,  8
+   CONTROL "Ready?",             -1, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                         224,  20,  31, 10
+   CONTROL "",               -25515, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               154,  99,   9, 10
+   CONTROL "",               -25514, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               231,  99,   9, 10
+   CONTROL "",               -25513, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               96,  98,  46, 85
+   CONTROL "",               -25510, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               154, 114,   9, 10
+   CONTROL "",               -25509, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               231, 114,   9, 10
+   CONTROL "",               -25508, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                               96, 113,  46, 70
+   CONTROL "EJECT",            1050, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                   252,  98,  52, 14
+   CONTROL "EJECT",            1051, BUTTON,   BS_PUSHBUTTON | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                   252, 113,  52, 14
+   CONTROL "",               -25534, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                              176,  38,  46, 85
+   CONTROL "Resources",          -1, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                       176,  20,  40,  8
+   CONTROL "",               -25527, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                              176,  53,  46, 85
+   CONTROL "",               -25522, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                              176,  68,  46, 85
+   CONTROL "",               -25517, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                              176,  83,  46, 85
+   CONTROL "",               -25512, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                              176,  98,  46, 85
+   CONTROL "",               -25507, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_TABSTOP,                                                              176, 113,  46, 85
+   CONTROL "Scenario:",        1080, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                           8,   4,  39, 11
+   CONTROL "Unknown Mission",  1075, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                          52,   4, 250,  8
+   CONTROL "",               -25504, COMBOBOX, CBS_DROPDOWNLIST | CBS_SORT | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP,                                       52,   3, 360, 83
+   CONTROL "",                 1077, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                 320,  81,   8,  8
+   CONTROL "",                 1078, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                 320,  39,   8,  8
+   CONTROL "",                 1079, BUTTON,   BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_TABSTOP,                                                 320,  60,   8,  8
+   CONTROL "",                 1018, COMBOBOX, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_VSCROLL | WS_TABSTOP,                                   317, 107,  31, 85
+   CONTROL "Initial Vehicles", 1084, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_GROUP,                                                           355, 108,  53, 10
+   CONTROL "Disasters",        1085, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_GROUP,                                                           340,  81,  37,  9
+   CONTROL "Morale Steady",    1086, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_GROUP,                                                           340,  39,  53,  9
+   CONTROL "Day and Night",    1087, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_GROUP,                                                           340,  60,  64, 10
+   CONTROL "Chat:",              -1, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                           8, 235,  24,  8
+   CONTROL "",               -25536, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                        16,  39,  76, 10
+   CONTROL "",               -25526, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                        16,  69,  76, 10
+   CONTROL "",               -25531, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                        16,  54,  76, 10
+   CONTROL "",               -25521, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                        16,  84,  76, 10
+   CONTROL "",               -25516, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                        16,  99,  76, 10
+   CONTROL "",               -25511, STATIC,   SS_CENTER | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                        16, 114,  76, 10
+   CONTROL "",                   -1, STATIC,   SS_BLACKFRAME | WS_CHILD | WS_VISIBLE,                                                                                8,  31, 404,  1
+   CONTROL "Settings:",           0, STATIC,   SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP,                                                                         339,  20,  40,  9
+}
