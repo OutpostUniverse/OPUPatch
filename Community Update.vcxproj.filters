@@ -209,9 +209,6 @@
     <ClInclude Include="Tethys\API\Location.h">
       <Filter>Tethys\API</Filter>
     </ClInclude>
-    <ClInclude Include="Tethys\API\MissionScript.h">
-      <Filter>Tethys\API</Filter>
-    </ClInclude>
     <ClInclude Include="Tethys\API\Player.h">
       <Filter>Tethys\API</Filter>
     </ClInclude>
@@ -284,8 +281,17 @@
     <ClInclude Include="Tethys\UI\FileDialog.h">
       <Filter>Tethys\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Tethys\Game\MissionDLL.h">
+    <ClInclude Include="Tethys\Game\MissionManager.h">
       <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Resource\MemoryMappedFile.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\Mission.h">
+      <Filter>Tethys\API</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\API.h">
+      <Filter>Tethys\API</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -341,7 +347,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Op2Icon.ico">
+    <Image Include="OP2Icon.ico">
       <Filter>Resources</Filter>
     </Image>
   </ItemGroup>

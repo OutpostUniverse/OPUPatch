@@ -250,7 +250,7 @@ public:
   CommandPane commandPane_;
   StatusBar   statusBar_;
   IniSettings iniSettings_;
-  Font*       pUnknownFont_;    // ** TODO what is this used for?
+  Font*       pFont1_;    // ** TODO what is this used for?
   // ** TODO more fields
 };
 

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "Tethys/Game/CommandPacket.h"
+
 enum class MissionType : int;
 
 BEGIN_PACKED
@@ -58,8 +60,8 @@ struct GameStartInfo {
     char       str[13];
   }            playerName[6];
   int          gameSpeed;         ///< UI value * 4
-  int          randomNumberSeed;
-  int          field_B6;          // ** TODO Random seed 2nd dword?
+  uint32       randomNumberSeed;
+  uint32       checksum;
 };
 static_assert(sizeof(GameStartInfo) == 0xBA, "Incorrect GameStartInfo size.");
 

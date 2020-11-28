@@ -5,7 +5,7 @@
 #include "Patcher.h"
 
 #include "Tethys/Game/TApp.h"
-#include "Tethys/Game/MissionDLL.h"
+#include "Tethys/Game/MissionManager.h"
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/Resource/ResManager.h"
 #include "Tethys/UI/IWnd.h"
@@ -83,31 +83,34 @@ static std::vector<std::filesystem::path> GetSearchPaths(
         { ".avi",   "movies"   },
         { ".mp4",   "movies"   },
         { ".rtf",   "story"    },
+        { ".op2",   "saves"    }
       };
 
       const auto range = assetDirs.equal_range(extension);
       for (auto it = range.first; it != range.second; ++it) {
         const auto assetDir = base/it->second;
 
-        if (searchForMission && (it->first == ".dll") && (it->second == "maps") && std::filesystem::exists(assetDir)) {
-          // Search a) top level of OPU/[base]/maps/* subdirectories if we are searching for mission DLLs.
-          for (auto& p : std::filesystem::directory_iterator(assetDir, SearchOptions)) {
-            if (p.is_directory()) {
-              searchPaths.emplace_back(p);
+        if (std::filesystem::exists(assetDir)) {
+          if (searchForMission && (it->first == ".dll") && (it->second == "maps")) {
+            // Search a) top level of OPU/[base]/maps/* subdirectories if we are searching for mission DLLs.
+            for (auto& p : std::filesystem::directory_iterator(assetDir, SearchOptions)) {
+              if (p.is_directory()) {
+                searchPaths.emplace_back(p);
+              }
             }
           }
-        }
 
-        // Search b) OPU/[base]/[asset] directory.
-        if ((searchForMission == false) || (it->second == "maps")) {
-          searchPaths.emplace_back(assetDir);
+          // Search b) OPU/[base]/[asset] directory.
+          if ((searchForMission == false) || (it->second == "maps")) {
+            searchPaths.emplace_back(assetDir);
+          }
         }
       }
 
-      // Search c) OPU/[base] directory.
-      searchPaths.emplace_back(base);
-
       if (std::filesystem::exists(base)) {
+        // Search c) OPU/[base] directory.
+        searchPaths.emplace_back(base);
+
         // Search d) top level of any OPU/[base]/* subdirectories.
         for (auto& p : std::filesystem::directory_iterator(base, SearchOptions)) {
           if (p.is_directory()) {
@@ -137,7 +140,7 @@ static std::vector<std::filesystem::path> GetSearchPaths(
   if (excludeStockDirs == false) {
     // Search 8) Outpost2.exe directory, then 9) Outpost 2 CD directory if available.
     searchPaths.emplace_back(g_resManager.installedDir_);
-    if (g_resManager.cdDir_[0] != '.') {
+    if ((g_resManager.cdDir_[0] != '\0') && (g_resManager.cdDir_[0] != '.')) {
       searchPaths.emplace_back(g_resManager.cdDir_);
     }
   }
@@ -151,7 +154,7 @@ static std::filesystem::path GetFilePath(
   bool                          searchForMission = false)
 {
   constexpr auto SearchOptions = std::filesystem::directory_options::follow_directory_symlink |
-    std::filesystem::directory_options::skip_permission_denied;
+                                 std::filesystem::directory_options::skip_permission_denied;
 
   static const auto opuPath(std::filesystem::path(g_resManager.installedDir_)/OPUDir);
 
@@ -217,19 +220,20 @@ static MissionList GetMissionList(
           std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
 
           if (tested.count(filename) == 0) {
-            AIModDesc*const pModDesc = MissionDLL::GetModuleDesc(path.string().data());
+            AIModDesc*const pAIModDesc = MissionManager::GetModuleDesc(path.string().data());
 
-            if (pModDesc != nullptr) {
-              if ((pModDesc->descBlock.missionType >= minMissionType) &&
-                  (pModDesc->descBlock.missionType <= maxMissionType) &&
-                  (pModDesc->descBlock.numPlayers  >= maxPlayers))
+            if (pAIModDesc != nullptr) {
+              if ((pAIModDesc->descBlock.missionType >= minMissionType) &&
+                  (pAIModDesc->descBlock.missionType <= maxMissionType) &&
+                  (pAIModDesc->descBlock.numPlayers  >= maxPlayers))
               {
                 missions.emplace_back(
-                  filename,
-                  MissionList::value_type::second_type(pModDesc, [](AIModDesc* p) { MissionDLL::FreeModuleDesc(p); }));
+                  std::piecewise_construct,
+                  std::forward_as_tuple(path.filename().string()),
+                  std::forward_as_tuple(pAIModDesc, [](AIModDesc* p) { MissionManager::FreeModuleDesc(p); }));
               }
               else {
-                MissionDLL::FreeModuleDesc(pModDesc);
+                MissionManager::FreeModuleDesc(pAIModDesc);
               }
             }
 
@@ -332,9 +336,10 @@ static std::wstring GetPathEnv() {
 // =====================================================================================================================
 // Adds DLL search paths.
 // This does not use AddDllDirectory() because it's not WinXP-compatible, and multiple path search order is undefined.
+// See https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
 static void AddModuleSearchPaths(
-  std::vector<std::filesystem::path>  paths,
-  bool                                ifUnique = false)
+  const std::vector<std::filesystem::path>&  paths,
+  bool                                       ifUnique = false)
 {
   std::wstring pathEnv  = GetPathEnv();
   bool         modified = false;
@@ -365,7 +370,7 @@ static void AddModuleSearchPaths(
 // =====================================================================================================================
 // Removes DLL search paths.
 static void RemoveModuleSearchPaths(
-  std::vector<std::filesystem::path> paths)
+  const std::vector<std::filesystem::path>& paths)
 {
   std::wstring pathEnv  = GetPathEnv();
   bool         modified = false;
@@ -438,31 +443,28 @@ void InitModuleSearchPaths() {
     g_resManager.InitCDDir();
   }
 
+  // Set current directory to [install dir]/OPU if current directory was set to default.
   if (std::filesystem::current_path() == std::filesystem::canonical(g_resManager.installedDir_)) {
     SetCurrentDirectoryW((g_resManager.installedDir_/opuPath).wstring().data());
   }
 
+  // Add default DLL search paths.
   AddModuleSearchPaths({ "", opuPath, core, core/"maps", core/"libs" });
   SetBaseModuleSearchPaths(&g_baseModDir[0]);  // ** TODO override?
+  // ** TODO should add search paths for all mods
 }
 
 // =====================================================================================================================
 bool SetFileSearchPathPatch(
   bool enable)
 {
-
   static PatchContext op2Patcher;
   static PatchContext shellPatcher;
 
   static std::vector<HMODULE> hModules;
 
   static const std::wstring oldPathEnv(GetPathEnv());
-  static const std::wstring oldCwd = [] {
-    wchar_t cwd[MAX_PATH] = L"";
-    GetCurrentDirectoryW(MAX_PATH, &cwd[0]);
-    return std::wstring(cwd);
-  }();
-
+  static const auto oldCwd(std::filesystem::current_path());
 
   static bool inited  = false;
          bool success = true;
@@ -508,19 +510,23 @@ bool SetFileSearchPathPatch(
     });
 
     // In TethysGame::PrepareGame()
-    op2Patcher.LowLevelHook(0x48942E, [] { g_searchForMission = true; });
-    op2Patcher.HookCall(0x489444, FastcallLambdaPtr([](const char* pFilename) {
-      g_searchForMission = false;
-      const std::filesystem::path path(pFilename);
-      if (path.is_absolute()) {
-        g_curMapPath = path.parent_path();
-      }
-      return MissionDLL::GetModuleDesc(pFilename);
-    }));
+    op2Patcher.HookCall(0x489433, SetCapturedTrampoline, ThiscallFunctor(
+      [F = (ibool(__thiscall*)(ResManager*, char*, char*))0](ResManager* pResManager, char* pResName, char* pOut) {
+        g_searchForMission = true;
+        const ibool result = F(pResManager, pResName, pOut);
+        g_searchForMission = false;
+
+        const std::filesystem::path path(result ? pOut : "");
+        if (path.is_absolute()) {
+          g_curMapPath = path.parent_path();
+        }
+
+        return result;
+      }));
 
     static std::wstring preMissionPathEnv;
 
-    // In MissionDLL::LoadScript()
+    // In MissionManager::LoadScript()
     op2Patcher.HookCall(0x402B44, StdcallLambdaPtr([](const char* pFilename) {
       std::filesystem::path path(pFilename);
 
@@ -542,7 +548,7 @@ bool SetFileSearchPathPatch(
       return hModule;
     }));
 
-    // In MissionDLL::Deinit()
+    // In MissionManager::Deinit()
     op2Patcher.HookCall(0x402C2A, StdcallLambdaPtr([](HMODULE hModule) -> BOOL {
       const BOOL result = FreeLibrary(hModule);
       if (preMissionPathEnv.empty() == false) {
@@ -553,21 +559,16 @@ bool SetFileSearchPathPatch(
       return result;
     }));
 
-    // In MissionDLL::Load()
-    op2Patcher.LowLevelHook(0x402E46, [] { g_searchForMission = true;  });
-    op2Patcher.LowLevelHook(0x402E50, [] { g_searchForMission = false; });
-
-    // In ChecksumScript()
-    op2Patcher.LowLevelHook(0x450036, [] { g_searchForMission = true;  });
-    op2Patcher.LowLevelHook(0x450041, [] { g_searchForMission = false; });
-
-    // In MultiplayerPreGameSetupWnd::SetControlInfo()
-    op2Patcher.LowLevelHook(0x460B0C, [] { g_searchForMission = true;  });
-    op2Patcher.LowLevelHook(0x460B18, [] { g_searchForMission = false; });
-
-    // In ???
-    op2Patcher.LowLevelHook(0x460786, [] { g_searchForMission = true;  });
-    op2Patcher.LowLevelHook(0x460791, [] { g_searchForMission = false; });
+    // In MissionManager::Load(), ChecksumScript(), MultiplayerLobbyDialog::SetControlInfo(), ???_460770()
+    for (const uintptr loc : { 0x402E4B, 0x45003C, 0x460B13, 0x46078C }) {
+      op2Patcher.HookCall(loc, SetCapturedTrampoline, ThiscallFunctor(
+        [F = (ibool(__thiscall*)(ResManager*, char*, char*))0](ResManager* pResManager, char* pResName, char* pOut) {
+          g_searchForMission = true;
+          const ibool result = F(pResManager, pResName, pOut);
+          g_searchForMission = false;
+          return result;
+        }));
+    }
 
     // In StartSierraNW() (SierraNW.dll)
     op2Patcher.HookCall(0x47D2B1, &LoadModuleAltSearchPath);
@@ -582,11 +583,78 @@ bool SetFileSearchPathPatch(
   if ((enable == false) || (success == false)) {
     if (inited) {
       SetEnvironmentVariableW(PathVar, oldPathEnv.data());
-      SetCurrentDirectoryW(oldCwd.data());
+      std::error_code error;
+      std::filesystem::current_path(oldCwd, error);
       inited = false;
     }
 
     success &= (op2Patcher.RevertAll() == PatcherStatus::Ok) && (shellPatcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Changes netplay game start checksum validation logic.
+bool SetChecksumPatch(
+  bool enable)
+{
+  static PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // Reimplement ChecksumScript()
+    patcher.Hook(0x44FFE0, FastcallLambdaPtr([](int pOut[14], const char* pFilename) -> ibool {
+      AIModDesc* pAIModDesc = nullptr;
+      const std::filesystem::path scriptPath = GetFilePath(pFilename, true);
+      if (scriptPath.empty() == false) {
+        pAIModDesc = MissionManager::GetModuleDesc(scriptPath.string().data());
+      }
+
+      int  i      = 0;
+      bool result = true;
+      auto AddChecksum = [pOut, &result, &i](uint32 checksum) { pOut[i] = checksum;  result &= (checksum != 0); };
+
+      // Checksum sheets
+      for (const char* p : { "building.txt", "mines.txt", "morale.txt", "space.txt", "vehicle.txt", "weapons.txt" }) {
+        AddChecksum(g_resManager.ChecksumStream(p));
+      }
+
+      // Normally, edentek.txt, ply_tek.txt, and multitek.txt get checksummed here.
+      // Use these 3 slots instead for the actual map's tech checksum, op2ext.dll, and OPUPatch.dll.
+      // ** TODO tech checksum could be smarter to factor out localization etc.
+      AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pTechtreeName));
+      AddChecksum(g_resManager.ChecksumStream("op2ext.dll"));
+      AddChecksum(g_resManager.ChecksumStream("OPUPatch.dll"));
+
+      // Checksum OP2Shell.dll (seems pointless, maybe we can reuse this for something else)
+      AddChecksum(g_tApp.ChecksumShell());
+
+      // Checksum Outpost2.exe (seems pointless as long as this is a const, maybe we can reuse this for something else)
+      AddChecksum(0x59010E28);
+
+      // Checksum mission DLL
+      AddChecksum((pAIModDesc == nullptr) ? 0 : pAIModDesc->checksum);
+
+      // Checksum map file
+      AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pMapName));
+
+      // Overall checksum
+      pOut[i] = TApp::Checksum(pOut, sizeof(int) * i);
+      assert(i == 13);
+
+      if (pAIModDesc != nullptr) {
+        MissionManager::FreeModuleDesc(pAIModDesc);
+      }
+
+      return result;
+    }));
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
   }
 
   return success;

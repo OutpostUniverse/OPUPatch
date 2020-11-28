@@ -63,7 +63,7 @@ public:
   ///@}
 
   /// Loads a new map from the given file.  @warning This may crash if there are units on the map.
-  static bool Load(const char* pFilename) { GetImpl()->Unload();  return GetImpl()->LoadFromFile(pFilename); }
+  static bool Load(const char* pFilename) { GetImpl()->Deinit();  return GetImpl()->LoadFromFile(pFilename); }
 
 public:
   uint8 field_00;

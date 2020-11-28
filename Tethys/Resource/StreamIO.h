@@ -31,6 +31,7 @@ public:
   int    status_;
 };
 
+
 /// Basic file read stream.
 class FileRStream : public StreamIO {
   using $ = FileRStream;
@@ -134,6 +135,7 @@ public:
   ibool  ownsFile_;  ///< Will close the OS file handle on Close
 };
 static_assert(sizeof(FileRWStream) == 0x14, "Incorrect FileRWStream size.");
+
 
 /// Basic memory read/write stream.
 class MemRWStream : public StreamIO {

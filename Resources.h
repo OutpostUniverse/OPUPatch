@@ -10,9 +10,12 @@
 #define EXPAND(...)             __VA_ARGS__
 
 
-// OP2 version triple.  Expands to major.minor.step
+// Outpost 2 version triple.  Expands to major.minor.step
 #define OP2_VERSION_TRIPLE      EXPAND(OP2_MAJOR_VERSION).EXPAND(OP2_MINOR_VERSION).EXPAND(OP2_STEPPING_VERSION)
 #define OP2_VERSION_TRIPLE_STR  STRINGIFY(EXPAND(OP2_VERSION_TRIPLE))
+// Outpost 2 version quad.  Expands to major.minor.0.step
+#define OP2_VERSION_QUAD        EXPAND(OP2_MAJOR_VERSION).EXPAND(OP2_MINOR_VERSION).EXPAND(0).EXPAND(OP2_STEPPING_VERSION)
+#define OP2_VERSION_QUAD_STR    STRINGIFY(EXPAND(OP2_VERSION_QUAD))
 
 
 // Macro to define or match resource replacement template names.

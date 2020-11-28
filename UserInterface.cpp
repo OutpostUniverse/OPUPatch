@@ -8,6 +8,7 @@
 #include "Resources.h"
 #include "Library.h"
 
+#include "Tethys/API/Mission.h"
 #include "Tethys/API/TethysGame.h"
 #include "Tethys/API/GameMap.h"
 #include "Tethys/API/Enumerators.h"
@@ -27,7 +28,9 @@
 #include <cstdlib>
 #include <algorithm>
 #include <string>
+#include <filesystem>
 #include <map>
+#include <set>
 
 using namespace Patcher;
 using namespace Patcher::Util;
@@ -49,29 +52,30 @@ static std::string FindResourceReplacement(
 {
   const auto hModule = *phModule;
 
-  char otherModuleName[256] = "";
-  const char* pModuleName   = &otherModuleName[0];
+  std::string moduleName;
   if ((hModule == NULL) || (hModule == g_tApp.hOut2ResLib_)) {
-    pModuleName = "OUT2RES.DLL";
+    moduleName = "OUT2RES.DLL";
   }
   else if (hModule == g_tApp.hInstance_) {
-    pModuleName = "OUTPOST2.EXE";
+    moduleName = "OUTPOST2.EXE";
   }
   else if (hModule == GetModuleHandleA("op2shres.dll")) {
-    pModuleName = "OP2SHRES.DLL";
+    moduleName = "OP2SHRES.DLL";
   }
   else {
-    GetModuleFileNameA(hModule, &otherModuleName[0], sizeof(otherModuleName));
-    std::transform(&otherModuleName[0], &otherModuleName[sizeof(otherModuleName)], &otherModuleName[0], ::toupper);
+    char buf[MAX_PATH] = "";
+    GetModuleFileNameA(hModule, &buf[0], sizeof(buf));
+    moduleName = std::filesystem::path(buf).filename().string();
+    std::transform(moduleName.begin(), moduleName.end(), moduleName.begin(), ::toupper);
   }
 
   char buf[256] = "";
   if (IS_INTRESOURCE(pTemplate)) {
     snprintf(
-      &buf[0], sizeof(buf), RESOURCE_REPLACE_STR(%s, %i), pModuleName, reinterpret_cast<int>(pTemplate));
+      &buf[0], sizeof(buf), RESOURCE_REPLACE_STR(%s, %i), moduleName.data(), reinterpret_cast<int>(pTemplate));
   }
   else {
-    snprintf(&buf[0], sizeof(buf), RESOURCE_REPLACE_STR(%s, %s), pModuleName, pTemplate);
+    snprintf(&buf[0], sizeof(buf), RESOURCE_REPLACE_STR(%s, %s), moduleName.data(), pTemplate);
   }
 
   std::string result = "";
@@ -349,9 +353,7 @@ bool SetFontPatch(
   createInfo.lfWeight = 400;
 
   // ** TODO Define these font fields
-  for (Font* pFont :
-         { g_gameFrame.pUnknownFont_, (Font*)PtrInc(&g_gameFrame, 0x2828), (Font*)PtrInc(&g_gameFrame, 0x4488) })
-  {
+  for (Font* pFont: { g_gameFrame.pFont1_, (Font*)PtrInc(&g_gameFrame, 0x2828), (Font*)PtrInc(&g_gameFrame, 0x4488) }) {
     pFont->Init(createInfo);
   }
 
@@ -702,7 +704,7 @@ bool SetSavantNotificationPatch(
 }
 
 // =====================================================================================================================
-// Replacement mission name strings for stock missions in the multiplayer mission list.
+// Replacement mission info for stock missions in select mission lists.
 bool SetMissionListNamePatch(
   bool enable)
 {
@@ -710,7 +712,7 @@ bool SetMissionListNamePatch(
   bool success = true;
 
   if (enable) {
-    static const std::map<std::string, std::string> missionNames = {
+    static const std::map<std::string_view, std::string_view> missionNames = {
       { "mf2_01.dll",  "2P, SR, 'Close Encounter'"    },    { "mf3_02.dll",  "3P, SR, 'Biohazard'"        },
       { "mf3_08.dll",  "3P, SR, 'Three's a Crowd'"    },    { "mf4_03.dll",  "4P, SR, 'Rock Garden'"      },
       { "mf4_05.dll",  "4P, SR, 'Crash Zone'"         },    { "mf4_08.dll",  "4P, SR, 'The Rift'"         },
@@ -744,7 +746,7 @@ bool SetMissionListNamePatch(
     };
 
     // In GetModuleDesc()
-    patcher.LowLevelHook(0x402627, [](Esi<const char*> pModuleName, Esp<void*> pEsp) {
+    patcher.LowLevelHook(0x402627, [](Esi<const char*> pModuleName, Esp<void*> pEsp, Eax<const ModDesc*>& pModDesc) {
       std::string moduleName(pModuleName);
 
       const size_t separatorPos = moduleName.find_last_of("\\/");
@@ -757,6 +759,14 @@ bool SetMissionListNamePatch(
       const auto it = missionNames.find(moduleName);
       const auto**const ppLevelDesc = static_cast<const char**>(PtrInc(pEsp, 36));
       *ppLevelDesc = (it != missionNames.end()) ? it->second.data() : nullptr;
+
+      // us_them is a useless unit reference-type mission where both players are uncontrollable AIs (forced to GoAI())
+      // that is set to MissionType::Colony.  Set its mission type to 0 to hide it from mission list UIs.
+      if (moduleName == "us_them.dll") {
+        static const ModDesc Desc =
+          { MissionType{0}, pModDesc->numPlayers, pModDesc->maxTechLevel, pModDesc->unitMission };
+        pModDesc = &Desc;
+      }
     });
 
     patcher.LowLevelHook(0x40265E, [](Eax<const char*> pLevelDesc, Esp<void*> pEsp) {

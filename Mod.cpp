@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "Tethys/Game/TApp.h"
+#include "Tethys/Game/GameStartInfo.h"
 
 #include "Patches.h"
 #include "Util.h"
@@ -21,9 +22,9 @@ BOOL APIENTRY DllMain(
 
 // =====================================================================================================================
 DLLAPI void InitMod(
-  const char*  pIniSectionName)
+  const char* pIniSectionName)
 {
-  bool result = (g_tApp.Version() >= 0x01020007);  // Requires official patch 1.2.0.7 (unpatched CD version is 1.2.0.5)
+  bool result = (g_tApp.GetVersion() >= 0x01020007);  // Requires official patch 1.2.7 (unpatched CD version is 1.2.5)
   result = result && SetGameVersion(true);
 
   // Misc
@@ -34,6 +35,7 @@ DLLAPI void InitMod(
 
   // Stream
   result = result && SetFileSearchPathPatch(true);
+  //result = result && SetChecksumPatch(true);
 
   // Netplay
   result = result && SetNatFix(true);
@@ -41,7 +43,6 @@ DLLAPI void InitMod(
   result = result && SetBindAnyNetAdapterFix(true);
   result = result && SetNoCheatsPatch(true);
   result = result && SetSigsDllCheckPatch(true);
-  //result = result && SetQuickJoinPatch(true);  // ** TODO
 
   // UI
   result = result && SetUiResourceReplacePatch(true);
@@ -49,7 +50,6 @@ DLLAPI void InitMod(
   result = result && SetUiHighlightFix(true);
   result = result && SetIpWindowFocusPatch(true);
   result = result && SetMiniMapFix(true);
-  //result = result && SetFontPatch("Arial");  // ** TODO
   result = result && SetVehicleCargoDisplayPatch(true);
   result = result && SetMissionListNamePatch(true);
   result = result && SetSavantNotificationPatch(true);
@@ -78,9 +78,4 @@ DLLAPI void InitMod(
   result = result && SetNoAlliedDockDamageFix(true);
   result = result && SetAllyEdwardSurveyMinesPatch(true);
   result = result && SetTurretAnimationPatch(true);
-}
-
-// =====================================================================================================================
-DLLAPI bool DestroyMod() {
-  return true;
 }

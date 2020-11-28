@@ -203,9 +203,9 @@ public:
   ~MapImpl() { Thunk<0x435350>();        }
 
   /// Unloads the current map and cleans up memory allocations.
-  void Unload() { return Thunk<0x435350, &$::Unload>(); }
+  void Deinit() { return Thunk<0x435350, &$::Deinit>(); }
 
-  /// Loads a new map file.  Unload() should be called before calling this.
+  /// Loads a new map file.  Deinit() should be called before calling this.
   ibool LoadFromFile(const char* pFilename) { return Thunk<0x437310, &$::LoadFromFile>(pFilename); }
 
   ibool Load(StreamIO* pMapOrSavedGame, ibool isSavedGame)

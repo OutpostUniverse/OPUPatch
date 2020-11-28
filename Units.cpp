@@ -252,7 +252,7 @@ bool SetTransferUnitToGaiaFix(
   bool success = true;
 
   if (enable && (patcher.NumPatches() == 0)) {
-    // In MissionDLL::RaiseUnitTransferredEvent()
+    // In MissionManager::RaiseUnitTransferredEvent()
     patcher.LowLevelHook(0x4031D6, [](Eax<int> dstPlayerId) { return (dstPlayerId >= 6) ? 0x4031F2 : 0; });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

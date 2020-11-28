@@ -16,8 +16,8 @@ inline HINSTANCE g_hInst = nullptr;  // HINSTANCE of this DLL.  DllMain must set
 
 /// Returns true if the virtual machine hypervisor bit of cpuid is set.
 inline bool IsVirtualMachine() {
-  unsigned out[4] = { };
-#if _MSC_VER
+  uint32 out[4] = { };
+#if defined(_WIN32)
   __cpuid(reinterpret_cast<int*>(&out[0]), 0x1);
 #elif defined(__GNUC__)
   __get_cpuid(0x1, &out[0], &out[1], &out[2], &out[3]);

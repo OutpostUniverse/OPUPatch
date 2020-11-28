@@ -43,6 +43,7 @@ public:
 };
 
 
+/// Exported interface for AI construction unit groups (wraps BuildingGroupImpl).
 class BuildingGroup : public ScGroup {
   using $ = BuildingGroup;
 public:
@@ -73,6 +74,7 @@ public:
 };
 
 
+/// Exported interface for AI mining unit groups (wraps MiningGroupImpl).
 class MiningGroup : public ScGroup {
 public:
   using ScGroup::ScGroup;
@@ -88,6 +90,7 @@ public:
 };
 
 
+/// Exported interface for AI combat unit groups (wraps FightGroupImpl).
 class FightGroup : public ScGroup {
   using $ = FightGroup;
 public:
@@ -153,7 +156,7 @@ struct PWDef {
 };
 
 
-/// AI strategy manager.  Can spawn ScGroups.
+/// Exported interface for AI strategy manager.  Can spawn ScGroups.
 class Pinwheel : public ScStub {
   using $ = Pinwheel;
 public:

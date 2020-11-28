@@ -2,13 +2,13 @@
 #pragma once
 
 #include "Tethys/Common/Memory.h"
-#include "Tethys/API/MissionScript.h"
+#include "Tethys/API/Mission.h"
 
 class MapObject;
 class StreamIO;
 class ScBase;
 
-/// Structure describing a mission DLL.  Returned by GetModuleDesc().
+/// Structure describing a mission script.  Returned by GetModuleDesc().
 struct AIModDesc {
   ModDesc descBlock;
   char*   pMapName;
@@ -22,11 +22,11 @@ struct DefaultScGroupInfo {
   int flag;
 };
 
-/// Internal MissionDLL class.
-class MissionDLL : public OP2Class<MissionDLL> {
+/// Internal MissionManager class.
+class MissionManager : public OP2Class<MissionManager> {
 public:
-   MissionDLL() { InternalCtor<0x402B10>(); }
-  ~MissionDLL() { Deinit();                 }
+   MissionManager() { InternalCtor<0x402B10>(); }
+  ~MissionManager() { Deinit();                 }
 
   void Deinit() { return Thunk<0x402C20, &$::Deinit>(); }
 
@@ -81,11 +81,11 @@ public:
   static ModDescEx* GetModuleDescEx(const char* pFilename)
     { return OP2Thunk<0x402780, &$::GetModuleDescEx>(pFilename); }
 
-  /// Frees the DescBlockEx allocated by GetModuleDescEx.
+  /// Frees the ModDescEx allocated by GetModuleDescEx.
   static void FreeModuleDescEx(ModDescEx* pDescBlockEx) { operator delete(pDescBlockEx, OP2Heap); }
 
-  /// Gets the global MissionDLL instance.
-  static MissionDLL* GetInstance() { return OP2Mem<0x4EFD18, MissionDLL*>(); }
+  /// Gets the global MissionManager instance.
+  static MissionManager* GetInstance() { return OP2Mem<0x4EFD18, MissionManager*>(); }
 
 public:
   HINSTANCE          hModule_;

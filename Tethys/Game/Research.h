@@ -6,6 +6,7 @@
 
 struct GameStartInfo;
 class  StreamIO;
+class  TextStream;
 
 /// "CATEGORY" values (for both items and upgrades to these items)
 enum class TechCategory : int {
@@ -37,7 +38,9 @@ struct TechUpgradeInfo {
   int              newValue;  ///< New value of property being upgraded
 };
 
-struct TechInfo {
+struct TechInfo : public OP2Class<TechInfo> {
+  ibool ParseTech(TextStream* pTechParser) { return Thunk<0x473A80, &$::ParseTech>(pTechParser); }
+
   int          techID;     ///< TechID found in the sheets files
   TechCategory category;   ///< In sheets "CATEGORY" tells what kind this tech is
   int          techLevel;  ///< Tech level of this tech (the thousands digit)
@@ -66,6 +69,8 @@ struct TechInfo {
 
 class Research : public OP2Class<Research> {
 public:
+  Research() { InternalCtor<0x472930>(); }
+
   int   GetTechNum(int techID)                      { return Thunk<0x472D90, &$::GetTechNum>(techID);                  }
   ibool HasTech(int playerNum, int techNum)         { return Thunk<0x472D10, &$::HasTech>(playerNum, techNum);         }
   ibool CanResearchTech(int playerNum, int techNum) { return Thunk<0x4733C0, &$::CanResearchTech>(playerNum, techNum); }
@@ -84,11 +89,17 @@ public:
   void ParseTechFile(const char* pFilename, int maxTechID)
     { return Thunk<0x472940, &$::ParseTechFile>(pFilename, maxTechID); }
 
+  void Deinit() { return Thunk<0x473240, &$::Deinit>(); }
+
   ibool SaveStartState(GameStartInfo* pGameStartInfo) { return Thunk<0x473700, &$::SaveStartState>(pGameStartInfo); }
   ibool LoadStartState(GameStartInfo* pGameStartInfo) { return Thunk<0x473830, &$::LoadStartState>(pGameStartInfo); }
   ibool Save(StreamIO* pSavedGame)                    { return Thunk<0x473580, &$::Save>(pSavedGame);               }
   ibool Load(StreamIO* pSavedGame)                    { return Thunk<0x473630, &$::Load>(pSavedGame);               }
   int   Checksum()                                    { return Thunk<0x472FF0, &$::Checksum>();                     }
+
+  // ** TODO 0x473210
+  // ** TODO 0x4732B0
+  // ** TODO 0x473330
 
   static Research* GetInstance() { return OP2Mem<0x56C230, Research*>(); }
 

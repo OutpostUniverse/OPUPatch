@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "Tethys/API/MissionScript.h"
+#include "Tethys/API/Mission.h"
 #include "Tethys/Game/GameStartInfo.h"
 #include "Tethys/UI/IWnd.h"
 
@@ -20,10 +20,10 @@ struct PlayerControls {
   HWND hEjectButtonWnd;
 };
 
-class MultiplayerPreGameSetupDlg : public IDlgWnd {
-  using $ = MultiplayerPreGameSetupDlg;
+class MultiplayerLobbyDialog : public IDlgWnd {
+  using $ = MultiplayerLobbyDialog;
 public:
-  MultiplayerPreGameSetupDlg() : IDlgWnd(UseInternalCtorChain) { InternalCtor<0x45F050>(); }
+  MultiplayerLobbyDialog() : IDlgWnd(UseInternalCtorChain) { InternalCtor<0x45F050>(); }
 
   void* Destroy(ibool freeMem = 0)                       override { return Thunk<0x45F080, &$::Destroy>(freeMem); }
   int   DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam) override

@@ -16,8 +16,7 @@ struct PacketHeader {
   uint32 checksum;
 };
 
-// =====================================================================================================================
-// Transport Layer messages
+// --------------------------------------------- Transport Layer messages ----------------------------------------------
 
 enum class TransportLayerCommand : int {
   JoinRequest           = 0,
@@ -46,8 +45,7 @@ enum class PeerStatus : uint16 {
 };
 
 
-// =====================================================================================================================
-// Payload formats
+// -------------------------------------------------- Payload formats --------------------------------------------------
 
 // [Nested structure]
 struct NetPeerInfo {
@@ -89,8 +87,7 @@ struct StatusUpdate : public TransportLayerHeader {
 };
 
 
-// =====================================================================================================================
-// Custom Packet formats
+// ----------------------------------------------- Custom Packet formats -----------------------------------------------
 
 // [Nested structure]
 struct CreateGameInfo {
@@ -141,8 +138,6 @@ struct EchoExternalAddress : public TransportLayerHeader {
   sockaddr_in addr;
 };
 
-// =====================================================================================================================
-
 union TransportLayerMessage {
   // Header only
   TransportLayerHeader tlHeader;
@@ -164,8 +159,7 @@ union TransportLayerMessage {
 };
 
 
-// =====================================================================================================================
-// Game Messages
+// --------------------------------------------------- Game Messages ---------------------------------------------------
 
 struct GameMessageHeader {};
 
@@ -178,8 +172,7 @@ union GameMessage {
 };
 
 
-// =====================================================================================================================
-// Packet
+// ------------------------------------------------------ Packet -------------------------------------------------------
 class Packet : public OP2Class<Packet> {
 public:
   int Checksum() const { return Thunk<0x490F10, &Packet::Checksum>(); }
