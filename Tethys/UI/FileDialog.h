@@ -54,3 +54,22 @@ public:
   int field_2C[17373];
 };
 static_assert(sizeof(SaveGameDialog) == 0x10FA0, "Incorrect SaveGameDialog size.");
+
+class LoadGameDialog : public TFileDialog {
+public:
+  void* Destroy(ibool freeMem = 0) override { return Thunk<0x487410, &$::Destroy>(); }
+
+  void F2()  override; // ** TODO 0x419190
+  void F3()  override; // ** TODO 0x418E90
+  void F4()  override; // ** TODO 0x4188F0
+  void F5()  override; // ** TODO 0x4188C0
+  void F6()  override; // ** TODO 0x487400
+  void F10() override; // ** TODO 0x418520
+
+  DEFINE_VTBL_GETTER(0x4D62E0);
+
+public:
+  // ** TODO member fields
+  int field_2C[17374];
+};
+static_assert(sizeof(LoadGameDialog) == 0x10FA4, "Incorrect LoadGameDialog size.");

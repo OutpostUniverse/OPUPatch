@@ -82,11 +82,25 @@
 # define  PATCHER_ATTR_EXPAND_0(attr)
 #endif
 
-#define PATCHER_EMIT_CALLING_CONVENTIONS($)                                                               \
-  $(PATCHER_CDECL,       Cdecl)       $(PATCHER_STDCALL,    Stdcall)     $(PATCHER_FASTCALL,   Fastcall)  \
-  $(PATCHER_THISCALL,    Thiscall)    $(PATCHER_VECTORCALL, Vectorcall)  $(PATCHER_REGCALL,    Regcall)   \
-  $(PATCHER_REGPARM(1),  Regparm1)    $(PATCHER_REGPARM(2), Regparm2)    $(PATCHER_REGPARM(3), Regparm)   \
-  $(PATCHER_SSEREGPARM,  SseRegparm)
+#if PATCHER_MSVC
+# define PATCHER_PRAGMA(expr)                      __pragma(expr)
+# define PATCHER_IGNORE_GCC_WARNING(warning, ...)  __VA_ARGS__
+#else
+# define PATCHER_PRAGMA(expr)                      _Pragma(#expr)
+# define PATCHER_IGNORE_GCC_WARNING(warning, ...)  \
+  PATCHER_PRAGMA(GCC diagnostic push)              \
+  PATCHER_PRAGMA(GCC diagnostic ignored warning)   \
+  __VA_ARGS__                                      \
+  PATCHER_PRAGMA(GCC diagnostic pop)
+#endif
+
+
+#define PATCHER_EMIT_CALLING_CONVENTIONS($)                                                                 \
+  PATCHER_IGNORE_GCC_WARNING("-Wignored-attributes",                                                        \
+    $(PATCHER_CDECL,       Cdecl)       $(PATCHER_STDCALL,    Stdcall)     $(PATCHER_FASTCALL,   Fastcall)  \
+    $(PATCHER_THISCALL,    Thiscall)    $(PATCHER_VECTORCALL, Vectorcall)  $(PATCHER_REGCALL,    Regcall)   \
+    $(PATCHER_REGPARM(1),  Regparm1)    $(PATCHER_REGPARM(2), Regparm2)    $(PATCHER_REGPARM(3), Regparm)   \
+    $(PATCHER_SSEREGPARM,  SseRegparm))
 
 
 /// Status enum returned by PatchContext methods.
@@ -132,15 +146,16 @@ constexpr size_t SetCapturedTrampoline = 0;
 namespace Util {
 /// Enum specifying a function's calling convention.
 enum class Call : uint32 {
+  Unknown    = 0,
+  Default,
 #define PATCHER_CALLING_CONVENTION_ENUM_DEF(convention, name) name,
-  Default    = 0,
   PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_CALLING_CONVENTION_ENUM_DEF)
-  Unknown,
 #if   PATCHER_MS_ABI
   Membercall = Thiscall,
 #elif PATCHER_UNIX_ABI
   Membercall = Cdecl,
 #endif
+  Variadic   = Cdecl,
 };
 
 /// Templated dummy parameter type that can be used to pass a calling convention as a templated function argument.
@@ -286,63 +301,92 @@ template <typename T>  constexpr bool IsVectorArg() { return std::is_floating_po
 constexpr Util::Call GetDefaultConvention()
   { return PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_GET_DEFAULT_CONVENTION_DEF) Util::Call::Default; }
 
-///@{ @internal  Helper metafunctions for converting function types to function pointers of different calling conventions.
-template <typename T, Util::Call C>   struct AddConventionImpl{};
-template <typename R, typename... A>  struct AddConventionImpl<R(A...), Util::Call::Default> { using Type = R(A...); };
-template <typename R, typename... A>  struct AddConventionImpl<R(A...), Util::Call::Unknown> { using Type = void*;   };
-#define PATCHER_ADD_CONVENTION_DEF(convention, name)  template <typename R, typename... A>  \
-struct AddConventionImpl<R(A...), Util::Call::name> { using Type = R(convention*)(A...); };
+///@{ @internal  Helper metafunctions for converting function types to function pointers of other calling conventions.
+template <typename T, Util::Call C>  struct AddConvImpl{};
+template <typename T, Util::Call C>  using  AddConvention = typename AddConvImpl<Decay<T>, C>::Type;
+
+#define PATCHER_ADD_CONVENTION_DEF(conv, name) \
+template <typename R, typename... A>  struct AddConvImpl<R(*)(A...), Util::Call::name> { using Type = R(conv*)(A...); };
+template <typename R, typename... A>  struct AddConvImpl<R(*)(A...), Util::Call::Default> { using Type = R(*)(A...);  };
+template <typename R, typename... A>  struct AddConvImpl<R(*)(A...), Util::Call::Unknown> { using Type = void*;       };
+template <typename R, typename... A, Util::Call C>
+struct AddConvImpl<R(*)(A..., ...), C> { using Type = R(*)(A..., ...); };
 PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_ADD_CONVENTION_DEF);
 ///@}
 
-/// @internal  Template that defines typed function call signature information for use at compile time.
-template <typename R, Util::Call C = Util::Call::Default, typename T = void, typename... A>
+///@{ @internal  Helper metafunctions to determine if a function is a (C-style) variadic function.
+#define PATCHER_IS_VARIADIC_PMF_DEF(pThisQualifier, ...)  template <typename T, typename R, typename... A>  \
+struct IsVariadicImpl<R(T::*)(A..., ...) pThisQualifier __VA_ARGS__>         { static constexpr bool Value = true;  };
+template <typename T>                 struct IsVariadicImpl                  { static constexpr bool Value = false; };
+template <typename R, typename... A>  struct IsVariadicImpl<R(*)(A..., ...)> { static constexpr bool Value = true;  };
+PATCHER_EMIT_PMF_QUALIFIERS(PATCHER_IS_VARIADIC_PMF_DEF);
+
+template <typename Fn>  constexpr bool IsVariadic() { return IsVariadicImpl<Decay<Fn>>::Value; }
+///@}
+
+///@{ @internal  Template that defines typed function call signature information for use at compile time.
+template <typename R, Util::Call Call = Util::Call::Default, bool Variadic = false, typename T = void, typename... A>
 struct FuncSig {
   static constexpr size_t NumParams = std::is_void<T>::value ? 0 : (sizeof...(A) + 1);  ///< Number of function params.
-  using Function = Conditional<NumParams == 0, R(A...), R(T, A...)>;                    ///< Signature minus convention.
-  using Pfn      = typename AddConventionImpl<Function, C>::Type;                       ///< Function pointer signature.
+  using Function = Conditional<NumParams == 0, R(A...), R(T, A...)>;                    ///< Signature w/o convention.
+  using Pfn      = AddConvention<Function, Call>;                                       ///< Function pointer signature.
   using Return   = R;                                                                   ///< Function return type.
   using Params   = Conditional<NumParams == 0, std::tuple<A...>, std::tuple<T, A...>>;  ///< Function params as a tuple.
   static constexpr size_t ParamSizes[]    = { ArgSize<T>(),     ArgSize<A>()...     };  ///< Aligned sizes of params.
   static constexpr bool   ParamIsVector[] = { IsVectorArg<T>(), IsVectorArg<A>()... };  ///< Are params float/vector?
-  static constexpr auto   Convention      = C;                                          ///< Calling convention.
+  static constexpr bool   IsVariadic      = Variadic;                                   ///< Is function variadic?
+  static constexpr auto   Convention      = Call;                                       ///< Calling convention.
 
-  /// If Convention is Thiscall, returns a FuncSig with the "this" parameter removed.
-  using StripThis = Conditional<C != Util::Call::Unknown,  FuncSig<R, Util::Call::Unknown, A...>,
-                                                           FuncSig<R, C, T, A...>>;
+  using StripThis = Conditional<  ///< If Convention is Thiscall, returns a FuncSig with the "this" parameter removed.
+    Call != Util::Call::Unknown, FuncSig<R, Util::Call::Unknown, Variadic, A...>, FuncSig<R, Call, Variadic, T, A...>>;
 };
+
+template <typename R, Util::Call Call, typename T, typename... A>
+struct FuncSig<R, Call, true, T, A...> : public FuncSig<R, Call, false, T, A...> {
+  using First    = Conditional<std::is_void<T>::value, int, T>;                       ///< Placeholder for first param.
+  using Function = Conditional<std::is_void<T>::value, R(...), R(First, A..., ...)>;  ///< Signature w/o convention.
+  using Pfn      = AddConvention<Function, Call>;                                     ///< Function pointer signature.
+  static constexpr bool IsVariadic = true;                                            ///< Is function variadic?
+};
+///@}
 
 ///@internal  Defines untyped function call signature information for use at runtime.
 struct RtFuncSig {
   /// Conversion constructor for the compile-time counterpart to this type, FuncSig.
-  template <typename R, Util::Call C, typename... A>
-  constexpr RtFuncSig(FuncSig<R, C, A...>)
+  template <typename R, Util::Call C, bool V, typename... A>
+  constexpr RtFuncSig(FuncSig<R, C, V, A...>)
     : returnSize(SizeOfType<R>()),
-      numParams(FuncSig<R, C, A...>::NumParams),
-      pParamSizes(&FuncSig<R, C, A...>::ParamSizes[0]),
-      pParamIsVector(&FuncSig<R, C, A...>::ParamIsVector[0]),
+      numParams(FuncSig<R, C, V, A...>::NumParams),
+      pParamSizes(&FuncSig<R, C, V, A...>::ParamSizes[0]),
+      pParamIsVector(&FuncSig<R, C, V, A...>::ParamIsVector[0]),
       totalParamSize(Sum(ArgSize<A>()...)),
+      isVariadic(V),
       convention(C) { }
 
   /// Default constructor with unspecified call signature information.
   constexpr RtFuncSig()
-    : returnSize(), numParams(), pParamSizes(), pParamIsVector(), totalParamSize(), convention(Util::Call::Unknown) { }
+    : returnSize(), numParams(), pParamSizes(), pParamIsVector(), totalParamSize(), isVariadic(), convention() { }
 
   size_t         returnSize;      ///< Size in bytes of the function's returned value.
   size_t         numParams;       ///< Number of parameters to call the function (including "this").
   const size_t*  pParamSizes;     ///< Aligned size in bytes of each parameter.
   const bool*    pParamIsVector;  ///< Specifies whether each parameter is floating-point/intrinsic vector type.
   size_t         totalParamSize;  ///< Total size in bytes of all @ref numParams parameters and alignment padding.
+  bool           isVariadic;      ///< Specifies whether this is a variadic function.
   Util::Call     convention;      ///< Function calling convention.
 };
 
 ///@{ @internal  Template metafunction used to obtain function call signature information from a callable.
 #define PATCHER_FUNC_TRAITS_DEF(con, name)  template <typename R, typename... A>  struct FuncTraitsImpl<R(con*)(A...), \
   Conditional<(GetDefaultConvention() == Util::Call::name) || (std::is_same<void(*)(), void(con*)()>::value == false), \
-              void, Util::AsCall<Util::Call::name>>> { using Type = FuncSig<R, Util::Call::name, A...>; };
-#define PATCHER_FUNC_TRAITS_PMF_DEF(pThisQualifier, ...)  \
-template <typename R, typename T, typename... A> struct FuncTraitsImpl<R(T::*)(A...) pThisQualifier __VA_ARGS__, void> \
-  { using Type = FuncSig<R, Util::Call::Membercall, pThisQualifier T*, A...>; };
+              void, Util::AsCall<Util::Call::name>>> { using Type = FuncSig<R, Util::Call::name, false, A...>; };
+#define PATCHER_FUNC_TRAITS_PMF_DEF(pThisQual, ...)  \
+template <typename R, typename T, typename... A> struct FuncTraitsImpl<R(T::*)(A...)      pThisQual __VA_ARGS__, void> \
+  { using Type = FuncSig<R, Util::Call::Membercall, false, pThisQual T*, A...>; };                                     \
+template <typename R, typename T, typename... A> struct FuncTraitsImpl<R(T::*)(A..., ...) pThisQual __VA_ARGS__, void> \
+  { using Type = FuncSig<R, Util::Call::Variadic,   true,  pThisQual T*, A...>; };
+template <typename R,             typename... A> struct FuncTraitsImpl<R(*)(A..., ...)>
+  { using Type = FuncSig<R, Util::Call::Variadic,   true,                A...>; };
 PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_FUNC_TRAITS_DEF);
 PATCHER_EMIT_PMF_QUALIFIERS(PATCHER_FUNC_TRAITS_PMF_DEF);
 PATCHER_FUNC_TRAITS_PMF_DEF(,);
@@ -430,7 +474,7 @@ public:
   FunctionPtr(
     std::function<R(A...)> functor, Util::AsCall<C> = {}, GetTargetFunc<decltype(functor)>* pfnTarget = nullptr)
     : pfn_(reinterpret_cast<void*>(&InvokeFunctor<Fn, R, A...>)),
-      sig_(FuncSig<R, C, const Fn*, void*, A...>{}),
+      sig_(FuncSig<R, C, false, const Fn*, void*, A...>{}),
       pObj_(new Fn(std::move(functor))),
       pState_((pfnTarget && pObj_) ? pfnTarget(static_cast<Fn*>(pObj_)) : nullptr),
       pfnDel_([](void* pObj) { delete static_cast<Fn*>(pObj); }) { }
@@ -473,7 +517,7 @@ private:
 } // Impl
 
 
-/// Options passed to PatchContext::LowLevelHook().  These are mostly performance tweaks, can be useful for tight loops.
+/// Options passed to PatchContext::LowLevelHook().  These are mainly performance tweaks, can be useful for tight loops.
 namespace LowLevelHookOpt {
 enum : uint32 {
   NoBaseRelocReturn  = (1 << 0), ///< Do not automatically adjust custom return destinations for module base relocation.
@@ -484,7 +528,7 @@ enum : uint32 {
 };
 
 /// Gets default LowLevelHook options based on the callback's function signature.
-template <typename R, Util::Call C, typename... A>  constexpr uint32 GetDefaults(Impl::FuncSig<R, C, A...>)
+template <typename R, Util::Call C, bool V, typename... A>  constexpr uint32 GetDefaults(Impl::FuncSig<R, C, V, A...>)
   { return ((std::is_pointer<R>::value ? NoBaseRelocReturn : 0) | (std::is_void<R>::value ? NoCustomReturnAddr : 0)); }
 }
 
@@ -655,7 +699,7 @@ struct DummyFactory<T, true> {
     return (std::is_default_constructible<U>::value == false) &&
            (std::is_copy_constructible<U>::value || std::is_move_constructible<U>::value);
   }
-    
+
   template <typename = void, typename... A>
   struct MatchCtor {
     template <typename U = T*>  static auto Create(void* p) -> EnableIf<(sizeof...(A) >= 25), U> { return nullptr; }
@@ -819,12 +863,8 @@ auto PmfCast(
 # endif
 #elif PATCHER_GXX && (PATCHER_CLANG == false)
 // GCC-compliant:  GCC has an extension to cast PMF constants to pointers without an object instance, which is ideal.
-# define MFN_PTR(method, ...)  [] {                                                                \
-    _Pragma("GCC diagnostic push")                                                                 \
-    _Pragma("GCC diagnostic ignored \"-Wpmf-conversions\"")                                        \
-    return reinterpret_cast<typename Patcher::Impl::FuncTraits<decltype(&method)>::Pfn>(&method);  \
-    _Pragma("GCC diagnostic pop")                                                                  \
-  }()
+# define MFN_PTR(method, ...)  [] { PATCHER_IGNORE_GCC_WARNING("Wpmf-conversions",  \
+   return reinterpret_cast<typename Patcher::Impl::FuncTraits<decltype(&method)>::Pfn>(&method)); }()
 #else
 // MSVC (non-x86_32), Clang, other:  See comments of PmfCast about restrictions.
 # define MFN_PTR(method, ...)  Patcher::Util::PmfCast(&method, {__VA_ARGS__})

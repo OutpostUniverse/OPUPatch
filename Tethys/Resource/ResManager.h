@@ -13,6 +13,7 @@ public:
 
   ibool GetFilePath(const char* pFilename, char* pPath) { return Thunk<0x471590, &$::GetFilePath>(pFilename, pPath); }
 
+  /// ChecksumStream will first call GetFilePath, then search in VOLs.
   uint32    ChecksumStream(const char* pFilename)     { return Thunk<0x4712A0, &$::ChecksumStream>(pFilename); }
   StreamIO* CreateStream(const char*   pFilename)     { return Thunk<0x471B60, &$::CreateStream>(pFilename);   }
   StreamIO* OpenStream(const char*     pFilename)     { return Thunk<0x471170, &$::OpenStream>(pFilename);     }

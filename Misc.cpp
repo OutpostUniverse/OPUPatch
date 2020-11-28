@@ -25,10 +25,16 @@ bool SetGameVersion(
   bool success = true;
 
   if (enable) {
-    patcher.ReplaceReferencesToGlobal(0x4E973C, 1,             OP2_VERSION_TRIPLE_STR);              // For netplay
-    patcher.ReplaceReferencesToGlobal(0x4D6380, 1, "OUTPOST2 " OP2_VERSION_TRIPLE_STR "-OPU SAVE");  // For saved games
-    patcher.ReplaceReferencesToGlobal(0x4E3200, 1,             OP2_VERSION_TRIPLE_STR "-OPU");       // For UI display
-    patcher.Write(0x566708 + 596,                   "Version " OP2_VERSION_TRIPLE_STR "-OPU");       // For UI display
+    // For netplay, TApp::Version()
+    patcher.ReplaceReferencesToGlobal(0x4E973C, 1, OP2_VERSION_QUAD_STR);
+
+    // For saved games
+    // ** TODO Freeze this at the last version to make a saved game format change until back compat code is written
+    patcher.ReplaceReferencesToGlobal(0x4D6380, 1, "OUTPOST2 1.4.0-OPU SAVE");
+
+    // For UI display
+    patcher.ReplaceReferencesToGlobal(0x4E3200, 1, OP2_VERSION_TRIPLE_STR "-OPU");
+    patcher.Write(0x566708 + 596,       "Version " OP2_VERSION_TRIPLE_STR "-OPU");
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

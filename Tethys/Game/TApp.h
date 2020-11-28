@@ -11,6 +11,7 @@ struct CommandPacket;
 
 class IDirectDraw;
 class DirectDrawWindow;
+class IDlgWnd;
 class TFileDialog;
 class TLobby;
 class TFrame;
@@ -22,7 +23,8 @@ class GurManager;
 /// Exported API controlling the main game instance.
 class TApp : public OP2Class<TApp> {
 public:
-  uint32 Version() { return Thunk<0x488200, &$::Version>(); }
+  uint32 GetVersion()           { return Thunk<0x488200, &$::GetVersion>();     }
+  void   GetAppDesc(char* pBuf) { return Thunk<0x487A40, &$::GetAppDesc>(pBuf); }
 
   int  Init()                           { return Thunk<0x485B20, &$::Init>();                     }
   int  InitForDirectDraw()              { return Thunk<0x485EC0, &$::InitForDirectDraw>();        }
@@ -56,7 +58,7 @@ public:
   int   StartSingleGame(GameStartInfo* pGameStartInfo) { return Thunk<0x487F80, &$::StartSingleGame>(pGameStartInfo); }
   int   LoadGame(const char* pFilename)                { return Thunk<0x4878F0, &$::LoadGame>(pFilename);             }
   int   GetLoadName()                                  { return Thunk<0x487430, &$::GetLoadName>();                   }
-  void  SaveGame(const char* pFilename, TFileDialog* pSaveDialog)
+  void  SaveGame(const char* pFilename, TFileDialog* pSaveDialog = nullptr)
     { return Thunk<0x4877E0, &$::SaveGame>(pFilename, pSaveDialog); }
   ibool NetActive()                                    { return Thunk<0x401D10, &$::NetActive>();                     }
   int   DoNetGame(int a, const char* pFilename)        { return Thunk<0x487C20, &$::DoNetGame>(a, pFilename);         }
@@ -67,11 +69,11 @@ public:
 
   void OnActivateApp(int a)                { return Thunk<0x4862F0, &$::OnActivateApp>(a);        }
   void OnPauseGame(int a)                  { return Thunk<0x486330, &$::OnPauseGame>(a);          }
-  int  OnLoadGame()                        { return Thunk<0x4874F0, &$::OnLoadGame>();            }
   void OnLoadScript(const char* pFilename) { return Thunk<0x487590, &$::OnLoadScript>(pFilename); }
+  void OnSaveSlot()                        { return Thunk<0x4871D0, &$::OnSaveSlot>();            }
   int  OnLoadSlot()                        { return Thunk<0x487300, &$::OnLoadSlot>();            }
   void OnSaveGame()                        { return Thunk<0x4874E0, &$::OnSaveGame>();            }
-  void OnSaveSlot()                        { return Thunk<0x4871D0, &$::OnSaveSlot>();            }
+  int  OnLoadGame()                        { return Thunk<0x4874F0, &$::OnLoadGame>();            }
 
   int HandleCommand(uint32 a)                           { return Thunk<0x486810, &$::HandleCommand>(a);               }
   int PlaybackCommand(CommandPacket* pCmdPacket, int a) { return Thunk<0x4864A0, &$::PlaybackCommand>(pCmdPacket, a); }
@@ -80,7 +82,6 @@ public:
   int SetUIState(UIState* pUIState)   { return Thunk<0x487030, &$::SetUIState>(pUIState);    }
   int InstallFilterFunc(int a, int b) { return Thunk<0x4883B0, &$::InstallFilterFunc>(a, b); }
 
-  void      GetAppDesc(char* pBuf)       { return Thunk<0x487A40, &$::GetAppDesc>(pBuf);   }
   void      SetMainInst(HINSTANCE hInst) { return Thunk<0x401D80, &$::SetMainInst>(hInst); }
   HINSTANCE GetMainInst()  const         { return Thunk<0x401D90, &$::GetMainInst>();      }
   HINSTANCE GetAccelInst() const         { return Thunk<0x401DF0, &$::GetAccelInst>();     }
@@ -101,7 +102,11 @@ public:
   static int FASTCALL OP2MessageBox(HWND hOwnerWnd, const char* pMsg, const char* pTitle, uint32 flags)
     { return OP2Thunk<0x41E0E0, &$::OP2MessageBox>(hOwnerWnd, pMsg, pTitle, flags); }
 
-  static uint32 Checksum(const void* pData, size_t size) { return OP2Thunk<0x40C050, &$::Checksum>(pData, size); }
+  static uint32 FASTCALL Checksum(const void* pMem, size_t sz) { return OP2Thunk<0x40C050, &$::Checksum>(pMem, sz); }
+  static ibool  FASTCALL ChecksumScript(const char* pFilename, int pOut[14])
+    { return OP2Thunk<0x44FFE0, ibool FASTCALL(int*, const char*)>(&pOut[0], pFilename); }
+  static uint32 FASTCALL ChecksumGameState()               { return OP2Thunk<0x40C0B0, &$::ChecksumGameState>(); }
+  static void   SetDebugMsgOnChecksumGameState(bool state) { OP2Mem<0x4DF1A0, ibool&>() = state;                 }
 
 public:
   HINSTANCE hInstance_;

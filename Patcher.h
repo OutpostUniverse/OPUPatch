@@ -91,7 +91,7 @@ public:
   ///
   /// Examples:  Hook(&Function,   &NewFunction,                  &global_pfnOriginal)
   ///            Hook(0x439AB0,    0x439AF2,                      &global_pfnOriginal)
-  ///            Hook(0x507470,    SetCapturedTrampoline,         [pfn = (int(*)(int)){}](int a) { return pfn(a * 2); })
+  ///            Hook(0x507470,    SetCapturedTrampoline,         [pfn = (int(*)(int))0](int a) { return pfn(a * 2); })
   ///            Hook(&StdcallFn,  &Functor::member_pfnOriginal,  Util::StdcallFunctor(Functor{}))
   ///         ** Hook(&Class::Fn,  &HookClass::Fn,                &HookClass::static_pfnOriginal)
   ///         ** Hook(&Class::Fn,  Util::ThiscallLambdaPtr([](Class* pThis, int a) { return pThis->b - a; }))
@@ -110,8 +110,8 @@ public:
   }
   ///@}
 
-  /// Hooks a function call instruction in module memory, replacing its original target address.
-  /// New function's signature must match the original's.
+  /// Hooks a function call instruction in module memory, replacing its original target address, and optionally returns
+  /// a pointer to the original function if possible.  New function's signature must match the original's.
   ///
   /// @param [in]  pAddress           Address of the call instruction to fix up.
   /// @param [in]  pfnNewFunction     The hook function or address to call instead.

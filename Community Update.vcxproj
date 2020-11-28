@@ -18,7 +18,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{A81DE2B7-D413-4D50-AE1B-10F51D6C4AD0}</ProjectGuid>
     <RootNamespace>Patcher3</RootNamespace>
-    <ProjectName>OpuPatch</ProjectName>
+    <ProjectName>OPUPatch</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -88,7 +88,7 @@
       <Command>copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2\$(TargetFileName)"
 copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-1.3.0.8\$(TargetFileName)"
 copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-RtPatch\$(TargetFileName)"
-copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(TargetFileName)"</Command>
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Analyze|Win32'">
@@ -118,7 +118,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(Ta
       <Command>copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2\$(TargetFileName)"
 copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-1.3.0.8\$(TargetFileName)"
 copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-RtPatch\$(TargetFileName)"
-copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(TargetFileName)"</Command>
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -150,7 +150,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(Ta
       <Command>copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2\$(TargetFileName)"
 copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-1.3.0.8\$(TargetFileName)"
 copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-RtPatch\$(TargetFileName)"
-copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(TargetFileName)"</Command>
+copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -169,10 +169,11 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(Ta
     <ClInclude Include="PatcherUtil.h" />
     <ClInclude Include="Patches.h" />
     <ClInclude Include="Resources.h" />
+    <ClInclude Include="Tethys\API\API.h" />
     <ClInclude Include="Tethys\API\Enumerators.h" />
     <ClInclude Include="Tethys\API\GameMap.h" />
     <ClInclude Include="Tethys\API\Location.h" />
-    <ClInclude Include="Tethys\API\MissionScript.h" />
+    <ClInclude Include="Tethys\API\Mission.h" />
     <ClInclude Include="Tethys\API\Player.h" />
     <ClInclude Include="Tethys\API\ScGroup.h" />
     <ClInclude Include="Tethys\API\ScStub.h" />
@@ -188,10 +189,10 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(Ta
     <ClInclude Include="Tethys\Game\CommandPacket.h" />
     <ClInclude Include="Tethys\Game\GameImpl.h" />
     <ClInclude Include="Tethys\Game\GameStartInfo.h" />
-    <ClInclude Include="Tethys\Game\MissionDLL.h" />
     <ClInclude Include="Tethys\Game\MapImpl.h" />
     <ClInclude Include="Tethys\Game\MapObject.h" />
     <ClInclude Include="Tethys\Game\MapObjectType.h" />
+    <ClInclude Include="Tethys\Game\MissionManager.h" />
     <ClInclude Include="Tethys\Game\MoraleManager.h" />
     <ClInclude Include="Tethys\Game\PathFinder.h" />
     <ClInclude Include="Tethys\Game\PlayerImpl.h" />
@@ -214,6 +215,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(Ta
     <ClInclude Include="Tethys\Resource\GFXSurface.h" />
     <ClInclude Include="Tethys\Resource\LocalizedStrings.h" />
     <ClInclude Include="Tethys\Resource\CodecStream.h" />
+    <ClInclude Include="Tethys\Resource\MemoryMappedFile.h" />
     <ClInclude Include="Tethys\Resource\ResManager.h" />
     <ClInclude Include="Tethys\Resource\SoundID.h" />
     <ClInclude Include="Tethys\Resource\SoundManager.h" />
@@ -258,7 +260,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\$(Ta
     <ResourceCompile Include="MultiplayerMethodMenu.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Op2Icon.ico" />
+    <Image Include="OP2Icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

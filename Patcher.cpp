@@ -327,11 +327,9 @@ PatchContext::PatchContext(
 // =====================================================================================================================
 PatchContext::~PatchContext() {
   RevertAll();
-  g_allocator.Release();
-  if (frozenThreads_.empty() == false) {
-    UnlockThreads();
-  }
+  UnlockThreads();
   ReleaseModule();
+  g_allocator.Release();
 }
 
 // =====================================================================================================================
@@ -345,9 +343,11 @@ Status PatchContext::ResetStatus() {
 // =====================================================================================================================
 void PatchContext::InitModule() {
   const auto*const pDosHeader = static_cast<const IMAGE_DOS_HEADER*>(hModule_);
+
   if ((pDosHeader != nullptr) && (pDosHeader->e_magic == IMAGE_DOS_SIGNATURE)) {
     // Calculate the module's base relocation delta.
     const auto& peHeader = *static_cast<const IMAGE_NT_HEADERS*>(PtrInc(hModule_, pDosHeader->e_lfanew));
+
     if (peHeader.Signature == IMAGE_NT_SIGNATURE) {
       if (peHeader.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
         moduleRelocDelta_ = PtrDelta(hModule_, reinterpret_cast<const void*>(peHeader.OptionalHeader.ImageBase));
@@ -368,9 +368,7 @@ Status PatchContext::SetModule(
   bool        loadModule)
 {
   RevertAll();
-  if (frozenThreads_.empty() == false) {
-    UnlockThreads();
-  }
+  UnlockThreads();
   ReleaseModule();
 
   status_       = Status::FailInvalidModule;
@@ -699,10 +697,13 @@ Status PatchContext::UnlockThreads() {
     }
   }
 
+  const bool needsUnlock = (frozenThreads_.empty() == false);
   frozenThreads_.clear();
 
-  const bool ignored = g_codeThreadLock.try_lock();  // Ensure the mutex is locked if not already before calling unlock
-  g_codeThreadLock.unlock();
+  if (needsUnlock) {
+    assert(g_codeThreadLock.try_lock() == false);
+    g_codeThreadLock.unlock();
+  }
 
   return status_;
 }
@@ -986,6 +987,7 @@ Status PatchContext::ReplaceReferencesToGlobal(
 }
 
 // =====================================================================================================================
+// Creates a thunk to call FunctionPtr::InvokeFunctor().
 static void* CreateFunctorThunk(
   const FunctionPtr&  pfnCallback,               // [in]  FunctionPtr that has an associated functor.
   void*               pPlacementAddr = nullptr)  // [in]  (Optional) Pointer to pre-allocated memory to write out to.
@@ -998,9 +1000,11 @@ static void* CreateFunctorThunk(
   if (pMemory != nullptr) {
     auto* pWriter = static_cast<uint8*>(pMemory);
 
-    const uintptr     functorAddr     = reinterpret_cast<uintptr>(pfnCallback.Functor());
-    const RtFuncSig&  sig             = pfnCallback.Signature();
-    const size_t      numTargetParams = sig.numParams - 2;  // Without the extra 2 (pFunctor, pReturnAddress) args.
+    const uintptr     functorAddr = reinterpret_cast<uintptr>(pfnCallback.Functor());
+    const RtFuncSig&  sig         = pfnCallback.Signature();
+
+    size_t numRegisterSizeParams = 0;  // Excluding pFunctor and pReturnAddress
+    for (uint32 i = 2; i < sig.numParams; (sig.pParamSizes[i++] <= RegisterSize) ? ++numRegisterSizeParams : 0);
 
     // pfnCallback.Pfn() is always cdecl;  Signature().Convention refers to the original function Pfn() wraps.
     // We need to translate from the "input" calling convention to cdecl, then do the expected stack cleanup.
@@ -1042,20 +1046,18 @@ static void* CreateFunctorThunk(
 
     case Call::Thiscall:
       // MS thiscall puts arg 1 in ECX.  If the arg exists, put it on the stack.
-      CatByte(&pWriter, 0x5A);                                           //  pop  edx 
-      (numTargetParams >= 1) ? CatBytes(&pWriter, { 0x51, 0x52 })        // (push ecx)
-                             :  CatByte(&pWriter,   0x52);               //  push edx
-      // ** TODO Need to somehow know if this is a variadic function, which is caller-cleanup for MS thiscall
+      CatByte(&pWriter, 0x5A);                                           //  pop  edx
+      (numRegisterSizeParams >= 1) ? CatBytes(&pWriter, { 0x51, 0x52 })  // (push ecx)
+                                   :  CatByte(&pWriter,   0x52);         //  push edx
       WriteCallAndCalleeCleanup();
       break;
 
     case Call::Fastcall:
-      // MS fastcall puts args 1 and 2 in ECX and EDX.  If the args exist, put them on the stack.
-      // ** TODO does an int64 in arg 1 get put in ECX and EDX?
-      (numTargetParams >= 2) ? CatBytes(&pWriter, { 0x87, 0x14, 0x24 })  // (xchg edx, [esp]) or
-                             :  CatByte(&pWriter,   0x5A);               // (pop  edx)
-      (numTargetParams >= 1) ? CatBytes(&pWriter, { 0x51, 0x52 })        // (push ecx)
-                             :  CatByte(&pWriter,   0x52);               //  push edx
+      // MS fastcall puts the first 2 register-sized args in ECX and EDX.  If the args exist, put them on the stack.
+      (numRegisterSizeParams >= 2) ? CatBytes(&pWriter, { 0x87, 0x14, 0x24 })  // (xchg edx, [esp]) or
+                                   :  CatByte(&pWriter,   0x5A);               // (pop  edx)
+      (numRegisterSizeParams >= 1) ? CatBytes(&pWriter, { 0x51, 0x52 })        // (push ecx)
+                                   :  CatByte(&pWriter,   0x52);               //  push edx
       WriteCallAndCalleeCleanup();
       break;
 #endif
@@ -1469,9 +1471,11 @@ Status PatchContext::HookCall(
   }
 
   const void*const pHookFunction = (pFunctorThunk == nullptr) ? pfnNewFunction.Pfn() : pFunctorThunk;
+  void*            pfnOriginal   = nullptr;
 
   if (pInsn[0] == 0xE8) {
     // Call pcrel32
+    pfnOriginal = PtrInc(pAddress, sizeof(Call32) + reinterpret_cast<ptrdiff_t&>(pInsn[1]));
     Write(pAddress,  Call32{ 0xE8, PcRelPtr(pAddress, sizeof(Call32), pHookFunction) });
   }
   else if (pInsn[0] == 0xFF) {
@@ -1479,7 +1483,7 @@ Status PatchContext::HookCall(
 
     switch (pInsn[1]) {
     // Call m32
-    case 0x15:                                                                          insnSize = 6;  break;
+    case 0x15:                     pfnOriginal = *reinterpret_cast<void**&>(pInsn[2]);  insnSize = 6;  break;
     // Call r32 (+ r32) (* {2,4,8})
     case 0x10:  case 0x11:  case 0x12:  case 0x13:  case 0x16:  case 0x17:              insnSize = 2;  break;
     case 0x14:                                                                          insnSize = 3;  break;
@@ -1513,17 +1517,8 @@ Status PatchContext::HookCall(
   }
 
   if ((status_ == Status::Ok) && (pPfnOriginal != nullptr)) {
-    auto*const pPfnOut = static_cast<void**>(pPfnOriginal);
-    if (pInsn[0] == 0xE8) {
-      *pPfnOut = PtrInc(pAddress, 5 + reinterpret_cast<ptrdiff_t&>(pInsn[1]));
-    }
-    else if ((pInsn[0] == 0xFF) && (pInsn[1] == 0x15)) {
-      *pPfnOut = *reinterpret_cast<void**&>(pInsn[2]);
-    }
-    else {
-      // ** TODO Implement this for call r32 variants
-      *pPfnOut = nullptr;
-    }
+    // ** TODO Possibly implement this for call r32 variants, for now returns nullptr in those cases
+    *static_cast<void**>(pPfnOriginal) = pfnOriginal;
   }
 
   if ((status_ == Status::Ok) && (pfnNewFunction.Functor() != nullptr)) {

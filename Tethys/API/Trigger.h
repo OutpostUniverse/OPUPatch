@@ -5,6 +5,8 @@
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Unit.h"
 
+// ** TODO The Trigger API will be changed substantially.  The current interface should be considered a placeholder.
+
 /// Used by various trigger creation functions.
 enum class compare_mode : int {
   Equal = 0,
