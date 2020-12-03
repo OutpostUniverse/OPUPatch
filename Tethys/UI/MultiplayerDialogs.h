@@ -36,9 +36,11 @@ public:
   ibool ShowJoinGame(const char* pPlayerName, int hostPlayerNetID, ibool purgeDroppedPlayers)
     { return Thunk<0x45F2F0, &$::ShowJoinGame>(pPlayerName, hostPlayerNetID, purgeDroppedPlayers); }
 
+  // ** TODO 0x45F420
+
   static int FASTCALL PopulateMissionDropdown(
-    HWND hWnd, int maxPlayers, MissionType maxMissionType, MissionType minMissionType)
-      { return OP2Thunk<0x497780, &$::PopulateMissionDropdown>(hWnd, maxPlayers, maxMissionType, minMissionType); }
+    HWND hCBWnd, int maxPlayers, MissionType maxMissionType, MissionType minMissionType)
+      { return OP2Thunk<0x497780, &$::PopulateMissionDropdown>(hCBWnd, maxPlayers, maxMissionType, minMissionType); }
 
 public:
   UINT           timerID_;

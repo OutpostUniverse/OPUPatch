@@ -37,7 +37,7 @@ public:
   static CConfig* GetInstance() { return OP2Mem<0x547090, CConfig*>(); }
 
 public:
-  int field_00[65];
+  char iniPath_[MAX_PATH];
 };
 static_assert(sizeof(CConfig) == 260, "Incorrect CConfig size.");
 

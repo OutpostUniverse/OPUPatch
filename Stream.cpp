@@ -3,6 +3,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <vfw.h>
 
 #include "Patcher.h"
 
@@ -77,6 +78,7 @@ static std::vector<std::filesystem::path> GetSearchPaths(
   for (const auto& base : bases) {
     if (base.empty() == false) {
       static const std::multimap<std::string, std::string> assetDirs = {
+        { ".ax",    "libs"     },
         { ".dll",   "libs"     },
         { ".dll",   "maps"     },
         { ".map",   "maps"     },
@@ -163,7 +165,7 @@ static std::filesystem::path GetFilePath(
   static const auto opuPath(std::filesystem::path(g_resManager.installedDir_)/OPUDir);
 
   std::filesystem::path path = filename;
-  bool result = filename.is_absolute();
+  bool result = filename.is_absolute() && std::filesystem::exists(filename);
 
   if (filename.is_relative()) {
     for (auto& searchPath : GetSearchPaths(filename.extension().string(), searchForMission)) {
@@ -410,12 +412,14 @@ static void RemoveModuleSearchPaths(
 // Prefers loading DLL import dependencies from the new module's file directory first, instead of the base module's.
 // Also adds module directory to PATH for the sake of LoadLibrary().
 // See https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
-static HMODULE WINAPI LoadModuleAltSearchPath(
+static HMODULE WINAPI LoadLibraryAltSearchPath(
   const char* pFilename)
 {
-  const std::filesystem::path path = std::filesystem::absolute(GetFilePath(pFilename, g_searchForMission));
-  AddModuleSearchPaths({ path.parent_path() }, true);
-  return LoadLibraryExW(path.wstring().data(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+  const std::filesystem::path path = GetFilePath(pFilename, g_searchForMission);
+  if (path.is_absolute()) {
+    AddModuleSearchPaths({ path.parent_path() }, true);
+  }
+  return LoadLibraryExW(path.wstring().data(), NULL, path.is_absolute() ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
 }
 
 // =====================================================================================================================
@@ -446,7 +450,7 @@ void InitModuleSearchPaths() {
   // OPUPatch needs to keep some DLLs loaded to patch them; load them here so they get loaded from the correct path.
   if (hModules.empty()) {
     for (const char* pFilename : { "OP2Shell.dll", "odasl.dll" }) {
-      const HMODULE hModule = LoadModuleAltSearchPath(pFilename);
+      const HMODULE hModule = LoadLibraryAltSearchPath(pFilename);
       if (hModule != NULL) {
         hModules.push_back(hModule);
       }
@@ -531,7 +535,7 @@ bool SetFileSearchPathPatch(
       g_searchForMission    = true;
       preMissionPathEnv     = GetPathEnv();
       AddModuleSearchPaths({ g_curMapPath, g_curMapPath/"libs" }, true);
-      const HMODULE hModule = LoadModuleAltSearchPath(path.string().data());
+      const HMODULE hModule = LoadLibraryAltSearchPath(path.string().data());
       g_searchForMission    = false;
 
       return hModule;
@@ -560,11 +564,11 @@ bool SetFileSearchPathPatch(
     }
 
     // In StartSierraNW() (SierraNW.dll)
-    op2Patcher.HookCall(0x47D2B1, &LoadModuleAltSearchPath);
+    op2Patcher.HookCall(0x47D2B1, &LoadLibraryAltSearchPath);
     // In StartSNWValid() (SNWValid.dll)
-    op2Patcher.LowLevelHook(0x47D56C, [](Ebp<void*>& pfn) { pfn = &LoadModuleAltSearchPath; });
+    op2Patcher.LowLevelHook(0x47D56C, [](Ebp<void*>& pfn) { pfn = &LoadLibraryAltSearchPath; });
     // In TApp::Init() (Out2res.dll)
-    op2Patcher.HookCall(0x485C76, &LoadModuleAltSearchPath);
+    op2Patcher.HookCall(0x485C76, &LoadLibraryAltSearchPath);
 
     success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -583,6 +587,7 @@ bool SetFileSearchPathPatch(
   return success;
 }
 
+
 // =====================================================================================================================
 // Changes netplay game start checksum validation logic.
 bool SetChecksumPatch(
@@ -594,6 +599,9 @@ bool SetChecksumPatch(
   if (enable) {
     // Reimplement ChecksumScript()
     patcher.Hook(0x44FFE0, FastcallLambdaPtr([](int pOut[14], const char* pFilename) -> ibool {
+      static const uint32 op2extChecksum   = g_resManager.ChecksumStream("op2ext.dll");
+      static const uint32 opuPatchChecksum = g_resManager.ChecksumStream("OPUPatch.dll");
+
       AIModDesc* pAIModDesc = nullptr;
       const std::filesystem::path scriptPath = GetFilePath(pFilename, true);
       if (scriptPath.empty() == false) {
@@ -613,8 +621,8 @@ bool SetChecksumPatch(
       // Use these 3 slots instead for the actual map's tech checksum, op2ext.dll, and OPUPatch.dll.
       // ** TODO tech checksum could be smarter to factor out localization etc. for now we checksum spoof the files
       AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pTechtreeName));
-      AddChecksum(g_resManager.ChecksumStream("op2ext.dll"));
-      AddChecksum(g_resManager.ChecksumStream("OPUPatch.dll"));
+      AddChecksum(op2extChecksum);
+      AddChecksum(opuPatchChecksum);
 
       // Checksum OP2Shell.dll (seems pointless, maybe we can reuse this for something else)
       AddChecksum(g_tApp.ChecksumShell());
@@ -647,4 +655,76 @@ bool SetChecksumPatch(
   }
 
   return success;
+}
+
+
+// =====================================================================================================================
+// Locally injects the Indeo 4.1 codec needed for game cutscenes if it is not installed in the OS.
+bool SetCodecPatch(
+  bool enable)
+{
+  constexpr DWORD IndeoFourCC = mmioFOURCC('i', 'v', '4', '1');
+
+  static PatchContext patcher;
+  static bool useLocalIndeo = false;
+         bool success       = true;
+
+  if (enable) {
+    // Fucking drivers, how do they work?
+    // Microsoft VfW API is a piece of shit and the documentation is an even bigger piece of shit,
+    // work around some issues that cause the Indeo codec to crash when registered as a function via ICInstall().
+    auto IndeoDriverProc = [](DWORD_PTR dwDriverId, HDRVR hDrvr, UINT msg, LONG lParam1, LONG lParam2) {
+      static HMODULE hMod       = LoadLibraryAltSearchPath("ir41_32.ax");
+      static auto    driverProc = (hMod != nullptr) ? DRIVERPROC(GetProcAddress(hMod, "DriverProc")) : nullptr;
+      
+      LRESULT result = 0;
+      
+      if (driverProc != nullptr) {
+        // When registered as a function, the codec crashes if ICM_GETINFO is sent, so we handle that ourselves here.
+        // This is also the first message sent, so we send the real codec DRV_LOAD and DRV_ENABLE messages as would get
+        // sent otherwise (for some reason they aren't sent to function-based codecs).
+        if (msg == ICM_GETINFO) {
+          if ((driverProc(dwDriverId, hDrvr, DRV_LOAD,   lParam1, lParam2) != 0) &&
+              (driverProc(dwDriverId, hDrvr, DRV_ENABLE, lParam1, lParam2) != 0) &&
+              (lParam2 >= sizeof(ICINFO)))
+          {
+            auto*const pInfo = (ICINFO*)(lParam1);
+            pInfo->dwSize           = sizeof(ICINFO);
+            pInfo->fccType          = ICTYPE_VIDEO;
+            pInfo->fccHandler       = IndeoFourCC;
+            pInfo->dwFlags          = VIDCF_DRAW;
+            pInfo->dwVersion        = 0;
+            pInfo->dwVersionICM     = ICVERSION;
+            pInfo->szName[0]        = '\0';
+            pInfo->szDescription[0] = '\0';
+            result = sizeof(ICINFO);
+          }
+        }
+        else {
+          result = driverProc(dwDriverId, hDrvr, msg, lParam1, lParam2);
+        }
+      }
+      
+      return result;
+    };
+
+    // Check for Indeo 4.1 codec and install as a function if missing.
+    if (useLocalIndeo == false) {
+      ICINFO icInfo;
+      const bool indeo41Present = ICInfo(ICTYPE_VIDEO, IndeoFourCC, &icInfo);
+
+      if (indeo41Present == false) {
+        useLocalIndeo =
+          ICInstall(ICTYPE_VIDEO, IndeoFourCC, LPARAM(StdcallLambdaPtr(IndeoDriverProc)), nullptr, ICINSTALL_FUNCTION);
+        success &= useLocalIndeo;
+      }
+    }
+  }
+
+  if (((enable == false) || (success == false)) && useLocalIndeo) {
+    useLocalIndeo = (ICRemove(ICTYPE_VIDEO, IndeoFourCC, 0) == false);
+    success      &= (useLocalIndeo == false);
+  }
+
+  return true;  // We currently don't treat this as fatal.
 }

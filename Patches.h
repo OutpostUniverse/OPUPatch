@@ -6,13 +6,15 @@
 // Misc
 bool SetGameVersion(bool enable);
 bool SetNoCdPatch(bool enable);
+bool SetDefaultIniSettingsPatch(bool enable);
 bool SetForceMoraleFix(bool enable);
 bool SetPrintfFloatFix(bool enable);
 bool SetGlobalMusicFix(bool enable);
 
 // Stream
 bool SetFileSearchPathPatch(bool enable);
-bool SetChecksumPatch(bool enable);
+bool SetChecksumPatch(bool enable);  // ** WIP
+bool SetCodecPatch(bool enable);
 
 // Netplay
 bool SetNatFix(bool enable);

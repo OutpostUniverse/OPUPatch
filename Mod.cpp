@@ -8,6 +8,8 @@
 #include "Patches.h"
 #include "Util.h"
 
+#include <list>
+
 using namespace Tethys;
 
 // =====================================================================================================================
@@ -26,63 +28,78 @@ BOOL APIENTRY DllMain(
 DLLAPI void InitMod(
   const char* pIniSectionName)
 {
+  using SetPatchFunc = bool(bool);
+  static std::list<SetPatchFunc*> pfnPatches;
+
+  auto RegisterPatch = [](SetPatchFunc* pfnSetPatch) {
+    static bool result = true;
+    result = result && pfnSetPatch(true);
+    if (result) {
+      pfnPatches.push_front(pfnSetPatch);
+    }
+  };
+
   // Requires official patch 1.2.7 (unpatched English CD version is 1.2.5, localized CDs are {2-5}.2.{7-9})
   const uint32 version = g_tApp.GetVersion();
-  bool         result  = (version >= 0x01020007) && (version < 0x02000000);
+  if ((version >= 0x01020007) && (version < 0x02000000)) {
+    RegisterPatch(&SetGameVersion);
 
-  result = result && SetGameVersion(true);
+    // Stream
+    RegisterPatch(&SetFileSearchPathPatch);
+    //RegisterPatch(&SetChecksumPatch);
+    RegisterPatch(&SetCodecPatch);
 
-  // Misc
-  result = result && SetNoCdPatch(true);
-  result = result && SetForceMoraleFix(true);
-  result = result && SetPrintfFloatFix(true);
-  result = result && SetGlobalMusicFix(true);
+    // Misc
+    RegisterPatch(&SetNoCdPatch);
+    RegisterPatch(&SetDefaultIniSettingsPatch);
+    RegisterPatch(&SetForceMoraleFix);
+    RegisterPatch(&SetPrintfFloatFix);
+    RegisterPatch(&SetGlobalMusicFix);
 
-  // Stream
-  result = result && SetFileSearchPathPatch(true);
-  //result = result && SetChecksumPatch(true);
+    // Netplay
+    RegisterPatch(&SetNatFix);
+    RegisterPatch(&SetNetGameSpeedPatch);
+    RegisterPatch(&SetBindAnyNetAdapterFix);
+    RegisterPatch(&SetNoCheatsPatch);
+    RegisterPatch(&SetSigsDllCheckPatch);
 
-  // Netplay
-  result = result && SetNatFix(true);
-  result = result && SetNetGameSpeedPatch(true);
-  result = result && SetBindAnyNetAdapterFix(true);
-  result = result && SetNoCheatsPatch(true);
-  result = result && SetSigsDllCheckPatch(true);
+    // UI
+    RegisterPatch(&SetUiResourceReplacePatch);
+    RegisterPatch(&SetChatLengthPatch);
+    RegisterPatch(&SetUiHighlightFix);
+    RegisterPatch(&SetIpWindowFocusPatch);
+    RegisterPatch(&SetMiniMapFix);
+    RegisterPatch(&SetVehicleCargoDisplayPatch);
+    RegisterPatch(&SetMissionListNamePatch);
+    RegisterPatch(&SetSavantNotificationPatch);
+    RegisterPatch(&SetControlGroupHotkeyPatch);
 
-  // UI
-  result = result && SetUiResourceReplacePatch(true);
-  result = result && SetChatLengthPatch(true);
-  result = result && SetUiHighlightFix(true);
-  result = result && SetIpWindowFocusPatch(true);
-  result = result && SetMiniMapFix(true);
-  result = result && SetVehicleCargoDisplayPatch(true);
-  result = result && SetMissionListNamePatch(true);
-  result = result && SetSavantNotificationPatch(true);
-  result = result && SetControlGroupHotkeyPatch(true);
+    // Graphics
+    RegisterPatch(&SetWindowFix);
+    RegisterPatch(&SetDwmFix);
+    RegisterPatch(&SetDpiFix);
+    RegisterPatch(&SetAlphaBlendPatch);
 
-  // Graphics
-  result = result && SetWindowFix(true);
-  result = result && SetDwmFix(true);
-  result = result && SetDpiFix(true);
-  result = result && SetAlphaBlendPatch(true);
+    // ScStub
+    RegisterPatch(&SetScStubPatch);
 
-  // ScStub
-  result = result && SetScStubPatch(true);
+    // Map
+    RegisterPatch(&SetLargeMapPatch);
+    RegisterPatch(&SetCustomMapFlagsPatch);
 
-  // Map
-  result = result && SetLargeMapPatch(true);
-  result = result && SetCustomMapFlagsPatch(true);
+    // Units
+    RegisterPatch(&SetUnitLimitPatch);
+    RegisterPatch(&SetDrawLightningFix);
+    RegisterPatch(&SetTransferUnitToGaiaFix);
+    RegisterPatch(&SetBuildWallFix);
+    RegisterPatch(&SetWreckageFix);
+    RegisterPatch(&SetMissileFix);
+    RegisterPatch(&SetNoAlliedDockDamageFix);
+    RegisterPatch(&SetAllyEdwardSurveyMinesPatch);
+    RegisterPatch(&SetMultipleRepairPatch);
+    RegisterPatch(&SetOreRoutePatch);
+    RegisterPatch(&SetTurretAnimationPatch);
+  }
 
-  // Units
-  result = result && SetUnitLimitPatch(true);
-  result = result && SetDrawLightningFix(true);
-  result = result && SetTransferUnitToGaiaFix(true);
-  result = result && SetBuildWallFix(true);
-  result = result && SetWreckageFix(true);
-  result = result && SetMissileFix(true);
-  result = result && SetNoAlliedDockDamageFix(true);
-  result = result && SetAllyEdwardSurveyMinesPatch(true);
-  result = result && SetMultipleRepairPatch(true);
-  result = result && SetOreRoutePatch(true);
-  result = result && SetTurretAnimationPatch(true);
+  atexit([] { for (SetPatchFunc* pfn : pfnPatches) { pfn(false); }  pfnPatches.clear(); });
 }

@@ -30,7 +30,7 @@ enum class TriggerResource : int {
 };
 
 /// Damage types used by CreateDamagedTrigger.  Refers to % of FightGroup that has been destroyed.
-enum class DamageType : int {
+enum class TriggerDamage : int {
   _100 = 1,  ///< 100% damaged
   _75,       ///<  75% damaged
   _50,       ///<  50% damaged
@@ -199,10 +199,10 @@ Trigger CreateAttackedTrigger(
 }
 
 Trigger CreateDamagedTrigger(
-  const ScGroup& group, DamageType damageType, const char* pTriggerFunction, bool oneShot = true, bool enabled = true)
+  const ScGroup& group, TriggerDamage damage, const char* pTriggerFunction, bool oneShot = true, bool enabled = true)
 {
-  return OP2Thunk<0x479640, Trigger FASTCALL(ibool, ibool, const ScGroup&, DamageType, const char*)>(
-    enabled, oneShot, group, damageType, pTriggerFunction);
+  return OP2Thunk<0x479640, Trigger FASTCALL(ibool, ibool, const ScGroup&, TriggerDamage, const char*)>(
+    enabled, oneShot, group, damage, pTriggerFunction);
 }
 
 // ------------------------------------------------ Positional triggers ------------------------------------------------
