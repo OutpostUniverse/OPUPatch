@@ -219,8 +219,8 @@ public:
   ibool AllocateMap(int log2TileWidth, int tileHeight, int numTilesetMappings, int numTilesets)
     { return Thunk<0x4354F0, &$::AllocateMap>(log2TileWidth, tileHeight, numTilesetMappings, numTilesets); }
 
-  void GetFactoryOutputLocation(MapID itemToProduce, Location factoryLocation, Location* pBuildLocation) const
-    { return Thunk<0x4367D0, &$::GetFactoryOutputLocation>(itemToProduce, factoryLocation, pBuildLocation); }
+  void FindFactoryOutputLocation(MapID itemToProduce, Location factoryLocation, Location* pBuildLocation) const
+    { return Thunk<0x4367D0, &$::FindFactoryOutputLocation>(itemToProduce, factoryLocation, pBuildLocation); }
 
   void        SetTile(Location where, int tileIndex) { return Thunk<0x435430, &$::SetTile>(where, tileIndex); }
   void InitialSetTile(Location where, int tileIndex) { return Thunk<0x4354A0, &$::SetTile>(where, tileIndex); }
@@ -294,9 +294,9 @@ public:
   int         lastUsedUnitIndex_;
   int         nextFreeUnitIndex_;
   int         firstFreeUnitIndex_;
-  MapObject** ppMapObjFreeList_;
-  AnyMapObj*  pMapObjArray_;
-  MapObject*  pMapObjListBegin_;    ///< Top-most map object list (sorted ascending by pixelY).  Head always == [0].
+  MapObject** ppMapObjFreeList_;    ///< Linked list of recycled MapObjects.
+  AnyMapObj*  pMapObjArray_;        ///< This map's MapObject data array.
+  MapObject*  pMapObjListBegin_;    ///< Top-most map object linked list (sorted ascending by pixelY).  Head == [0].
   MapObject*  pMapObjListEnd_;      ///< One past the end of pMapObjArray_.
 
   uint8              lightLevelAdjustTable_[1024];

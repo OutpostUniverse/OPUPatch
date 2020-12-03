@@ -16,9 +16,9 @@ public:
   int GetInt(const char* pSection, const char* pKey, int defaultVal)
     { return Thunk<0x410870, int(const char*, const char*, int)>(pSection, pKey, defaultVal); }
     
-  int GetString(const char* pKey, char* pOut, uint32 bufferSize, const char* pDefaultVal)
+  int GetString(const char* pKey, char* pOut, uint32 bufferSize, const char* pDefaultVal = "")
     { return Thunk<0x410B30, int(const char*, char*, uint32, const char*)>(pKey, pOut, bufferSize, pDefaultVal); }
-  int GetString(const char* pSection, const char* pKey, char* pOut, uint32 bufferSize, const char* pDefaultVal) {
+  int GetString(const char* pSection, const char* pKey, char* pOut, uint32 bufferSize, const char* pDefaultVal = "") {
     return Thunk<0x4108B0, int(const char*, const char*, char*, uint32, const char*)>(
       pSection, pKey, pOut, bufferSize, pDefaultVal);
   }

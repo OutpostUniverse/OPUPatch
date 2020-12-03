@@ -1,5 +1,6 @@
 
 #include "Tethys/API/GameMap.h"
+#include "Tethys/Resource/GFXBitmap.h"
 
 #include "Patcher.h"
 #include "Util.h"
@@ -14,23 +15,23 @@ static constexpr uint32 MaxMapHeight = 512;
 static_assert((MaxMapWidth <= 1024) && (MaxMapHeight <= 512),
               "Map size is limited to 1024x512 due to certain data structures storing pixel X/Y in 15/14 bits.");
 
-static constexpr uint8 NumLightLevels = 32;
-static_assert(NumLightLevels == 32,  "The game is hardcoded to assume 32 light levels.");
+static constexpr uint32 MaxLightLevels = NumLightLevels;  // ** TODO Figure out how to increase this?
 
 // Extended map flags used in place of the "is saved game" 32-bit boolean.
 union MapFlags {
   struct {
     uint32 isSavedGame      :  1;  // 0 for map file, 1 for saved game file.
-    uint32 forceWorldMapOn  :  1;  // Force world map (wraparound).
-    uint32 forceWorldMapOff :  1;  // Force non-world map.  Only valid for 512-width maps.
+    uint32 forceWorldMapOn  :  1;  // Force world map (X wrap-around).  Warning: this is currently buggy and unstable!
+    uint32 forceWorldMapOff :  1;  // Force non-world map.  Only meaningful for 512xY maps;  ignored for 1024xY.
     uint32 reserved         : 29;  // Reserved for future use.
   };
   uint32 u32All;
 };
 
 // =====================================================================================================================
-// Fix crash with loading maps of width > 512, caused by fixed-size light level adjust table not being large enough.
-// NOTE: This patch breaks compatibility with old versions of the CCF2 blight hook.  Maps using it need to be updated.
+// Double the max map size to 1024x512 by fixing a crash with loading maps of width > 512, caused by fixed-size light
+// level adjust table not being large enough.
+// NOTE: This patch breaks compatibility with old versions of the CCF2 blight mod.  Maps using it need to be updated.
 bool SetLargeMapPatch(
   bool enable)
 {
@@ -46,8 +47,8 @@ bool SetLargeMapPatch(
 
     // In MapImpl::AllocateSpaceForMap()
     patcher.LowLevelHook(0x435748, [](Esi<int> curX) {
-      lightAdjustTable[curX]                        = NumLightLevels - 1;
-      lightAdjustTable[g_mapImpl.tileWidth_ + curX] = NumLightLevels - 10;
+      lightAdjustTable[curX]                        = MaxLightLevels - 1;  // Tile
+      lightAdjustTable[g_mapImpl.tileWidth_ + curX] = MaxLightLevels - 10; // Sprite
       return 0x435787;
     });
     patcher.LowLevelHook(0x435773, [](Eax<uint8> lightLevel, Esi<int> curX)
@@ -114,7 +115,7 @@ bool SetCustomMapFlagsPatch(
   static PatchContext patcher;
   bool success = true;
 
-  if (enable && (patcher.NumPatches() == 0)) {
+  if (enable) {
     static MapFlags mapFlags = { };
   
     // In MapImpl::LoadMapData()
@@ -131,6 +132,8 @@ bool SetCustomMapFlagsPatch(
     // In MapImpl::AllocateMap()
     patcher.LowLevelHook(0x43552D, [] { return mapFlags.forceWorldMapOn  ? 0x435550 :
                                                mapFlags.forceWorldMapOff ? 0x435532 : 0; });
+    
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 
   if ((enable == false) || (success == false)) {

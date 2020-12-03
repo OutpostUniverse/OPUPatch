@@ -194,10 +194,11 @@ public:
   bool GetLights() { return IsLive() && HasFlag(MoFlagVecHeadlights); }
 
   void DoSetLights(bool on);
-  void DoMove(Location where);
-  void DoDock(Unit building);
+  void DoMove(Location where) { if (IsLive()) { const auto [x, y] = where.GetPixel(); GetMapObject()->CmdMove(x, y); } }
+  void DoDock(Unit at)
+    { auto d = at.GetDockLocation();  if (IsLive() && d) { GetMapObject()->CmdDock(d.GetPixelX(), d.GetPixelY()); } }
   void DoDockAtGarage(Unit garage);
-  void DoBuild(MapID buildingType, Location bottomRight);                                    ///< [ConVec]
+  void DoBuild(Location bottomRight);                                                        ///< [ConVec]
   void DoDismantle(Unit what);                                                               ///< [ConVec]
 	void DoRepair(Unit    what) { if (IsLive()) { GetMapObject()->CmdRepair(what.id_); }    }
 	void DoReprogram(Unit what) { if (IsLive()) { GetMapObject()->CmdReprogram(what.id_); } }  ///< [Spider]
@@ -220,6 +221,9 @@ public:
       pMo->cargoBayCargoOrWeapon_[bay] = cargoOrWeaponType;
     }
   }
+
+  Location FindFactoryOutputLocation(MapID itemToProduce = mapCargoTruck) const
+    { Location loc; MapImpl::GetInstance()->FindFactoryOutputLocation(itemToProduce, GetLocation(), &loc); return loc; }
   ///@}
 
   /// [Garage, StructureFactory, Spaceport]
@@ -252,9 +256,11 @@ public:
 
   Location GetDockLocation() const
     { Location dock;  if (IsBuilding()) { GetMapObject<Building>()->GetDockLocation(&dock); }  return dock; }
-
-  Location GetFactoryOutputLocation(MapID itemToProduce = mapCargoTruck) const
-    { Location loc; MapImpl::GetInstance()->GetFactoryOutputLocation(itemToProduce, GetLocation(), &loc); return loc; }
+  Unit     GetUnitOnDock()   const {
+    const auto dock = GetDockLocation();
+    Unit       unit = Unit(dock ? g_mapImpl.Tile(dock).unitIndex : 0);
+    return unit.IsVehicle() ? unit : Unit();
+  }
 
   bool IsUnderConstruction() const
     { const auto cmd = GetCommand();  return (cmd == CommandType::Develop) || (cmd == CommandType::UnDevelop); }
@@ -337,36 +343,17 @@ inline void Unit::DoSetLights(
 }
 
 // =====================================================================================================================
-inline void Unit::DoMove(
-  Location where)
-{
-  auto*const pMap = MapImpl::GetInstance();
-  if (IsLive() && (where.x >= 0) && (where.x < pMap->tileWidth_) && (where.y >= 0) && (where.y < pMap->tileHeight_)) {
-    CommandPacket packet = { CommandType::Move, sizeof(MoveCommand) };
-    packet.data.move.numUnits     = 1;
-    packet.data.move.unitID[0]    = id_;
-    packet.data.move.numWaypoints = 1;
-    packet.data.move.waypoint[0]  = where.AsWaypoint();
-    ProcessCommandPacket(packet);
-  }
-}
-
-// =====================================================================================================================
 inline void Unit::DoBuild(
-  MapID    buildingType,
   Location bottomRight)
 {
-  if (IsLive()) {
-    const auto&   stats  = MapObjectType::GetInstance(buildingType)->stats_.building;
+  if (IsLive() && (GetCargoWeapon() != mapNone)) {
+    const auto&   s      = MapObjectType::GetInstance(GetCargoWeapon())->stats_.building;
     CommandPacket packet = { CommandType::Build, sizeof(BuildCommand) };
     packet.data.build.numUnits     = 1;
     packet.data.build.unitID[0]    = id_;
     packet.data.build.numWaypoints = 1;
     packet.data.build.waypoint[0]  = bottomRight.AsWaypoint(true, false);
-    packet.data.build.rect.x1      = bottomRight.x - stats.width  - 1;
-    packet.data.build.rect.y1      = bottomRight.y - stats.height - 1;
-    packet.data.build.rect.x2      = bottomRight.x;
-    packet.data.build.rect.y2      = bottomRight.y;
+    packet.data.build.rect         = MapRect(bottomRight - Location(s.width + 1, s.height + 1), bottomRight).AsPacked();
     packet.data.build.unknown      = -1;
     ProcessCommandPacket(packet);
   }
@@ -394,8 +381,7 @@ inline void Unit::DoAttack(
     packet.data.attack.numUnits  = 1;
     packet.data.attack.unitID[0] = id_;
     packet.data.attack.unknown   = 0;
-    packet.data.attack.tileX     = where.x;
-    packet.data.attack.tileY     = where.y;
+    packet.data.attack.target    = { uint16(where.x), uint16(where.y) };
     ProcessCommandPacket(packet);
   }
 }
@@ -406,11 +392,10 @@ inline void Unit::DoGuard(
 {
   if (IsLive() && what.IsLive()) {
     CommandPacket packet{ CommandType::Guard, sizeof(AttackCommand) };
-    packet.data.attack.numUnits     = 1;
-    packet.data.attack.unitID[0]    = id_;
-    packet.data.attack.unknown      = 0;
-    packet.data.attack.targetUnitID = what.id_;
-    packet.data.attack.tileY        = -1;
+    packet.data.attack.numUnits  = 1;
+    packet.data.attack.unitID[0] = id_;
+    packet.data.attack.unknown   = 0;
+    packet.data.attack.target    = { uint16(what.id_), UINT16_MAX };
     ProcessCommandPacket(packet);
   }
 }
@@ -423,10 +408,7 @@ inline void Unit::DoDoze(
     CommandPacket packet = { CommandType::Doze, sizeof(DozeCommand) };
     packet.data.doze.numUnits  = 1;
     packet.data.doze.unitID[0] = id_;
-    packet.data.doze.rect.x1   = area.x1;
-    packet.data.doze.rect.y1   = area.y1;
-    packet.data.doze.rect.x2   = area.x2;
-    packet.data.doze.rect.y2   = area.y2;
+    packet.data.doze.rect      = area.AsPacked();
     ProcessCommandPacket(packet);
   }
 }
@@ -440,7 +422,7 @@ inline void Unit::DoDockAtGarage(
     packet.data.move.numUnits     = 1;
     packet.data.move.unitID[0]    = id_;
     packet.data.move.numWaypoints = 1;
-    packet.data.move.waypoint[0]  = garage.GetDockLocation().AsWaypoint();
+    packet.data.move.waypoint[0]  = garage.GetDockLocation().AsWaypoint(true, true);
     ProcessCommandPacket(packet);
   }
 }
@@ -487,10 +469,7 @@ inline void Unit::DoRemoveWall(
     packet.data.removeWall.numUnits     = 1;
     packet.data.removeWall.unitID[0]    = id_;
     packet.data.removeWall.numWaypoints = 0;
-    packet.data.removeWall.rect.x1      = area.x1;
-    packet.data.removeWall.rect.y1      = area.y1;
-    packet.data.removeWall.rect.x2      = area.x2;
-    packet.data.removeWall.rect.y2      = area.y2;
+    packet.data.removeWall.rect         = area.AsPacked();
     ProcessCommandPacket(packet);
   }
 }
@@ -501,11 +480,10 @@ inline void Unit::DoDismantle(
 {
   if (IsLive() && what.IsLive()) {
     CommandPacket packet = { CommandType::Dismantle, sizeof(RepairCommand) };
-    packet.data.repair.numUnits     = 1;
-    packet.data.repair.unitID[0]    = id_;
-    packet.data.repair.unknown1     = 0;
-    packet.data.repair.targetUnitID = what.id_;
-    packet.data.repair.unknown2     = -1;
+    packet.data.repair.numUnits  = 1;
+    packet.data.repair.unitID[0] = id_;
+    packet.data.repair.unknown1  = 0;
+    packet.data.repair.target    = { uint16(what.id_), UINT16_MAX };
     ProcessCommandPacket(packet);
   }
 }
@@ -518,10 +496,7 @@ inline void Unit::DoSalvage(
   if (IsLive() && gorf.IsLive()) {
     CommandPacket packet = { CommandType::Salvage, sizeof(SalvageCommand) };
     packet.data.salvage.unitID     = id_;
-    packet.data.salvage.rect.x1    = area.x1;
-    packet.data.salvage.rect.y1    = area.y1;
-    packet.data.salvage.rect.x2    = area.x2;
-    packet.data.salvage.rect.y2    = area.y2;
+    packet.data.salvage.rect       = area.AsPacked();
     packet.data.salvage.unitIDGorf = gorf.id_;
     ProcessCommandPacket(packet);
   }
@@ -548,8 +523,8 @@ inline void Unit::DoLaunch(
 
     CommandPacket packet = { CommandType::Launch, sizeof(LaunchCommand) };
     packet.data.launch.unitID       = id_;
-    packet.data.launch.targetPixelX = target.GetPixelX(true);
-    packet.data.launch.targetPixelY = target.GetPixelY(true);
+    packet.data.launch.targetPixelX = target.GetPixelX();
+    packet.data.launch.targetPixelY = target.GetPixelY();
     ProcessCommandPacket(packet);
 
     if (forceEnable) {

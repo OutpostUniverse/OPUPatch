@@ -4,7 +4,9 @@
 #include "Tethys/Common/Util.h"
 #include "Tethys/API/Location.h"
 
-// ** TODO make a CommandPacketBuilder/Reader class?
+// ** TODO This interface will change substantially when a CmdPacketBuilder/Parser is made.
+// SingleUnitSimpleCommand, SimpleCommand, and MoveCommand will be changed to be empty types, so instantiating packet
+// structs manually will be broken.
 
 enum map_id : int;
 using MapID = map_id;
@@ -33,7 +35,7 @@ enum class CommandType : int {
   UnloadCargo,      ///< 'ctMoUnloadCargo'
   Recycle,          ///< 'ctMoRecycle'
   DumpCargo,        ///< 'ctMoDumpCargo'
-  Scavenge,         ///< 'ctMoScavenge';  Unused?
+  Scavenge,         ///< 'ctMoScavenge'
   SpecialWait,      ///< 'ctMoSpecialWait'
   Survey,           ///< 'ctMoSurvey'
   Idle,             ///< 'ctMoIdle'
@@ -45,7 +47,7 @@ enum class CommandType : int {
   Transfer,         ///< 'ctMoTransfer'
   Launch,           ///< 'ctMoLaunch'
   FlyInSpace,       ///< 'ctMoFlyInSpace'
-  Repair,           ///< 'ctMoRepair';  Unused?
+  Repair,           ///< 'ctMoRepair'
   RepairObj,        ///< 'ctMoRepairObj'
   Reprogram,        ///< 'ctMoReprogram'
   Dismantle,        ///< 'ctMoDismantle';  ConVec performing dismantle
@@ -71,7 +73,9 @@ enum class CommandType : int {
   Ally,             ///< 'ctAlly'
   GoAI,             ///< 'ctGoAI'
   MachineSettings,  ///< 'ctMachineSettings'
-  InvalidCommand    ///< 'ctInvalidCommand'
+  InvalidCommand,   ///< 'ctInvalidCommand'
+
+  Count
 };
 
 /// Used by ctGameOpt
@@ -166,50 +170,17 @@ union PlayerBitmaskImpl {
 };
 } // TethysImpl
 
-
 using PlayerBitmask       = TethysImpl::PlayerBitmaskImpl<uint32>;  ///< 32-bit mask of player IDs.
 using PackedPlayerBitmask = TethysImpl::PlayerBitmaskImpl<uint8>;   ///<  8-bit mask of player IDs.
 
-/// 32-bit mask of player IDs.
-union _PlayerBitmask {
-  operator       uint32&()       { return u32All; }  ///< Allows bitwise operators.
-  operator const uint32&() const { return u32All; }  ///< Allows bitwise operators.
 
-  bool Get(int player)             { return u32All & (1u << player);                               }
-  void Set(int player, bool state) { return TethysUtil::SetBitFlag(u32All, (1u << player), state); }
-
-  struct {
-    uint32 player0 :  1;
-    uint32 player1 :  1;
-    uint32 player2 :  1;
-    uint32 player3 :  1;
-    uint32 player4 :  1;
-    uint32 player5 :  1;
-    uint32 player6 :  1;
-    uint32         : 25;
+/// Used by some commands to indicate either a tile or unit target.
+struct CommandTarget {
+  union {
+    uint16 tileX;
+    uint16 unitID;
   };
-  uint32 u32All;
-};
-
-/// 8-bit mask of player IDs.
-union _PackedPlayerBitmask {
-  operator       uint8&()       { return u8All; }  ///< Allows bitwise operators.
-  operator const uint8&() const { return u8All; }  ///< Allows bitwise operators.
-
-  bool Get(int player)             { return u8All & (1u << player);                               }
-  void Set(int player, bool state) { return TethysUtil::SetBitFlag(u8All, (1u << player), state); }
-
-  struct {
-    uint8 player0 : 1;
-    uint8 player1 : 1;
-    uint8 player2 : 1;
-    uint8 player3 : 1;
-    uint8 player4 : 1;
-    uint8 player5 : 1;
-    uint8 player6 : 1;
-    uint8         : 1;
-  };
-  uint8 u8All;
+  uint16 tileY;  ///< Set to -1 if target is unit
 };
 
 
@@ -222,7 +193,9 @@ struct SingleUnitSimpleCommand {
 /// Has an array of unit IDs.  May be used as a header for other command packet data types.
 /// Used with DoSimpleCommand (ctMoStop, ctMoSelfDestruct, ctMoScatter, ...)
 struct SimpleCommand {
-  size_t GetUnitCount() const { return OP2Thunk<0x4102C0, uint32 FASTCALL(const void*)>(this); }
+  /// Gets the size in bytes of this struct.
+  /// To get the address of a subclass's data, this value can be used as the offset into CommandPacketData.
+  size_t GetSimpleCommandSize() const { return OP2Thunk<0x4102C0, uint32 FASTCALL(const void*)>(this); }
 
   uint8  numUnits;
   uint16 unitID[1];
@@ -300,9 +273,8 @@ struct LaunchCommand : public SingleUnitSimpleCommand {
 
 /// Used with ctMoRepairObj, ctMoReprogram, ctMoDismantle
 struct RepairCommand : public SimpleCommand {
-  uint16 unknown1;      ///< 0
-  uint16 targetUnitID;
-  uint16 unknown2;      ///< -1
+  uint16        unknown1;      ///< 0
+  CommandTarget target;
 };
 
 /// Used with ctMoSalvage
@@ -329,12 +301,8 @@ struct LightToggleCommand : public SimpleCommand {
 
 /// Used with ctMoAttackObj, ctMoGuard
 struct AttackCommand : public SimpleCommand {
-  uint16   unknown;       ///< 0
-  union {
-    uint16 tileX;
-    uint16 targetUnitID;
-  };
-  uint16   tileY;         ///< Set to -1 if target is a unit
+  uint16        unknown;  ///< 0
+  CommandTarget target;
 };
 
 /// Used by ctGameOpt
@@ -481,7 +449,7 @@ OP2_CMD_PACKET_DATA_FOR_DEF(CommandType::InvalidCommand,  void);
 template <CommandType Command>  using CmdPacketDataFor = typename TethysImpl::CmdPacketDataForImpl<Command>::Type;
 
 
-class CommandPacketWriter {
+class CmdPacketWriter {
 public:
   // ** TODO
 

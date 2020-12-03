@@ -24,7 +24,10 @@ BOOL APIENTRY DllMain(
 DLLAPI void InitMod(
   const char* pIniSectionName)
 {
-  bool result = (g_tApp.GetVersion() >= 0x01020007);  // Requires official patch 1.2.7 (unpatched CD version is 1.2.5)
+  // Requires official patch 1.2.7 (unpatched English CD version is 1.2.5, localized CDs are {2-5}.2.{7-9})
+  const uint32 version = g_tApp.GetVersion();
+  bool         result  = (version >= 0x01020007) && (version < 0x02000000);
+
   result = result && SetGameVersion(true);
 
   // Misc
@@ -77,5 +80,7 @@ DLLAPI void InitMod(
   result = result && SetMissileFix(true);
   result = result && SetNoAlliedDockDamageFix(true);
   result = result && SetAllyEdwardSurveyMinesPatch(true);
+  result = result && SetMultipleRepairPatch(true);
+  result = result && SetOreRoutePatch(true);
   result = result && SetTurretAnimationPatch(true);
 }

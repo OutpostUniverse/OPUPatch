@@ -29,9 +29,15 @@ enum class MineType : int {
   RandomOre = int(OreType::Random),
   CommonOre = int(OreType::Common),
   RareOre   = int(OreType::Rare),
-
   MagmaVent = -2,
   Fumarole  = -3,
+};
+
+enum class MeteorSize : int {
+  Random = -1,
+  Small,
+  Medium,
+  Large
 };
 
 enum class MarkerType : int {
@@ -75,7 +81,7 @@ public:
 
   /// Outputs a game sound at the specified map tile location.
   static void AddMapSound(SoundID  soundID, Location location)
-    { SoundManager::GetInstance()->AddMapSound(location.GetPixelX(true), location.GetPixelY(true), soundID); }
+    { SoundManager::GetInstance()->AddMapSound(location.GetPixelX(), location.GetPixelY(), soundID); }
 
   /// Outputs a game message at the specified map pixel coordinates.  @note (0, -1) = no associated coordinates.
   static void AddMessage(const char* pMsg, SoundID soundID, int toPlayerNum = -1, int pixelX = 0, int pixelY = -1) {
@@ -85,7 +91,7 @@ public:
 
   /// Outputs a game message at the specified map tile location.
   static void AddMessage(const char* pMsg, SoundID soundID, int toPlayerNum, Location tile)
-    { AddMessage(pMsg, soundID, toPlayerNum, tile.GetPixelX(true), tile.GetPixelY(true)); }
+    { AddMessage(pMsg, soundID, toPlayerNum, tile.GetPixelX(), tile.GetPixelY()); }
 
   /// Outputs a game message at the specified Unit's location.
   static void AddMessage(const char* pMsg, SoundID soundID, int toPlayerNum, Unit owner)
@@ -93,11 +99,14 @@ public:
 
   /// Creates a Unit on the map.
   static Unit CreateUnit(
-    MapID unitType, Location location, int playerNum, MapID weaponCargoType = mapNone, UnitDirection rotation = {})
+    MapID type, Location where, int ownerNum, MapID weaponCargo = {}, UnitDirection rotation = {}, bool lightsOn = true)
   {
     Unit u;
     OP2Thunk<0x478780, ibool FASTCALL(Unit&, MapID, Location, int, MapID, UnitDirection)>(
-      u, unitType, location, playerNum, weaponCargoType, rotation);
+      u, type, where, ownerNum, weaponCargo, rotation);
+    if (u.IsVehicle() && lightsOn) {
+      u.DoSetLights(true);
+    }
     return u;
   }
 
@@ -160,9 +169,9 @@ public:
   ///       weight
   /// @note Target player military units weigh 64, non-target player military units weigh -32, and non-target player
   ///       non-military units weigh 1.
-  static Location FindEMPMissileTarget(const MapRect& searchArea, int dstPlayerNum) {
+  static Location FindEMPMissileTarget(const MapRect& searchArea, int targetPlayerNum) {
     return OP2Thunk<0x478480, Location FASTCALL(int, int, int, int, int)>(
-      searchArea.x1, searchArea.x2, searchArea.y1, searchArea.y2, dstPlayerNum);
+      searchArea.x1, searchArea.x2, searchArea.y1, searchArea.y2, targetPlayerNum);
   }
 
   /// Launches an EMP missile (owned by the specified player) and returns a Unit reference to it.
@@ -173,8 +182,8 @@ public:
 
   /// Creates a meteor and returns a Unit reference to it.
   /// @note Size 0 = large, 1 = medium, 2 = small, -1 = random
-  static Unit CreateMeteor(Location where, int size, bool immediate = false)
-    { return DisasterThunk<0x4783B0, Disaster* FASTCALL(int, int, int)>(immediate, where.x, where.y, size); }
+  static Unit CreateMeteor(Location where, MeteorSize size, bool immediate = false)
+    { return DisasterThunk<0x4783B0, Disaster* FASTCALL(int, int, MeteorSize)>(immediate, where.x, where.y, size); }
 
   /// Creates an earthquake and returns a Unit reference to it.
   static Unit CreateEarthquake(Location where, int magnitude, bool immediate = false)
@@ -185,15 +194,15 @@ public:
     { return DisasterThunk<0x4782E0, Disaster* FASTCALL(int, int, int)>(immediate, where.x, where.y, spreadSpeed); }
 
   /// Creates an electrical storm and returns a Unit reference to it.
-  static Unit CreateLightning(Location start, int markDuration, Location end, bool immediate = false) {
+  static Unit CreateLightning(Location start, Location end, int duration, bool immediate = false) {
     return DisasterThunk<0x4783E0, Disaster* FASTCALL(int, int, int, int, int)>(
-      immediate, start.x, start.y, markDuration * 100, end.x, end.y);
+      immediate, start.x, start.y, duration, end.x, end.y);
   }
 
   /// Creates a vortex and returns a Unit reference to it.
-  static Unit CreateTornado(Location start, int markDuration, Location end, bool immediate = false) {
+  static Unit CreateTornado(Location start, Location end, int duration, bool immediate = false) {
     return DisasterThunk<0x478350, Disaster* FASTCALL(int, int, int, int, int, int)>(
-      false, start.x, start.y, markDuration * 100, end.x, end.y, immediate);
+      false, start.x, start.y, duration, end.x, end.y, immediate);
   }
 
   /// Creates (or removes) Blight.  Always immediate.

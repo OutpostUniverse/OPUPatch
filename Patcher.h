@@ -38,17 +38,19 @@ public:
   PatchContext(const PatchContext&)            = delete;
   PatchContext& operator=(const PatchContext&) = delete;
 
-  /// Destructor.  Reverts all patches owned by this context, and if it had opened a module, releases it as well.
-  ~PatchContext();
+  
+  ~PatchContext();  ///< Destructor.  Reverts all patches owned by this context and releases any owned module reference.
 
-  /// Gets the status of this context. This can be called once after multiple Write/Memcpy/Hook/etc. calls, rather than
+  /// Gets the status of this context.  This can be called once after multiple Write/Memcpy/Hook/etc. calls, rather than
   /// checking the returned status of each call individually.
   PatcherStatus GetStatus() const { return status_; }
 
-  /// Resets the tracked status of this context for non-fatal errors, so that the user may implement their own handling.
-  PatcherStatus ResetStatus();
+  
+  PatcherStatus ResetStatus();  ///< Resets the tracked status of this context for non-fatal errors (for user handling).
 
-  ///@{ Reverts all patches, releases any module reference held, and sets the module associated with this PatchContext.
+  void* GetModule() const { return hModule_; }  ///< Gets the OS module handle associated with this context.
+
+  ///@{ Reverts all patches, releases any module reference held, and sets the module associated with this context.
   PatcherStatus SetModule() { return SetModule(static_cast<const char*>(nullptr), false); }
   PatcherStatus SetModule(const char* pModuleName, bool loadModule   = false);
   PatcherStatus SetModule(const void* hModule,     bool addReference = false);

@@ -5,6 +5,8 @@
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Unit.h"
 
+// ** TODO The Enumerator API will be changed substantially.  The current interface should be considered a placeholder.
+
 class MapObject;
 
 struct UnitNode {

@@ -6,6 +6,7 @@
 #include "Tethys/Game/MapObject.h"
 
 #include "Tethys/UI/GameFrame.h"
+#include "Tethys/UI/UICommand.h"
 
 #include "Tethys/Resource/GFXBitmap.h"
 #include "Tethys/Resource/GFXSurface.h"
@@ -28,6 +29,8 @@ static constexpr uint32 StructureLimits[] = { 950, 350, 200, 150, 100, 96  };
 
 // =====================================================================================================================
 // Doubles the max unit limit from 1024 to 2048.
+// ** FIXME Saving is broken
+// ** TODO IDs 2048+ could potentially be used for MapEntity, since only MapUnit IDs are limited to 11 bits
 bool SetUnitLimitPatch(
   bool enable)
 {
@@ -440,20 +443,13 @@ bool SetNoAlliedDockDamageFix(
     // Replace Building::DoEvent()
     patcher.Hook(0x482D90, SetCapturedTrampoline, ThiscallFunctor(
       [F = decltype(Building::VtblType::pfnDoEvent){}](Building* pThis) {
-        Location dockPos;
-        Unit     unitOnDock;
+        const Unit bld      = Unit(pThis);
+        const Unit dockUnit = bld.GetUnitOnDock();
 
-        // ** TODO Should figure out where the missing nullptr check is during create unit
-        if ((pThis != nullptr) && (pThis->index_ != 0) && pThis->IsLive() && (pThis->GetDockLocation(&dockPos) != 0)) {
-          Unit unitOnDock(g_mapImpl.Tile(dockPos).unitIndex);
-
-          if ((unitOnDock.id_ != 0) && unitOnDock.IsLive() && unitOnDock.IsVehicle()) {
-            if ((Player[pThis->ownerNum_].IsAlliedTo(unitOnDock.GetOwner()) == false) ||
-                ((pThis->flags_ & MoFlagSpecialTarget) != 0))
-            {
-              F(pThis);
-            }
-          }
+        if (dockUnit.IsVehicle() &&
+            ((Player[pThis->ownerNum_].IsAlliedTo(dockUnit.GetOwner()) == false) || bld.HasFlag(MoFlagSpecialTarget)))
+        {
+          F(pThis);
         }
       }));
 
@@ -494,6 +490,99 @@ bool SetAllyEdwardSurveyMinesPatch(
 
         return result;
       }));
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Allows multiple selected ConVecs or Repair Vehicles to be given repair commands (like Spiders can).
+bool SetMultipleRepairPatch(
+  bool enable)
+{
+  static PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In UICmd::CommandRepair::IsEnabled()
+    patcher.LowLevelHook(0x454952, [](Eax<MapID> type)
+      { return ((type == mapConVec) || (type == mapRepairVehicle) || (type == mapSpider)) ? 0x454969 : 0x454961; });
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Allows trucks with ore in them to set ore routes.
+// ** TODO See if trucks with ore can go to the smelter first, or if mines can ignore already loaded trucks instead of
+// them getting stuck on the dock;  remove "set path from smelter back to mine" step;  make it so EMP doesn't reset
+bool SetOreRoutePatch(
+  bool enable)
+{
+  static PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In UICmd::CommandSetOreRoute::IsEnabled()
+    patcher.LowLevelHook(0x453FFE, [](Esi<MapObj::CargoTruck*> pThis, Edi<ibool>& isEnabled) {
+      const auto c      = TruckCargo(pThis->truckCargoType_);
+      const bool result = (c == TruckCargo::Empty) || (c == TruckCargo::CommonOre) || (c == TruckCargo::RareOre);
+      return result ? 0x454007 : 0x454005;
+    });
+
+    // In UICmd::CommandSetOreRoute::GetMouseCursor()
+    patcher.LowLevelHook(0x4544B6, [](Edi<MapID> mineType, Esp<void*> pEsp) {
+      bool       result = (mineType == mapCommonOreMine) || (mineType == mapRareOreMine) || (mineType == mapMagmaWell);
+      TruckCargo cargo  = TruckCargo::Empty;
+
+      if (result) {
+        auto*const pSelection = UnitGroup::GetSelectedUnitGroup();
+
+        for (int i = 0; i < pSelection->numUnits_; ++i) {
+          const TruckCargo curCargo = Unit(pSelection->unitIndex_[i]).GetTruckCargoType();
+          if (curCargo != TruckCargo::Empty) {
+            if ((cargo != TruckCargo::Empty) && (curCargo != cargo)) {
+              result = false;
+              break;
+            }
+            cargo = curCargo;
+          }
+        }
+      }
+
+      result &=  (cargo == TruckCargo::Empty)                                         ||
+                ((cargo == TruckCargo::CommonOre) &&  (mineType == mapCommonOreMine)) ||
+                ((cargo == TruckCargo::RareOre)   && ((mineType == mapRareOreMine) || (mineType == mapMagmaWell)));
+
+      return result ? 0x45453A : 0x4544C5;
+    });
+    
+    // In PlayerImpl::ProcessCommandPacket()
+    // ** TODO This is a temporary workaround to trucks with ore getting stuck on the mine's dock
+    patcher.LowLevelHook(0x40E3B0, [](Ebp<PlayerImpl*> pThis, Edi<CommandPacket*> pPacket) {
+      if (pPacket->type == CommandType::CargoRoute) {
+        auto*const pUnitIDs = pThis->GetPacketUnitIDs(&pPacket->data);
+        const auto count    = pThis->GetPacketUnitCount(&pPacket->data);
+        for (int i = 0; i < count; ++i) {
+          Unit truck(pUnitIDs[i]);
+          if ((truck.GetType() == mapCargoTruck) && (truck.GetTruckCargoType() != TruckCargo::Empty)) {
+            truck.SetCargo(TruckCargo::Empty, 0);
+            TethysGame::AddMapSound(SoundID::Dump, truck.GetLocation());
+          }
+        }
+      }
+    });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

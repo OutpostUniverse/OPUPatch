@@ -3,25 +3,30 @@
 
 #include "Tethys/Common/Memory.h"
 
+/// Bitfields typically representing pixel X/Y coordinates for path finding waypoints.
 struct Waypoint {
   uint32 x : 15;  ///< In pixels (max = 1024 tiles)
   uint32 y : 14;  ///< In pixels (max = 512 tiles)
   uint32   :  3;
 };
 
+/// Compactified struct typically representing a rectangular tile area on the map.
 struct PackedMapRect {
-  uint16 x1;  ///< In tiles
-  uint16 y1;  ///< In tiles
-  uint16 x2;  ///< In tiles
-  uint16 y2;  ///< In tiles
+  uint16 x1;
+  uint16 y1;
+  uint16 x2;
+  uint16 y2;
 };
 
 
-/// Struct representing tile X/Y coordinates on the map.
+/// Struct typically representing tile X/Y coordinates on the map.
 struct LOCATION : public OP2Class<LOCATION> {
 public:
-  LOCATION()                     : x(0),     y(0)     { }
-  LOCATION(int tileX, int tileY) : x(tileX), y(tileY) { }
+  constexpr LOCATION()                     : x(INT_MIN), y(INT_MIN) { }
+  constexpr LOCATION(int tileX, int tileY) : x(tileX),   y(tileY)   { }
+
+  constexpr bool operator==(const LOCATION& other) const { return (x == other.x) && (y == other.y); }
+  constexpr operator bool()                        const { return (x != INT_MIN) && (y != INT_MIN); }
 
   LOCATION& Add(const LOCATION& vector) { Thunk<0x475A30, void(const LOCATION&)>(vector); return *this; }
   static LOCATION FASTCALL Difference(const LOCATION& a, const LOCATION& b)
@@ -37,12 +42,12 @@ public:
 
   int Norm() { return Thunk<0x401E50, &$::Norm>(); }  ///< ftol(sqrt(x*x + y*y) + 0.5)
 
-  int   GetPixelX(bool centered = false) const { return (x * 32) + (centered ? 16 : 0); }
-  int   GetPixelY(bool centered = false) const { return (y * 32) + (centered ? 16 : 0); }
-  POINT GetPixel(bool xCentered = false, bool yCentered = false) const
+  constexpr int   GetPixelX(bool centered = true) const { return (x * 32) + (centered ? 16 : 0); }
+  constexpr int   GetPixelY(bool centered = true) const { return (y * 32) + (centered ? 16 : 0); }
+  constexpr POINT GetPixel(bool xCentered = true, bool yCentered = true) const
     { return { GetPixelX(xCentered), GetPixelY(yCentered) }; }
 
-  Waypoint AsWaypoint(bool xCentered = false, bool yCentered = false) const
+  constexpr Waypoint AsWaypoint(bool xCentered = true, bool yCentered = true) const
     { return { uint32(GetPixelX(xCentered)), uint32(GetPixelY(yCentered)) }; }
 
 public:
@@ -52,22 +57,26 @@ public:
 using Location = LOCATION;
 
 
-/// Struct representing a rectangular tile area on the map.
+/// Struct typically representing a rectangular tile area on the map.
 struct MAP_RECT : public OP2Class<MAP_RECT> {
 public:
-  MAP_RECT() : x1(0), y1(0), x2(0), y2(0) { }
-  MAP_RECT(int leftTile, int topTile, int rightTile, int bottomTile)
+  constexpr MAP_RECT() : x1(INT_MIN), y1(INT_MIN), x2(INT_MIN), y2(INT_MIN) { }
+  constexpr MAP_RECT(int leftTile, int topTile, int rightTile, int bottomTile)
     : x1(leftTile), y1(topTile), x2(rightTile), y2(bottomTile) { }
-  MAP_RECT(const Location& topLeftTile, const Location& bottomRightTile)
+  constexpr MAP_RECT(const Location& topLeftTile, const Location& bottomRightTile)
     : x1(topLeftTile.x), y1(topLeftTile.y), x2(bottomRightTile.x), y2(bottomRightTile.y) { }
+
+  constexpr bool operator==(const MAP_RECT& other) const
+    { return (x1 == other.x1) && (y1 == other.y1) && (x2 == other.x2) && (y2 == other.y2); }
+  constexpr operator bool() const { return (x1 != INT_MIN) && (y1 != INT_MIN) && (x2 != INT_MIN) && (y2 != INT_MIN); }
 
   int      Width()  const { return Thunk<0x475AA0, &$::Width>();  }
   int      Height() const { return Thunk<0x475AE0, &$::Height>(); }
   Location Size()   const { return Thunk<0x475C70, &$::Size>();   }
 
   /// Checks if the point is in the rect  [handles x wrap around for rect coordinates]
-  int      Check(Location& ptToCheck) { return Thunk<0x475D50, &$::Check>(ptToCheck); }
-  Location RandPt() const             { return Thunk<0x475CC0, &$::RandPt>();         }
+  int      Check(const Location& ptToCheck) { return Thunk<0x475D50, &$::Check>(ptToCheck); }
+  Location RandPt() const                   { return Thunk<0x475CC0, &$::RandPt>();         }
 
   MAP_RECT& Clip()                      { Thunk<0x475AF0>();                             return *this; }
   MAP_RECT& Inflate(int wide, int high) { Thunk<0x475A60, void(int, int)>(wide, high);   return *this; }
@@ -75,13 +84,13 @@ public:
   MAP_RECT& FromPtSize(const Location& a, const Location& b)
     { Thunk<0x475C10, void(const Location&, const Location&)>(a, b);  return *this; }
 
-  RECT GetPixels(bool xCentered = false, bool yCentered = false) const {
-    const int cx = xCentered ? 16 : 0;
-    const int cy = yCentered ? 16 : 0;
-    return { (x1 * 32) + cx, (y1 * 32) + cy, (x2 * 32) + cx, (y2 * 32) + cy };
+  constexpr RECT GetPixels(bool centered = false) const {
+    const int c = centered ? 16 : 0;
+    const int e = centered ? 0  : 31;
+    return { (x1 * 32) + c, (y1 * 32) + c, (x2 * 32) + c + e, (y2 * 32) + c + e };
   }
 
-  PackedMapRect AsPacked() { return { uint16(x1), uint16(y1), uint16(x2), uint16(y2) }; }
+  constexpr PackedMapRect AsPacked() const { return { uint16(x1), uint16(y1), uint16(x2), uint16(y2) }; }
 
 public:
   int x1;

@@ -32,9 +32,9 @@ namespace Patcher {
 using namespace Impl;
 using namespace Util;
 
-using Status = PatcherStatus;
-
 // Internal typedefs
+
+using Status = PatcherStatus;
 
 #pragma pack(push, 1)
 // Generic structure of a simple x86 instruction with a 1-byte opcode and one 1-dword operand.
@@ -818,11 +818,16 @@ uint32 PatchContext::BeginDeProtect(
 
   DWORD attr = 0;
 
+  if ((status_ == Status::Ok) && (CalculateModuleHash(hModule_) != moduleHash_)) {
+    status_ = Status::FailModuleUnloaded;
+  }
+
   if (status_ == Status::Ok) {
-    const HMODULE hModule = GetModuleFromAddress(pAddress);
+    const HMODULE hDstModule = GetModuleFromAddress(pAddress);
     // Note:  Heap-allocated memory isn't associated with any module, in which case hModule will be set to nullptr.
-    if ((hModule != nullptr) && (CalculateModuleHash(hModule) != moduleHash_)) {
-      status_ = Status::FailModuleUnloaded;
+    // Patching modules other than the one associated with this context is an error.
+    if ((hDstModule != nullptr) && (CalculateModuleHash(hDstModule) != moduleHash_)) {
+      status_ = Status::FailInvalidPointer;
     }
   }
 

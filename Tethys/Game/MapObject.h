@@ -17,50 +17,48 @@ class  TubeConnection;
 /// Some bits have different meanings based on unit type, specified by MoFlagVehicle, MoFlagBuilding, or MoFlagEntity.
 enum MapObjectFlags : uint32 {
   // Flags specifying what type of MapObject this is, which determines context for other flags.
-  MoFlagVehicle  = (1u << 1),
-  MoFlagBuilding = (1u << 2),
-  MoFlagEntity   = (1u << 6),
+  MoFlagVehicle  = (1u << 1),  ///< MapObject is a Vehicle.
+  MoFlagBuilding = (1u << 2),  ///< MapObject is a Building.
+  MoFlagEntity   = (1u << 6),  ///< MapObject is a MapEntity.
 
   // Flags that apply to any type.
-  MoFlagOffensive         = (1u <<  4),
-  MoFlagDoubleFireRate    = (1u <<  5),
-  MoFlagCanBeDamaged      = (1u << 10),
-  MoFlagPlymouth          = (1u << 11),
-  MoFlagEden              = (1u << 12),
-  MoFlagDead              = (1u << 17),
-  MoFlagEMPed             = (1u << 19),
-  MoFlagESGed             = (1u << 20),
-  MoFlagOppFiredUpon      = (1u << 23),
-  MoFlagUndocking         = (1u << 24),
-  MoFlagSpecialTarget     = (1u << 25),
-  MoFlagForceFullLighting = (1u << 27),
-  MoFlagSpecialDraw       = (1u << 28),
-  MoFlagMarkedForRedraw   = (1u << 29),
+  MoFlagOffensive         = (1u <<  4),  ///< Unit is a combat unit type.
+  MoFlagDoubleFireRate    = (1u <<  5),  ///< Combat unit has 2x weapon fire rate (Tigers).
+  MoFlagCanBeDamaged      = (1u << 10),  ///< Unit can be damaged.
+  MoFlagEden              = (1u << 12),  ///< Unit was created by an Eden player.
+  MoFlagDead              = (1u << 17),  ///< MapObject is deallocated.
+  MoFlagEMPed             = (1u << 19),  ///< Unit is EMPed.
+  MoFlagESGed             = (1u << 20),  ///< Unit is ESGed.
+  MoFlagOppFiredUpon      = (1u << 23),  ///< Unit may be auto-targeted by hostile combat units.  ** TODO Building only?
+  MoFlagUndocking         = (1u << 24),  ///< Unit is undocking.  ** TODO What does this apply to, truck and/or factory?
+  MoFlagSpecialTarget     = (1u << 25),  ///< Unit has an attached SpecialTarget trigger.
+  MoFlagForceFullLighting = (1u << 27),  ///< Always draw MapObject at full light level.
+  MoFlagSpecialDraw       = (1u << 28),  ///< Use special drawing method for this MapObject.
+  MoFlagMarkedForRedraw   = (1u << 29),  ///< MapObject is marked for redraw.
 
   // Flags that apply to vehicles.
-  MoFlagVecHeadlights   = (1u <<  0),
-  MoFlagVecArachnid     = (1u << 14),
-  MoFlagVecStickyfoamed = (1u << 18),
+  MoFlagVecHeadlights   = (1u <<  0),  ///< Vehicle headlights are turned on.
+  MoFlagVecArachnid     = (1u << 14),  ///< Vehicle is an arachnid type.
+  MoFlagVecStickyfoamed = (1u << 18),  ///< Vehicle is stickyfoamed.
 
   // Flags that apply to buildings.
-  MoFlagBldActive             = (1u <<  0),
-  MoFlagBldFactory            = (1u <<  3),
-  MoFlagBldCmdCenterConnected = (1u <<  7),
-  MoFlagBldCanExplode         = (1u <<  8),
-  MoFlagBldEnabledPower       = (1u << 13),
-  MoFlagBldEnabledWorkers     = (1u << 14),
-  MoFlagBldEnabledScientists  = (1u << 15),
-  MoFlagBldInfected           = (1u << 18),
-  MoFlagBldNoExplosionOnDeath = (1u << 22),
+  MoFlagBldActive             = (1u <<  0),  ///< Building is unidled.
+  MoFlagBldFactory            = (1u <<  3),  ///< Building is a FactoryBuilding.
+  MoFlagBldCmdCenterConnected = (1u <<  7),  ///< Building has an active Command Center connection.
+  MoFlagBldEnabledPower       = (1u << 13),  ///< Building has sufficient power.
+  MoFlagBldEnabledWorkers     = (1u << 14),  ///< Building has sufficient workers.
+  MoFlagBldEnabledScientists  = (1u << 15),  ///< Building has sufficient scientists.
+  MoFlagBldInfected           = (1u << 18),  ///< Building is Blight-infected.
+  MoFlagBldNoExplosionOnDeath = (1u << 22),  ///< Skip spawning an explosion on building death.
 
   // Flags that apply to entities.
-  MoFlagEntChild                 = (1u <<  8),
-  MoFlagEntDisasterStarted       = (1u << 13),
-  MoFlagEntDisasterDidFirstWarn  = (1u << 14),
-  MoFlagEntDisasterDidSecondWarn = (1u << 15),
-  MoFlagEntDisasterDoAftershock  = (1u << 16),
+  MoFlagEntChild                 = (1u <<  8),  ///< Entity is a MapChildEntity.
+  MoFlagEntDisasterStarted       = (1u << 13),  ///< Disaster has started.
+  MoFlagEntDisasterDidFirstWarn  = (1u << 14),  ///< Disaster first warning (10 marks out) completed.
+  MoFlagEntDisasterDidSecondWarn = (1u << 15),  ///< Disaster second warning (5 marks out) completed.
+  MoFlagEntDisasterDoAftershock  = (1u << 16),  ///< Earthquake should do aftershock.
 
-  // ** TODO Figure out what bits 9, 21, 26, and 31 are used for;  30 is unused?
+  // ** TODO Figure out what bits 9, 21, 26, and 31 are used for;  11 and 30 are unused?
 };
 
 /// Action types, these indicate what a MapObject is currently doing.
@@ -86,7 +84,9 @@ enum class ActionType : uint8 {
   WeaponAimCoarse,  ///< 'weaponAimCoarse'
   WeaponAimFine,    ///< 'weaponAimFine'
   SantaWalking,     ///< 'SantaWalking'
-  Invalid           ///< 'moInvalid'
+  Invalid,          ///< 'moInvalid'
+
+  Count
 };
 
 /// Possible values for MapObject::truckCargoType_.
@@ -101,7 +101,9 @@ enum class Truck_Cargo : int {
   RareRubble,
   Spaceport,     ///< Starship module/satellite;  MapID = truckCargoAmount 
   Wreckage,      ///< Wreckage;  Tech ID = 8000 + truckCargoAmount
-  GeneBank
+  GeneBank,
+
+  Count
 };
 using TruckCargo = Truck_Cargo;
 
@@ -312,6 +314,7 @@ public:
     struct {
       uint16 truckCargoType_   :  4;  ///< [CargoTruck] Cargo type carried.  @see TruckCargo.
       uint16 truckCargoAmount_ : 12;  ///< [CargoTruck] Amount of truck cargo.  For wreckage, this is (techID - 8000).
+                                      ///  For starship modules, this is its MapID.
     };
 
     uint16 tubeOrWallType_;           ///< [Earthworker] MapID tube/wall type currently being built.
@@ -396,7 +399,7 @@ public:
   DEFINE_VTBL_TYPE(OP2_MO_DISASTER_VTBL, 0x4D73A8);
 
   void StartDisaster()
-    { flags_ &= (MoFlagEntDisasterDidFirstWarn | MoFlagEntDisasterDidSecondWarn);  actionTimer_ = 6; }
+    { flags_ |= (MoFlagEntDisasterDidFirstWarn | MoFlagEntDisasterDidSecondWarn);  actionTimer_ = 6; }
 
   // Object size = between 0x48 and 0x54?
 };
@@ -443,7 +446,7 @@ public:
 };
 
 //  ====================================================================================================================
-/// Base class for rockets - SULV, RLV, and EMP Missile.
+/// Base class for Spaceport rockets.
 class Rocket : public MapEntity {
   using $ = Rocket;
 public:
@@ -722,7 +725,7 @@ public:
 
   DEFINE_VTBL_GETTER(0x4D0160);
 
-  // Object size = 0x54??
+  // Object size = 0x60?
 };
 
 //  ====================================================================================================================
@@ -743,18 +746,18 @@ public:
   void  Explode(ibool explode)              override { return Thunk<0x44AFB0, &$::Explode>(explode);            }
   ibool IsEnabled()                   const override { return Thunk<0x44AE70, &$::IsEnabled>();                 }
 
-  virtual void      BuildMine(int barYield, int variant, int numTruckLoads, int beaconUnitIdx)
+  virtual void     BuildMine(int barYield, int variant, int numTruckLoads, int beaconUnitIdx)
     { return Thunk<0x44AED0, &$::BuildMine>(barYield, variant, numTruckLoads, beaconUnitIdx); }
-  virtual int       NextTruckLoad()      { return Thunk<0x44AF00, &$::NextTruckLoad>();       }
-  virtual int       CalculateOreYield() { return Thunk<0x44AF10, &$::CalculateOreYield>();  }
-  virtual OreYield GetBarYield()        { return Thunk<0x44AFF0, &$::GetBarYield>();         }
+  virtual int      NextTruckLoad()     { return Thunk<0x44AF00, &$::NextTruckLoad>();      }
+  virtual int      CalculateOreYield() { return Thunk<0x44AF10, &$::CalculateOreYield>();  }
+  virtual OreYield GetBarYield()       { return Thunk<0x44AFF0, &$::GetBarYield>();        }
 
 #define OP2_MO_MINEBUILDING_VTBL($)  $(BuildMine)  $(NextTruckLoad)  $(CalculateOreYield)  $(GetBarYield)
   DEFINE_VTBL_TYPE(OP2_MO_MINEBUILDING_VTBL, 0x4D4798);
 
 public:
   // ** TODO this doesn't look correct
-  //int         numTruckLoads_;
+  //int        numTruckLoads_;
   //OreVariant variant_;
   //OreYield   barYield_;
 
@@ -762,7 +765,7 @@ public:
 };
 
 //  ====================================================================================================================
-/// Base class for all power generator structures.
+/// Base class for all power generator structures - Tokamak, Solar Power Array, MHD Generator, Geothermal Plant.
 class PowerBuilding : public Building {
   using $ = PowerBuilding;
 public:
@@ -2259,11 +2262,11 @@ public:
 
   using MineBuilding::MineBuilding;
 
-  Type* GetType()            const override { return Thunk<0x448E30, &$::GetType>();            }
-  void* Destroy(ibool freeMem = 0) override { return Thunk<0x443220, &$::Destroy>(freeMem);     }
-  void  Explode(ibool explode)     override { return Thunk<0x44B270, &$::Explode>(explode);     }
-  int   NextTruckLoad()            override { return Thunk<0x44B230, &$::NextTruckLoad>();      }
-  int   CalculateOreYield()       override { return Thunk<0x44B250, &$::CalculateOreYield>(); }
+  Type* GetType()            const override { return Thunk<0x448E30, &$::GetType>();           }
+  void* Destroy(ibool freeMem = 0) override { return Thunk<0x443220, &$::Destroy>(freeMem);    }
+  void  Explode(ibool explode)     override { return Thunk<0x44B270, &$::Explode>(explode);    }
+  int   NextTruckLoad()            override { return Thunk<0x44B230, &$::NextTruckLoad>();     }
+  int   CalculateOreYield()        override { return Thunk<0x44B250, &$::CalculateOreYield>(); }
 
   DEFINE_VTBL_GETTER(0x4D2550);
 

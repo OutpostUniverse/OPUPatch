@@ -15,13 +15,13 @@ namespace TethysUtil {
 template <typename T, size_t N>  constexpr size_t ArrayLen(const T (&array)[N]) { return N; }
 
 /// Tests if any bit flag is set in mask.
-template <typename T1, typename T2> bool BitFlagTest(T1 mask, T2 flag) { return (mask & flag) != 0; }
+template <typename M, typename F> bool BitFlagTest(M mask, F flag) { return (mask & flag) != 0; }
 
 /// Tests if all bit flags are set in mask.
-template <typename T1, typename T2> bool BitFlagsTest(T1 mask, T2 flags) { return (mask & flags) == flags; }
+template <typename M, typename F> bool BitFlagsTest(M mask, F flags) { return (mask & flags) == flags; }
 
 /// Sets or unsets a bit flag.
-template <typename T1, typename T2> void SetBitFlag(T1& out, T2 flag, bool on){ out ^= (out ^ (on ? flag : 0)) & flag; }
+template <typename M, typename F> void SetBitFlag(M& out, F flag, bool on) { out ^= (out ^ (on ? flag : 0)) & flag; }
 
 /// Iterates forward on a bitmask.  Found bit must be masked out after each call in a loop.
 inline bool GetNextBit(

@@ -26,7 +26,7 @@ enum class BehaviorType : int {
   BandboxUnitSelect = 0,  ///< Left-clicking starts drawing a bandbox
   SetRectRegion,          ///< Bulldoze or Salvage region
   SetBuildLocation,       ///< Highlight area under mouse (tile aligned, multicoloured region)
-  SetDest,                ///< Left-click to set destination (Attack, Move, etc.) (don't select units)
+  SetTarget,              ///< Left-click to set destination (Attack, Move, etc.) (don't select units)
   SetLineRegion,          ///< Build Tube, Wall, Lava Wall, or Microbe Wall
   MouseDisabled,          ///< Arrow cursor, clicking is disabled (including Right-click)
 };

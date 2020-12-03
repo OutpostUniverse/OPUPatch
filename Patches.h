@@ -57,4 +57,6 @@ bool SetWreckageFix(bool enable);
 bool SetMissileFix(bool enable);
 bool SetNoAlliedDockDamageFix(bool enable);
 bool SetAllyEdwardSurveyMinesPatch(bool enable);
+bool SetMultipleRepairPatch(bool enable);
+bool SetOreRoutePatch(bool enable);  // ** WIP
 bool SetTurretAnimationPatch(bool enable);

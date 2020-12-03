@@ -35,10 +35,10 @@ public:
   ibool InitLevel()                 { return Thunk<0x402F20, &$::InitLevel>();           }
   void  ProcessTriggers()           { return Thunk<0x403230, &$::ProcessTriggers>();     }
 
-  void RaiseUnitCreatedEvent(MapObject*     pUnit, uint16 scGroupIndex)
-    { return Thunk<0x403200, &$::RaiseUnitCreatedEvent>(pUnit, scGroupIndex); }
-  void RaiseUnitTransferredEvent(MapObject* pUnit, int srcPlayerNum, int dstPlayerNum)
-    { return Thunk<0x4031A0, &$::RaiseUnitTransferredEvent>(pUnit, srcPlayerNum, dstPlayerNum); }
+  void OnCreateUnit(MapObject*   pUnit, uint16 scGroupIndex)
+    { return Thunk<0x403200, &$::OnCreateUnit>(pUnit, scGroupIndex); }
+  void OnTransferUnit(MapObject* pUnit, int srcPlayerNum, int dstPlayerNum)
+    { return Thunk<0x4031A0, &$::OnTransferUnit>(pUnit, srcPlayerNum, dstPlayerNum); }
 
   void GoAI(int    playerNum) { return Thunk<0x402F80, &$::GoAI>(playerNum);    }
   void GoHuman(int playerNum) { return Thunk<0x403070, &$::GoHuman>(playerNum); }

@@ -35,8 +35,8 @@
 using namespace Patcher;
 using namespace Patcher::Util;
 
-static constexpr uint32 MaxNumMessagesLogged = 64;                      // ** TODO Try to increase this?
-static constexpr uint32 MaxLogMessageLen     = sizeof(ListItem::text);  // ** TODO Try to increase this?
+static constexpr uint32 MaxNumMessagesLogged = 64;                           // ** TODO Try to increase this?
+static constexpr uint32 MaxLogMessageLen     = sizeof(ListItem::text) - 10;  // ** TODO Try to increase this?
 static constexpr uint32 MaxChatMessageLen    = min(sizeof(ChatCommand::message), MaxLogMessageLen);
 
 static MessageLogEntry<MaxLogMessageLen> g_messageLogRb[MaxNumMessagesLogged] = { };
@@ -501,35 +501,75 @@ bool SetMiniMapFix(
 
 // =====================================================================================================================
 // Makes vehicles display their cargo in mouseover tooltips and in destroyed notifications in the message log.
-// ** TODO Make this work with more units besides ConVecs
 bool SetVehicleCargoDisplayPatch(
   bool enable)
 {
   static PatchContext patcher;
   bool success = true;
 
-  if (enable) {
+  if (enable && (patcher.NumPatches() == 0)) {
     static constexpr int UnitStrSize = sizeof(MapObjectType::unitName_);
 
-    // Make ConVecs display their cargo in mouseover tooltips.
-    static auto*const pfnOldGetMouseOverStr = MapObj::ConVec::Vtbl()->pfnGetMouseOverStr;
-    patcher.Write(
-      &MapObj::ConVec::Vtbl()->pfnGetMouseOverStr,
-      ThiscallLambdaPtr([](MapObj::ConVec* pThis, char* pDst, int size) {
-        if ((pThis->cargo_ == mapNone) || (pThis->ownerNum_ != TethysGame::LocalPlayer())) {
-          return pfnOldGetMouseOverStr(pThis, pDst, size);
-        }
-        else {
-          auto*const pCargoType = MapObjectType::GetInstance(pThis->cargo_);
-          return _snprintf_s(
-            pDst, (uint32)(size), _TRUNCATE, "%s (%s)", &pThis->GetType()->unitName_[0], &pCargoType->unitName_[0]);
-        }
-      }));
+    static constexpr const char* TruckCargoStrings[] = {
+      "empty",
+      "Food",
+      "Common Ore",
+      "Rare Ore",
+      "Common Metals",
+      "Rare Metals",
+      "Common Rubble",
+      "Rare Rubble",
+      "Starship Module",
+      "Wreckage",
+      "Gene Bank"
+    };
+    static_assert(TethysUtil::ArrayLen(TruckCargoStrings) == size_t(TruckCargo::Count),
+                  "The TruckCargoStrings table needs to be updated.");
+
+    // Make ConVecs, Cargo Trucks, and Evacuation Transports display their cargo in mouseover tooltips.
+    static auto GetCargoStr = [](Vehicle* pVec) -> std::string {
+      switch (pVec->GetTypeID()) {
+      case mapCargoTruck: {
+        const auto       cargoType  = TruckCargo(max(pVec->truckCargoType_, 0));
+        const char*const pCargoName =
+          (cargoType == TruckCargo::Spaceport) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0] :
+          (cargoType <  TruckCargo::Count)     ? TruckCargoStrings[size_t(cargoType)] : nullptr;
+        const auto       quantity   = ((pVec->truckCargoAmount_ > 1) && (cargoType <= TruckCargo::RareRubble)) ?
+          std::to_string(pVec->truckCargoAmount_) : "";
+
+        return (pCargoName != nullptr) ? (quantity + ((quantity[0] != '\0') ? " " : "") + pCargoName) : "empty";
+      }
+      case mapConVec: {
+        auto*const pCargoName  = &MapObjectType::GetInstance(pVec->cargo_)->unitName_[0];
+        auto*const pWeaponName =
+          (pVec->weaponOfCargo_ != mapNone) ? &MapObjectType::GetInstance(pVec->weaponOfCargo_)->unitName_[0] : "";
+
+        return std::string(pWeaponName) + ((pWeaponName[0] != '\0') ? " " : "") + pCargoName;
+      }
+      case mapEvacuationTransport:  return (pVec->cargo_ != 0) ? "Colonists" : "empty";
+      default:                      return "";
+      }
+    };
+
+    Vehicle::VtblType*const pVtbls[] =
+      { MapObj::ConVec::Vtbl(), MapObj::CargoTruck::Vtbl(), MapObj::EvacuationTransport::Vtbl() };
+
+    for (auto* pVtbl : pVtbls) {
+      patcher.Write(
+        &pVtbl->pfnGetMouseOverStr,
+        ThiscallLambdaPtr([](Vehicle* pThis, char* pDst, int size) {
+          auto*const pUnitTypeName = &pThis->GetType()->unitName_[0];
+          return ((pThis->cargo_ != 0) && Player[pThis->ownerNum_].IsAlliedTo(TethysGame::LocalPlayer()))   ?
+            _snprintf_s(pDst, size_t(size), _TRUNCATE, "%s (%s)", pUnitTypeName, GetCargoStr(pThis).data()) :
+            _snprintf_s(pDst, size_t(size), _TRUNCATE, "%s",      pUnitTypeName);
+        }));
+    }
 
     // Hide redundant vehicle cargo text in storage bay command pane views.
     // In CommandPaneView::BuildingStorageBays::Draw()
     patcher.LowLevelHook(0x464050, [](Ecx<MapObject*> pUnit, Eax<char*> pBuffer) {
-      if (pUnit->GetTypeID() == mapConVec) {
+      const MapID id = pUnit->GetTypeID();
+      if ((id == mapConVec) || (id == mapCargoTruck) || (id == mapEvacuationTransport)) {
         strncpy_s(pBuffer, UnitStrSize, &pUnit->GetType()->unitName_[0], _TRUNCATE);
         return 0x464058;
       }
@@ -540,12 +580,12 @@ bool SetVehicleCargoDisplayPatch(
 
     // Display cargo in vehicle destroyed messages.
     // In Unit::ProcessForGameCycle()
-    patcher.LowLevelHook(0x43DC24, [](Esi<MapObject*> pThis, Eax<char*> pBuffer) {
-      if ((pThis->GetTypeID() == mapConVec) && (pThis->cargo_ != mapNone)) {
+    patcher.LowLevelHook(0x43DC24, [](Esi<Vehicle*> pThis, Eax<char*> pBuffer) {
+      const MapID id = pThis->GetTypeID();
+      if (((id == mapConVec) || (id == mapCargoTruck) || (id == mapEvacuationTransport)) && (pThis->cargo_ != 0)) {
         char unitName[UnitStrSize] = "";
         pThis->GetSelectionStr(&unitName[0], UnitStrSize);
-        auto*const pCargoType = MapObjectType::GetInstance(pThis->cargo_);
-        _snprintf_s(pBuffer, UnitStrSize, _TRUNCATE, "%s (%s)", &unitName[0], &pCargoType->unitName_[0]);
+        _snprintf_s(pBuffer, UnitStrSize, _TRUNCATE, "%s (%s)", &unitName[0], GetCargoStr(pThis).data());
       }
       else {
         pThis->GetSelectionStr(pBuffer, UnitStrSize);

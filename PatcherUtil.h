@@ -34,7 +34,8 @@
 # define PATCHER_INCREMENTAL_LINKING  1  // MSVC incremental linking is typically on in debug builds and off in release.
 #endif
 
-#if (PATCHER_MSVC && _CPPUNWIND) || (PATCHER_GXX && (__cpp_exceptions || __EXCEPTIONS))
+#if ((PATCHER_MSVC && _CPPUNWIND) || (PATCHER_GXX && (__cpp_exceptions || __EXCEPTIONS))) &&  \
+    (defined(PATCHER_EXCEPTIONS) == false)
 # define PATCHER_EXCEPTIONS 1
 #endif
 
@@ -95,12 +96,11 @@
 #endif
 
 
-#define PATCHER_EMIT_CALLING_CONVENTIONS($)                                                                 \
-  PATCHER_IGNORE_GCC_WARNING("-Wignored-attributes",                                                        \
-    $(PATCHER_CDECL,       Cdecl)       $(PATCHER_STDCALL,    Stdcall)     $(PATCHER_FASTCALL,   Fastcall)  \
-    $(PATCHER_THISCALL,    Thiscall)    $(PATCHER_VECTORCALL, Vectorcall)  $(PATCHER_REGCALL,    Regcall)   \
-    $(PATCHER_REGPARM(1),  Regparm1)    $(PATCHER_REGPARM(2), Regparm2)    $(PATCHER_REGPARM(3), Regparm)   \
-    $(PATCHER_SSEREGPARM,  SseRegparm))
+#define PATCHER_EMIT_CALLING_CONVENTIONS($)  PATCHER_IGNORE_GCC_WARNING("-Wignored-attributes",         \
+  $(PATCHER_CDECL,       Cdecl)     $(PATCHER_STDCALL,    Stdcall)     $(PATCHER_FASTCALL,   Fastcall)  \
+  $(PATCHER_THISCALL,    Thiscall)  $(PATCHER_VECTORCALL, Vectorcall)  $(PATCHER_REGCALL,    Regcall)   \
+  $(PATCHER_REGPARM(1),  Regparm1)  $(PATCHER_REGPARM(2), Regparm2)    $(PATCHER_REGPARM(3), Regparm)   \
+  $(PATCHER_SSEREGPARM,  SseRegparm))
 
 
 /// Status enum returned by PatchContext methods.
@@ -146,14 +146,18 @@ constexpr size_t SetCapturedTrampoline = 0;
 namespace Util {
 /// Enum specifying a function's calling convention.
 enum class Call : uint32 {
+#define PATCHER_CALLING_CONVENTION_ENUM_DEF(conv, name) name,
+#define PATCHER_DEFAULT_CALLING_CONVENTION_ENUM_DEF(conv, name) std::is_same<void(*)(), void(conv*)()>::value ? name :
+
   Unknown    = 0,
-  Default,
-#define PATCHER_CALLING_CONVENTION_ENUM_DEF(convention, name) name,
   PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_CALLING_CONVENTION_ENUM_DEF)
+  Default    = PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_DEFAULT_CALLING_CONVENTION_ENUM_DEF) Unknown,
 #if   PATCHER_MS_ABI
   Membercall = Thiscall,
 #elif PATCHER_UNIX_ABI
   Membercall = Cdecl,
+#else
+  Memercall  = Unknown,
 #endif
   Variadic   = Cdecl,
 };
@@ -232,8 +236,8 @@ struct LambdaInvokerImpl<Return(Lambda::*)(Args...), true> {
   template <>  struct Enum<Util::Call::name>                                                         \
     { static Return convention    Fn(Args... args) { return GetInvoker()->operator()(args...); } };  \
   static     Return convention  name(Args... args) { return GetInvoker()->operator()(args...); }
+  static     Return          Default(Args... args) { return GetInvoker()->operator()(args...); }
   PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_LAMBDA_INVOKER_CONVERSION_DEF);
-  PATCHER_LAMBDA_INVOKER_CONVERSION_DEF(,Default);
 };
 ///@}
 } // Impl
@@ -296,32 +300,16 @@ template <typename T>  constexpr size_t ArgSize()
 // ** TODO add vector type detection
 template <typename T>  constexpr bool IsVectorArg() { return std::is_floating_point<T>::value; }
 
-#define PATCHER_GET_DEFAULT_CONVENTION_DEF(con, name) std::is_same<void(*)(), void(con*)()>::value ? Util::Call::name :
-/// @internal  Gets the build-specified default calling convention.
-constexpr Util::Call GetDefaultConvention()
-  { return PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_GET_DEFAULT_CONVENTION_DEF) Util::Call::Default; }
-
 ///@{ @internal  Helper metafunctions for converting function types to function pointers of other calling conventions.
 template <typename T, Util::Call C>  struct AddConvImpl{};
 template <typename T, Util::Call C>  using  AddConvention = typename AddConvImpl<Decay<T>, C>::Type;
 
 #define PATCHER_ADD_CONVENTION_DEF(conv, name) \
 template <typename R, typename... A>  struct AddConvImpl<R(*)(A...), Util::Call::name> { using Type = R(conv*)(A...); };
-template <typename R, typename... A>  struct AddConvImpl<R(*)(A...), Util::Call::Default> { using Type = R(*)(A...);  };
-template <typename R, typename... A>  struct AddConvImpl<R(*)(A...), Util::Call::Unknown> { using Type = void*;       };
+template <typename R, typename... A>  struct AddConvImpl<R(*)(A...), Util::Call::Unknown> { using Type = R(*)(A...);  };
 template <typename R, typename... A, Util::Call C>
 struct AddConvImpl<R(*)(A..., ...), C> { using Type = R(*)(A..., ...); };
 PATCHER_EMIT_CALLING_CONVENTIONS(PATCHER_ADD_CONVENTION_DEF);
-///@}
-
-///@{ @internal  Helper metafunctions to determine if a function is a (C-style) variadic function.
-#define PATCHER_IS_VARIADIC_PMF_DEF(pThisQualifier, ...)  template <typename T, typename R, typename... A>  \
-struct IsVariadicImpl<R(T::*)(A..., ...) pThisQualifier __VA_ARGS__>         { static constexpr bool Value = true;  };
-template <typename T>                 struct IsVariadicImpl                  { static constexpr bool Value = false; };
-template <typename R, typename... A>  struct IsVariadicImpl<R(*)(A..., ...)> { static constexpr bool Value = true;  };
-PATCHER_EMIT_PMF_QUALIFIERS(PATCHER_IS_VARIADIC_PMF_DEF);
-
-template <typename Fn>  constexpr bool IsVariadic() { return IsVariadicImpl<Decay<Fn>>::Value; }
 ///@}
 
 ///@{ @internal  Template that defines typed function call signature information for use at compile time.
@@ -350,7 +338,7 @@ struct FuncSig<R, Call, true, T, A...> : public FuncSig<R, Call, false, T, A...>
 };
 ///@}
 
-///@internal  Defines untyped function call signature information for use at runtime.
+/// @internal  Defines untyped function call signature information for use at runtime.
 struct RtFuncSig {
   /// Conversion constructor for the compile-time counterpart to this type, FuncSig.
   template <typename R, Util::Call C, bool V, typename... A>
@@ -378,7 +366,7 @@ struct RtFuncSig {
 
 ///@{ @internal  Template metafunction used to obtain function call signature information from a callable.
 #define PATCHER_FUNC_TRAITS_DEF(con, name)  template <typename R, typename... A>  struct FuncTraitsImpl<R(con*)(A...), \
-  Conditional<(GetDefaultConvention() == Util::Call::name) || (std::is_same<void(*)(), void(con*)()>::value == false), \
+  Conditional<(Util::Call::Default == Util::Call::name) || (std::is_same<void(*)(), void(con*)()>::value == false), \
               void, Util::AsCall<Util::Call::name>>> { using Type = FuncSig<R, Util::Call::name, false, A...>; };
 #define PATCHER_FUNC_TRAITS_PMF_DEF(pThisQual, ...)  \
 template <typename R, typename T, typename... A> struct FuncTraitsImpl<R(T::*)(A...)      pThisQual __VA_ARGS__, void> \
@@ -517,7 +505,25 @@ private:
 } // Impl
 
 
-/// Options passed to PatchContext::LowLevelHook().  These are mainly performance tweaks, can be useful for tight loops.
+/// Options passed to PatchContext::LowLevelHook() to tweak callback behavior.
+struct LowLevelHookOptions {
+  // ** TODO
+  union {
+    struct {
+      ///@{ Flags that are set automatically if callback function signature is known at compile time.
+      uint32 argsAsStructPtr    :  1;  ///< Args are passed to the callback as a pointer to a struct containing them.
+      uint32 useFixedReturnAddr :  1;  ///< Use a fixed return address (for hook functions that return void).
+      uint32 noRelocReturnAddr  :  1;  ///< Do not adjust custom return address for module base relocation.
+      ///@}
+      uint32 noShortReturnAddr  :  1;  ///< Custom return address cannot overlap overwritten area (5 bytes on x86).
+      uint32 reserved           : 28;
+    };
+    uint32 flags;  ///< All flags packed as a uint32.
+  };
+
+  uintptr fixedReturnAddress;  ///< Only meaningful if useFixedReturnAddr is set.  0 = return to original code.
+};
+
 namespace LowLevelHookOpt {
 enum : uint32 {
   NoBaseRelocReturn  = (1 << 0), ///< Do not automatically adjust custom return destinations for module base relocation.
@@ -784,7 +790,7 @@ auto PmfCast(
   // ** TODO need to check what ICC does in MS mode
   static constexpr struct {
     Impl::ConstArray<uint8, 20>  bytes;
-    uint8  operandBase;  // +0x0 for 0, +0x40 for byte operand, +0x80 for dword operand
+    uint8  operandBase;  // x86:  +0x0 for 0, +0x40 for byte operand, +0x80 for dword operand
   } Vcalls[] = {
 # if   PATCHER_MSVC  && PATCHER_X86_64
     { { 0x48, 0x8B, 0x01, 0xFF },       0x20 },  // mov rax, [rcx];  jmp qword ptr [rax+?]
@@ -863,8 +869,8 @@ auto PmfCast(
 # endif
 #elif PATCHER_GXX && (PATCHER_CLANG == false)
 // GCC-compliant:  GCC has an extension to cast PMF constants to pointers without an object instance, which is ideal.
-# define MFN_PTR(method, ...)  [] { PATCHER_IGNORE_GCC_WARNING("Wpmf-conversions",  \
-   return reinterpret_cast<typename Patcher::Impl::FuncTraits<decltype(&method)>::Pfn>(&method)); }()
+# define MFN_PTR(method, ...)  [] { PATCHER_IGNORE_GCC_WARNING("-Wpmf-conversions",  \
+   return reinterpret_cast<typename Patcher::Impl::FuncTraits<decltype(&method)>::Pfn>(&method);) }()
 #else
 // MSVC (non-x86_32), Clang, other:  See comments of PmfCast about restrictions.
 # define MFN_PTR(method, ...)  Patcher::Util::PmfCast(&method, {__VA_ARGS__})

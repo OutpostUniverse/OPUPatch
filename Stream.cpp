@@ -1,4 +1,6 @@
 
+// ** TODO This should probably be moved into op2ext due to overlap with mod loader functionality.
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -16,6 +18,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <set>
 #include <unordered_set>
 
 using namespace Patcher;
@@ -26,9 +29,8 @@ using MissionList = std::vector<std::pair<std::string, std::unique_ptr<AIModDesc
 static constexpr wchar_t PathVar[] = L"PATH";
 
 static constexpr char OPUDir[]  = "OPU";
-static constexpr char CoreDir[] = "core";
+static constexpr char BaseDir[] = "base";
 
-static char g_baseModDir[] = "base";  // ** TODO this needs to be override-able by mods (e.g. Renegades)
 static std::filesystem::path g_curMapPath;
 
 static bool g_searchForMission = false;
@@ -43,24 +45,34 @@ static std::vector<std::filesystem::path> GetSearchPaths(
   constexpr auto SearchOptions = std::filesystem::directory_options::follow_directory_symlink |
                                  std::filesystem::directory_options::skip_permission_denied;
 
-  static const auto opuPath(std::filesystem::path(g_resManager.installedDir_)/OPUDir);
+  const auto installPath(std::filesystem::path(g_resManager.installedDir_));
+  const auto opuPath(installPath/OPUDir);
 
   std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
   std::vector<std::filesystem::path> searchPaths;
+  std::set<std::filesystem::path>    knownPaths;
+  auto AddPath = [&searchPaths, &knownPaths](const std::filesystem::path& path) {
+    if (path.is_absolute() && (knownPaths.count(path) == 0)) {
+      searchPaths.emplace_back(path);
+      knownPaths.insert(path);
+    }
+  };
 
-  // Search 1) ini debug path if set (highest priority).
+  // Search 1) ini debug path if set.
   {
     char debugPath[MAX_PATH] = "";
-    g_configFile.GetString("DEBUG", "ART_PATH", &debugPath[0], MAX_PATH, "");
+    g_configFile.GetString("DEBUG", "ART_PATH", &debugPath[0], MAX_PATH);
     if (debugPath[0] != '\0') {
-      searchPaths.emplace_back(debugPath);
+      AddPath(debugPath);
     }
   }
 
-  // Search OPU subdirectories under 2) map dir, 3) mod dirs, 4) base mod dir, then 5) core dir.
-  // ** TODO Search all mod dirs here instead of op2ext, for now mod dirs are checked with highest priority w/o subdirs
-  const std::filesystem::path bases[] = { g_curMapPath, opuPath/g_baseModDir, opuPath/CoreDir };
+  // Search OPU subdirectories under 2) map dir, 3) mod dirs, 4) base dir, then 5) OPU dir.
+  // ** TODO Search all mod dirs here, for now mod dirs are checked with highest priority by op2ext's hook
+  const bool useMap = (g_curMapPath != opuPath/BaseDir) && (g_curMapPath != opuPath) && (g_curMapPath != installPath);
+  const std::filesystem::path bases[] = { (useMap ? g_curMapPath : ""), opuPath/BaseDir, opuPath };
+
   for (const auto& base : bases) {
     if (base.empty() == false) {
       static const std::multimap<std::string, std::string> assetDirs = {
@@ -92,31 +104,23 @@ static std::vector<std::filesystem::path> GetSearchPaths(
 
         if (std::filesystem::exists(assetDir)) {
           if (searchForMission && (it->first == ".dll") && (it->second == "maps")) {
-            // Search a) top level of OPU/[base]/maps/* subdirectories if we are searching for mission DLLs.
+            // Search a) top level of [base]/maps/* subdirectories iff we are searching for mission DLLs.
+            // This lets e.g. OPU/base/maps/AxnesHome/ml6_21.dll be found.
             for (auto& p : std::filesystem::directory_iterator(assetDir, SearchOptions)) {
               if (p.is_directory()) {
-                searchPaths.emplace_back(p);
+                AddPath(p);
               }
             }
           }
 
-          // Search b) OPU/[base]/[asset] directory.
-          if ((searchForMission == false) || (it->second == "maps")) {
-            searchPaths.emplace_back(assetDir);
-          }
+          // Search b) [base]/[asset] directory.
+          AddPath(assetDir);
         }
       }
 
       if (std::filesystem::exists(base)) {
-        // Search c) OPU/[base] directory.
-        searchPaths.emplace_back(base);
-
-        // Search d) top level of any OPU/[base]/* subdirectories.
-        for (auto& p : std::filesystem::directory_iterator(base, SearchOptions)) {
-          if (p.is_directory()) {
-            searchPaths.emplace_back(p);
-          }
-        }
+        // Search c) [base] directory.
+        AddPath(base);
       }
     }
   }
@@ -125,12 +129,13 @@ static std::vector<std::filesystem::path> GetSearchPaths(
   searchPaths.emplace_back(opuPath);
 
   // Search 7) all OPU/[base]/maps/* subdirectories if we are searching for .map files.
+  // This lets e.g. OPU/base/maps/misc/ademo1.dll refer to OPU/base/maps/campaign/eden04.map.
   if (extension == ".map") {
     for (const auto& base : bases) {
       if (std::filesystem::exists(base/"maps")) {
         for (auto& p : std::filesystem::recursive_directory_iterator(base/"maps", SearchOptions)) {
           if (p.is_directory()) {
-            searchPaths.emplace_back(p);
+            AddPath(p);
           }
         }
       }
@@ -139,10 +144,8 @@ static std::vector<std::filesystem::path> GetSearchPaths(
 
   if (excludeStockDirs == false) {
     // Search 8) Outpost2.exe directory, then 9) Outpost 2 CD directory if available.
-    searchPaths.emplace_back(g_resManager.installedDir_);
-    if ((g_resManager.cdDir_[0] != '\0') && (g_resManager.cdDir_[0] != '.')) {
-      searchPaths.emplace_back(g_resManager.cdDir_);
-    }
+    AddPath(g_resManager.installedDir_);
+    AddPath(g_resManager.cdDir_);
   }
 
   return searchPaths;
@@ -300,7 +303,7 @@ static int __fastcall PopulateMultiplayerMissionListHook(
 }
 
 // =====================================================================================================================
-// Replacement function for SinglePlayerGameDialog::PopulateMissionLis()
+// Replacement function for SinglePlayerGameDialog::PopulateMissionList()
 static void __fastcall PopulateSinglePlayerMissionListHook(
   IDlgWnd* pThis)
 {
@@ -348,11 +351,13 @@ static void AddModuleSearchPaths(
   for (auto& src: paths) {
     const std::filesystem::path path = (src.is_relative() || src.empty()) ? (g_resManager.installedDir_/src) : src;
     if (std::filesystem::exists(path)) {
-      bool found = (ifUnique == false);
+      bool found = false;
 
-      ss.seekg(0);
-      for (std::wstring token; ((found == false) && std::getline(ss, token, L';'));) {
-        found = (path == token) || ((path/"") == token);
+      if (ifUnique) {
+        ss.seekg(0);
+        for (std::wstring token; ((found == false) && std::getline(ss, token, L';'));) {
+          found = (path == token) || ((path/"") == token);
+        }
       }
 
       if (found == false) {
@@ -401,24 +406,6 @@ static void RemoveModuleSearchPaths(
 
 
 // =====================================================================================================================
-static void SetBaseModuleSearchPaths(
-  const char* pBaseModDir)
-{
-  static std::string oldBaseModDir = "";
-  if (pBaseModDir != oldBaseModDir) {
-    if (oldBaseModDir.empty() == false) {
-      const auto oldBase(std::filesystem::path(OPUDir)/oldBaseModDir);
-      RemoveModuleSearchPaths({ oldBase, oldBase/"maps", oldBase/"libs" });
-    }
-    oldBaseModDir = pBaseModDir;
-  }
-
-  const auto base(std::filesystem::path(OPUDir)/pBaseModDir);
-  AddModuleSearchPaths({ base, base/"maps", base/"libs" });
-}
-
-
-// =====================================================================================================================
 // Prefers loading DLL import dependencies from the new module's file directory first, instead of the base module's.
 // Also adds module directory to PATH for the sake of LoadLibrary().
 // See https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
@@ -432,8 +419,10 @@ static HMODULE WINAPI LoadModuleAltSearchPath(
 
 // =====================================================================================================================
 void InitModuleSearchPaths() {
+  static std::vector<HMODULE> hModules;
+
   const std::filesystem::path opuPath(OPUDir);
-  const std::filesystem::path core(opuPath/CoreDir);
+  const std::filesystem::path base(opuPath/BaseDir);
 
   // If this is called before TApp::Init(), then we need to init g_resManager's directories.
   if (g_resManager.installedDir_[0] == '\0') {
@@ -449,9 +438,23 @@ void InitModuleSearchPaths() {
   }
 
   // Add default DLL search paths.
-  AddModuleSearchPaths({ "", opuPath, core, core/"maps", core/"libs" });
-  SetBaseModuleSearchPaths(&g_baseModDir[0]);  // ** TODO override?
+  AddModuleSearchPaths({ "", opuPath }, true);  // ** TODO remove this, op2ext handles these
+  AddModuleSearchPaths({ base, base/"maps", base/"libs" });
   // ** TODO should add search paths for all mods
+
+  // OPUPatch needs to keep some DLLs loaded to patch them; load them here so they get loaded from the correct path.
+  if (hModules.empty()) {
+    for (const char* pFilename : { "OP2Shell.dll", "odasl.dll" }) {
+      const HMODULE hModule = LoadModuleAltSearchPath(pFilename);
+      if (hModule != NULL) {
+        hModules.push_back(hModule);
+      }
+    }
+
+    if (hModules.empty() == false) {
+      atexit([] { for (HMODULE hModule : hModules) { FreeLibrary(hModule); }  hModules.clear(); });
+    }
+  }
 }
 
 // =====================================================================================================================
@@ -460,8 +463,6 @@ bool SetFileSearchPathPatch(
 {
   static PatchContext op2Patcher;
   static PatchContext shellPatcher;
-
-  static std::vector<HMODULE> hModules;
 
   static const std::wstring oldPathEnv(GetPathEnv());
   static const auto oldCwd(std::filesystem::current_path());
@@ -472,23 +473,10 @@ bool SetFileSearchPathPatch(
   if (enable) {
     if (inited == false) {
       InitModuleSearchPaths();
-      inited = true;
-
-      // OPUPatch needs to keep some DLLs loaded to patch them;  load them here so they get loaded from the correct path.
-      if (hModules.empty()) {
-        for (const char* pFilename : { "OP2Shell.dll", "odasl.dll" }) {
-          const HMODULE hModule = LoadModuleAltSearchPath(pFilename);
-          if (hModule != NULL) {
-            hModules.push_back(hModule);
-          }
-        }
-
-        if (hModules.empty() == false) {
-          atexit([] { for (HMODULE hModule : hModules) { FreeLibrary(hModule); }  hModules.clear(); });
-        }
-
+      if (shellPatcher.GetModule() == GetModuleHandleA(nullptr)) {
         shellPatcher.SetModule("OP2Shell.dll", true);
       }
+      inited = true;
     }
 
     // Replace ResManager::GetFilePath()
@@ -622,7 +610,7 @@ bool SetChecksumPatch(
 
       // Normally, edentek.txt, ply_tek.txt, and multitek.txt get checksummed here.
       // Use these 3 slots instead for the actual map's tech checksum, op2ext.dll, and OPUPatch.dll.
-      // ** TODO tech checksum could be smarter to factor out localization etc.
+      // ** TODO tech checksum could be smarter to factor out localization etc. for now we checksum spoof the files
       AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pTechtreeName));
       AddChecksum(g_resManager.ChecksumStream("op2ext.dll"));
       AddChecksum(g_resManager.ChecksumStream("OPUPatch.dll"));
@@ -633,7 +621,7 @@ bool SetChecksumPatch(
       // Checksum Outpost2.exe (seems pointless as long as this is a const, maybe we can reuse this for something else)
       AddChecksum(0x59010E28);
 
-      // Checksum mission DLL
+      // Checksum mission script
       AddChecksum((pAIModDesc == nullptr) ? 0 : pAIModDesc->checksum);
 
       // Checksum map file
