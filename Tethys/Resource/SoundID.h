@@ -1,6 +1,8 @@
 
 #pragma once
 
+namespace Tethys {
+
 enum class SoundID : int {
   Bld_fal3     = 0,
   Bld_fal1     = 1,
@@ -293,3 +295,5 @@ enum class SongIds : int {
   Count
 };
 using SongID = SongIds;
+
+} // Tethys

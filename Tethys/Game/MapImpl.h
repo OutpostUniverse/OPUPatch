@@ -5,6 +5,8 @@
 #include "Tethys/Game/MapObjectType.h"
 #include "Tethys/API/Location.h"
 
+namespace Tethys {
+
 class StreamIO;
 class GFXBitmap;
 class GFXTilesetBitmap;
@@ -310,3 +312,5 @@ static_assert(sizeof(MapImpl) == 1136, "Incorrect MapImpl size.");
 
 inline       auto& g_mapImpl      = *MapImpl::GetInstance();
 inline const auto& g_pMapObjArray =  MapImpl::GetInstance()->pMapObjArray_;
+
+} // Tethys

@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class IWnd;
 class Pane;
 class Filter;
@@ -188,3 +190,5 @@ public:
   UIElement* pHotKeyTable_[256];
   int        pauseCount_;
 };
+
+} // Tethys

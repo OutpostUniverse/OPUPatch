@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class MapObject;
 
 /// Internal manager for tube connection sets.
@@ -38,3 +40,5 @@ public:
   // ** TODO member variables
   int field_00;
 };
+
+} // Tethys

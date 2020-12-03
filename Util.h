@@ -34,9 +34,10 @@ void TokenizeString(
   }
 }
 
+
 /// Returns true if the virtual machine hypervisor bit of cpuid is set.
 inline bool IsVirtualMachine() {
-  uint32 out[4] = { };
+  Tethys::uint32 out[4] = { };
 #if defined(_WIN32)
   __cpuid(reinterpret_cast<int*>(&out[0]), 0x1);
 #elif defined(__GNUC__)

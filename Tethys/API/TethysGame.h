@@ -11,6 +11,8 @@
 #include "Tethys/API/Player.h"
 #include "Tethys/API/Unit.h"
 
+namespace Tethys {
+
 class TFileDialog;
 class GameNetLayer;
 
@@ -269,3 +271,5 @@ private:
 public:
   uint8 field_00;
 };
+
+} // Tethys

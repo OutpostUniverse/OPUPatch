@@ -9,6 +9,8 @@
 #include "Tethys/Game/GameImpl.h"
 #include "Tethys/Game/PlayerImpl.h"
 
+namespace Tethys {
+
 /// Exported interface for accessing player data (wraps PlayerImpl).
 class _Player : public OP2Class<_Player> {
 public:
@@ -168,3 +170,5 @@ inline MiningGroup   FASTCALL CreateMiningGroup(_Player     p) { return OP2Thunk
 inline BuildingGroup FASTCALL CreateBuildingGroup(_Player   p) { return OP2Thunk<0x47A2B0, &CreateBuildingGroup>(p); }
 inline FightGroup    FASTCALL CreateFightGroup(_Player      p) { return OP2Thunk<0x47A0A0, &CreateFightGroup>(p);    }
 inline Pinwheel      FASTCALL CreatePinwheel(const _Player& p) { return OP2Thunk<0x47A880, &CreatePinwheel>(p);      }
+
+} // Tethys

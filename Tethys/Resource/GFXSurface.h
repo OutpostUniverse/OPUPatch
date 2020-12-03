@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/API/Location.h"
 
+namespace Tethys {
+
 class GFXBitmap;
 
 /// Background scanline draw methods.
@@ -260,3 +262,5 @@ struct ScanlineCopyInfo {
   void*   pDstImg;
   int     width;
 };
+
+} // Tethys

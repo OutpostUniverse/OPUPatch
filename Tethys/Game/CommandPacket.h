@@ -4,12 +4,13 @@
 #include "Tethys/Common/Util.h"
 #include "Tethys/API/Location.h"
 
+namespace Tethys {
+
 // ** TODO This interface will change substantially when a CmdPacketBuilder/Parser is made.
 // SingleUnitSimpleCommand, SimpleCommand, and MoveCommand will be changed to be empty types, so instantiating packet
 // structs manually will be broken.
 
-enum map_id : int;
-using MapID = map_id;
+enum MapID : int;
 
 constexpr int AllPlayers = -1;
 
@@ -461,3 +462,5 @@ public:
   Waypoint      waypoints_[8];
   size_t        numWaypoints_;
 };
+
+} // Tethys

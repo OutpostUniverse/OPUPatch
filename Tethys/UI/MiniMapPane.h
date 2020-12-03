@@ -6,6 +6,8 @@
 #include "Tethys/UI/UIElement.h"
 #include "Tethys/Resource/GFXPalette.h"
 
+namespace Tethys {
+
 class GFXClippedSurface;
 class GFXBitmap;
 
@@ -114,3 +116,5 @@ public:
 };
 
 static_assert(sizeof(MiniMapPane) == 0x314, "Incorrect MiniMapPane size.");
+
+} // Tethys

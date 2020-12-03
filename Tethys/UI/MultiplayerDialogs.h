@@ -5,6 +5,8 @@
 #include "Tethys/Game/GameStartInfo.h"
 #include "Tethys/UI/IWnd.h"
 
+namespace Tethys {
+
 struct HostGameParameters {
   StartupFlags startupFlags;
   int          unused[2];
@@ -60,3 +62,5 @@ public:
   int   missionType1_;
   int   missionType2_;
 };
+
+} // Tethys

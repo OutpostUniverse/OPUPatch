@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class Random : public OP2Class<Random> {
 public:
   int Rand()          { return Thunk<0x46F000, int()>();         }
@@ -20,3 +22,5 @@ public:
   uint64 seed_;
 };
 static_assert(8 == sizeof(Random), "Incorrect Random size.");
+
+} // Tethys

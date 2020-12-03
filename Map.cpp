@@ -7,6 +7,7 @@
 
 #include <algorithm>
 
+using namespace Tethys;
 using namespace Patcher;
 using namespace Patcher::Util;
 

@@ -5,6 +5,8 @@
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Unit.h"
 
+namespace Tethys {
+
 // ** TODO The Enumerator API will be changed substantially.  The current interface should be considered a placeholder.
 
 class MapObject;
@@ -107,3 +109,5 @@ public:
 public:
   int field_00[13];
 };
+
+} // Tethys

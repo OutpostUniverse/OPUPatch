@@ -3,6 +3,8 @@
 
 #include "Tethys/Resource/CodecStream.h"
 
+namespace Tethys {
+
 enum class CompressionCode : uint8 {
   Uncompressed = 0,
   RLE,
@@ -217,3 +219,5 @@ public:
 };
 
 END_PACKED
+
+} // Tethys

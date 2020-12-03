@@ -5,6 +5,8 @@
 #include "Tethys/Game/TApp.h"
 #include <cstdlib>
 
+namespace Tethys {
+
 namespace LocalizedString {
 /// Enum to index into the Outpost2.exe localized string table.  @see GetStringTable().
 enum StringIndex : size_t {
@@ -1029,3 +1031,5 @@ inline bool ResetAllLocalizedStrings() {
   for (size_t i = 0; i < ShellLocalizedString::StringTableSize; result &= ResetShellLocalizedString(i++));
   return result;
 }
+
+} // Tethys

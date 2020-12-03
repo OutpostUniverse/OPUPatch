@@ -3,6 +3,8 @@
 
 #include "Tethys/Resource/StreamIO.h"
 
+namespace Tethys {
+
 BEGIN_PACKED
 
 /// Adaptive Huffman Tree used in LZH streams.
@@ -265,3 +267,5 @@ public:
   uint16    field_96;           ///< Padding?
 };
 static_assert(sizeof(RLEWStream) == 0x98, "Incorrect RLEWStream size.");
+
+} // Tethys

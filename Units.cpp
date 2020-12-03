@@ -16,6 +16,7 @@
 #include "Patcher.h"
 #include "Util.h"
 
+using namespace Tethys;
 using namespace Patcher;
 using namespace Patcher::Util;
 

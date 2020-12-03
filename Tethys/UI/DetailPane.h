@@ -4,6 +4,8 @@
 #include "Tethys/UI/IWnd.h"
 #include "Tethys/UI/Filter.h"
 
+namespace Tethys {
+
 class Viewport;
 class MapObject;
 
@@ -81,3 +83,5 @@ public:
   MapObject* pUnitDrawList_[MaxPerGroup];    ///< MapUnit (player) objects
   MapObject* pEntityDrawList_[MaxPerGroup];  ///< MapEntity (gaia) objects
 };
+
+} // Tethys

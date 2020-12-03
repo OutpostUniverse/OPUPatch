@@ -6,6 +6,8 @@
 #include "Tethys/Game/GameStartInfo.h"
 #include "Tethys/Game/UnitGroup.h"
 
+namespace Tethys {
+
 class MapObject;
 class Building;
 class Vehicle;
@@ -191,3 +193,5 @@ public:
   MapObject* pEntityList_;
 };
 static_assert(sizeof(PlayerImpl) == 3108, "Incorrect PlayerImpl size.");
+
+} // Tethys

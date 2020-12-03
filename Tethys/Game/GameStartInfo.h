@@ -3,6 +3,8 @@
 
 #include "Tethys/Game/CommandPacket.h"
 
+namespace Tethys {
+
 enum class MissionType : int;
 
 BEGIN_PACKED
@@ -152,3 +154,5 @@ struct MissionResults : public GameStartInfo {
 static_assert(sizeof(MissionResults) == 0x3DD, "Incorrect MissionResults size.");
 
 END_PACKED
+
+} // Tethys

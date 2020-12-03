@@ -6,6 +6,8 @@
 #include "Tethys/API/ScStub.h"
 #include "Tethys/API/Unit.h"
 
+namespace Tethys {
+
 class UnitBlock;
 
 /// Exported interface for UI unit groups (wraps ScGroupImpl).
@@ -177,3 +179,5 @@ public:
   void SetNoRange(int a, int b)              { return Thunk<0x47A950, &$::SetNoRange>(a, b);                  }
   void SetPoints(const PWDef* pPwDefList)    { return Thunk<0x47A8B0, &$::SetPoints>(pPwDefList);             }
 };
+
+} // Tethys

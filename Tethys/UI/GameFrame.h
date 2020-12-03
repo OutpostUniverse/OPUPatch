@@ -8,6 +8,8 @@
 #include "Tethys/UI/DetailPane.h"
 #include "Tethys/UI/MiniMapPane.h"
 
+namespace Tethys {
+
 /// Struct defining user-controlled settings (mainly from CConfig).
 struct IniSettings {
   int   scrollRate;
@@ -255,3 +257,5 @@ public:
 };
 
 inline auto& g_gameFrame = *GameFrame::GetInstance();
+
+} // Tethys

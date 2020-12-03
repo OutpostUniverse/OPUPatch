@@ -1,6 +1,8 @@
 
 #pragma once
 
+namespace Tethys {
+
 /**
  * TApp::Run loops forever doing:
  *   peek for messages, call GameFrame::OnIdle() if none waiting
@@ -161,3 +163,5 @@ enum WmCommandId : int {
   BOOKMARK_LOCATION_3 = 40105,
   BOOKMARK_LOCATION_4 = 40106,
 };
+
+} // Tethys

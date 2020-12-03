@@ -11,6 +11,8 @@
 # include "Tethys/Common/WinTypes.h"
 #endif  // !SWIG
 
+namespace Tethys {
+
 using ibool   = int;
 using int8    = int8_t;
 using int16   = int16_t;
@@ -120,3 +122,5 @@ using uintptr = uintptr_t;
 #  define END_PACKED __pragma(pack(pop))
 # endif  // SWIG || !_MSC_VER
 #endif  // END_PACKED
+
+} // Tethys

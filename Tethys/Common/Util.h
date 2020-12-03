@@ -5,10 +5,12 @@
 
 #include <cstdlib>
 #include <cstdio>
+
 #if defined(_WIN32)
 # include <intrin.h>
 #endif
 
+namespace Tethys {
 namespace TethysUtil {
 
 /// Returns the size in elements of a C-style array.
@@ -52,3 +54,4 @@ inline bool GetNextBit(
 }
 
 } // TethysUtil
+} // Tethys

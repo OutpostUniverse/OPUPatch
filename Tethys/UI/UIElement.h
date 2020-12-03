@@ -5,6 +5,8 @@
 #include "Tethys/UI/IWnd.h"
 #include "Tethys/UI/Filter.h"
 
+namespace Tethys {
+
 class Font;
 class UICommand;
 class CommandPaneView;
@@ -256,3 +258,5 @@ public:
 };
 
 } // UIElem
+
+} // Tethys

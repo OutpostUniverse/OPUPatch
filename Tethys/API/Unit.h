@@ -10,8 +10,10 @@
 #include "Tethys/Game/MapImpl.h"
 #include "Tethys/API/Location.h"
 
+namespace Tethys {
+
 /// Enum specifying unit type classifications.  Used by AI and UnitBlock-related interfaces.
-enum class UnitClassifactions : int {  // [Note: **Typo** in name]
+enum class UnitClassification : int {
   Attack           = 0x00,  ///< Lynx, Panther, Tiger, Scorpion (excludes ESG, EMP, Stickyfoam)
   ESG              = 0x01,  ///< Lynx, Panther, Tiger
   EMP              = 0x02,  ///< Lynx, Panther, Tiger
@@ -33,7 +35,6 @@ enum class UnitClassifactions : int {  // [Note: **Typo** in name]
   NotSet           = 0x10,
   All              = 0x11,  ///< All vehicles and buildings
 };
-using UnitClassification = UnitClassifactions;
 
 
 /// Exported interface wrapping a reference to a MapObject instance.
@@ -560,3 +561,5 @@ inline void Unit::DoTrainScientists(
     ProcessCommandPacket(packet);
   }
 }
+
+} // Tethys

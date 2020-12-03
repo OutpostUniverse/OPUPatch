@@ -5,20 +5,21 @@
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Unit.h"
 
+namespace Tethys {
+
 // ** TODO The Trigger API will be changed substantially.  The current interface should be considered a placeholder.
 
 /// Used by various trigger creation functions.
-enum class compare_mode : int {
+enum class CompareMode : int {
   Equal = 0,
   LowerEqual,
   GreaterEqual,
   Lower,
   Greater,
 };
-using CompareMode = compare_mode;
 
 /// Used by CreateResourceTrigger.
-enum class trig_res : int {
+enum class TriggerResource : int {
   Food = 0,
   CommonOre,
   RareOre,
@@ -27,7 +28,6 @@ enum class trig_res : int {
   Scientists,
   Colonists,
 };
-using TriggerResource = trig_res;
 
 /// Damage types used by CreateDamagedTrigger.  Refers to % of FightGroup that has been destroyed.
 enum class DamageType : int {
@@ -220,3 +220,5 @@ Trigger CreateRectTrigger(
   return OP2Thunk<0x478FC0, Trigger FASTCALL(ibool, ibool, int, int, int, int, int, const char*)>(
     enabled, oneShot, playerNum, area.x1, area.x2, area.Width(), area.Height(), pTriggerFunction);
 }
+
+} // Tethys

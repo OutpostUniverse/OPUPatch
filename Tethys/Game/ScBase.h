@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/API/Unit.h"
 
+namespace Tethys {
+
 class ScBase;
 class StreamIO;
 class MapObject;
@@ -289,3 +291,5 @@ public:
   MapID smelterType_;
   RECT  mineGroupPixelRect_;
 };
+
+} // Tethys

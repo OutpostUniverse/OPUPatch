@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/UI/Filter.h"
 
+namespace Tethys {
+
 class GFXSurface;
 
 /// Exported base window class.
@@ -127,3 +129,5 @@ public:
   void*       pControls_[20];
   int         numControls_;
 };
+
+} // Tethys

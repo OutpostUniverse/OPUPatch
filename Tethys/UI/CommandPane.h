@@ -5,6 +5,8 @@
 #include "Tethys/UI/IWnd.h"
 #include "Tethys/UI/UIElement.h"
 
+namespace Tethys {
+
 class StreamIO;
 class GFXSurface;
 class CommandPaneView;
@@ -377,3 +379,5 @@ public:
 };
 
 } // UIElem
+
+} // Tethys

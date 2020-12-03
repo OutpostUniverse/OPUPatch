@@ -10,6 +10,7 @@
 #include "Util.h"
 #include "Resources.h"
 
+using namespace Tethys;
 using namespace Patcher;
 using namespace Patcher::Util;
 

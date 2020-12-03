@@ -7,6 +7,8 @@
 #include <cassert>
 #include <utility>
 
+namespace Tethys {
+
 union  AnyMapObj;
 struct PathContext;
 struct Waypoint;
@@ -2803,3 +2805,5 @@ inline MapObject* MapObject::GetInstance(
   auto*const pMap = MapImpl::GetInstance();
   return ((index >= 0) && (static_cast<size_t>(index) < pMap->MaxNumUnits())) ? &pMap->pMapObjArray_[index] : nullptr;
 }
+
+} // Tethys

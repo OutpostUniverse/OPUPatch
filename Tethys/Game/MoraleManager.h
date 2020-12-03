@@ -3,9 +3,10 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class PlayerImpl;
-enum  map_id : int;
-using MapID = map_id;
+enum  MapID : int;
 
 enum class MoraleBonusModifier : size_t {
   PtsTot = 0,     ///< 'M_PTS_TOT' in sheets
@@ -147,3 +148,5 @@ public:
   // ** TODO member variables
   int field_00;
 };
+
+} // Tethys

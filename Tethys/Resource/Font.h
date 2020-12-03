@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class  GFXSurface;
 struct RenderDataBase;
 struct Size;
@@ -104,3 +106,5 @@ struct RenderData : public RenderDataBase {
 
   RenderData<N>() { numChunks = N; };  ///< Convenient initalizer for the struct array size
 };
+
+} // Tethys

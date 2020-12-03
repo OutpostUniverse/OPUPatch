@@ -32,6 +32,7 @@
 #include <map>
 #include <set>
 
+using namespace Tethys;
 using namespace Patcher;
 using namespace Patcher::Util;
 

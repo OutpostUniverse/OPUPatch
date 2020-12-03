@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 BEGIN_PACKED
 
 /// Stream input/output base classa.
@@ -166,3 +168,5 @@ public:
 static_assert(sizeof(MemRWStream) == 0x18, "Incorrect MemRWStream size.");
 
 END_PACKED
+
+} // Tethys

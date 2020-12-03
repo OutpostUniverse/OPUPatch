@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 /// Net game session base class.  Used in populating the "pick game session" list.
 class NetGameSession : public OP2Class<NetGameSession> {
 public:
@@ -49,3 +51,5 @@ public:
 static_assert(sizeof(TCPGameSession) == 0x44, "Incorrect TCPGameSession size.");
 
 // ** TODO other *GameSession subclasses
+
+} // Tethys

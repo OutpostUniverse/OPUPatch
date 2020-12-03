@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class UIState : public OP2Class<UIState> {
 public:
   explicit UIState(uint32 controlID)  { InternalCtor<0x483EE0, uint32>(controlID); }
@@ -44,3 +46,5 @@ public:
 public:
   HMENU hMenu_;
 };
+
+} // Tethys

@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/Network/Packet.h"
 
+namespace Tethys {
+
 class NetTransportLayer;
 
 struct PlayerGurInfo {
@@ -55,3 +57,5 @@ public:
   int field_53D8;
   int field_53DC;
 };
+
+} // Tethys

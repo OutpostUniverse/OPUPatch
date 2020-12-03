@@ -3,6 +3,8 @@
 
 #include "Tethys/Resource/GFXPalette.h"
 
+namespace Tethys {
+
 class StreamIO;
 
 static constexpr size_t NumLightLevels = 32;
@@ -131,3 +133,5 @@ public:
 };
 
 END_PACKED
+
+} // Tethys

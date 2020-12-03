@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/Game/PlayerImpl.h"
 
+namespace Tethys {
+
 struct GameStartInfo;
 class  StreamIO;
 class  TextStream;
@@ -121,3 +123,5 @@ public:
 };
 
 inline auto& g_research = *Research::GetInstance();
+
+} // Tethys

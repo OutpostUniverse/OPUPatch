@@ -4,6 +4,8 @@
 #include "Tethys/Common/Types.h"
 #include <type_traits>
 
+namespace Tethys {
+
 constexpr uintptr  OP2Base      = 0x00400000;  ///< Preferred load address of Outpost2.exe.
 constexpr uintptr  OP2ShellBase = 0x13000000;  ///< Preferred load address of OP2Shell.dll.
 inline    HMODULE  GetOP2Handle()              ///< Returns HMODULE of Outpost2.exe.  Can be used with global variables.
@@ -47,19 +49,24 @@ inline void* CDECL OP2Calloc(size_t count,   size_t size) { return OP2Thunk<0x4C
 inline void* CDECL OP2Realloc(void* pMemory, size_t size) { return OP2Thunk<0x4C21F0, &OP2Realloc>(pMemory, size); }
 inline void  CDECL OP2Free(void*    pMemory)              { return OP2Thunk<0x4C1380, &OP2Free>(pMemory);          }
 ///@}
-
-namespace TethysImpl { struct OP2HeapTag { constexpr explicit OP2HeapTag() { } }; }
-
-/// Operator new overload using Outpost2.exe's memory allocation heap.
-inline void* CDECL operator new(size_t  s, TethysImpl::OP2HeapTag) noexcept { return OP2Thunk<0x4C0F40, &OP2Alloc>(s); }
-/// Operator delete overload using Outpost2.exe's memory allocation heap.
-inline void CDECL operator delete(void* p, TethysImpl::OP2HeapTag) noexcept { return OP2Thunk<0x4C0F30, &OP2Free>(p);  }
-/// Tag to select operator new/delete overloads using Outpost2.exe's memory allocation heap.
-constexpr TethysImpl::OP2HeapTag OP2Heap{};
-
+/// 
 /// Gets the OS handle to Outpost2.exe's memory allocation heap.
 inline HANDLE GetOP2HeapHandle() { return OP2Mem<0x582F8C, HANDLE&>(); }
 
+namespace TethysImpl { struct OP2HeapTag { constexpr explicit OP2HeapTag() { } }; }
+/// Tag to select operator new/delete overloads using Outpost2.exe's memory allocation heap.
+constexpr TethysImpl::OP2HeapTag OP2Heap{};
+
+} // Tethys
+
+/// Operator new overload using Outpost2.exe's memory allocation heap.
+inline void* CDECL operator new(size_t  s, Tethys::TethysImpl::OP2HeapTag) noexcept
+  { return Tethys::OP2Thunk<0x4C0F40, &Tethys::OP2Alloc>(s); }
+/// Operator delete overload using Outpost2.exe's memory allocation heap.
+inline void CDECL operator delete(void* p, Tethys::TethysImpl::OP2HeapTag) noexcept
+  { return Tethys::OP2Thunk<0x4C0F30, &Tethys::OP2Free>(p);  }
+
+namespace Tethys {
 
 /// CRTP class that defines templated member function helpers to thunk to internal OP2 code with specialized helpers
 /// for constructors, and allows exposing virtual function table internals (@see DEFINE_VTBL_TYPE, DEFINE_VTBL_GETTER).
@@ -184,3 +191,5 @@ public:                                                                         
 /// This can be used by itself if a base class has used DEFINE_VTBL_TYPE().
 #define DEFINE_VTBL_GETTER(...)  template <size_t Address = size_t{__VA_ARGS__}>  static auto Vtbl()  \
   -> std::enable_if_t<Address != 0, VtblType*> { return OP2Mem<Address, VtblType*>(); }
+
+} // Tethys

@@ -3,8 +3,9 @@
 
 #include "Tethys/Common/Memory.h"
 
-enum  map_id : int;
-using MapID = map_id;
+namespace Tethys {
+
+enum  MapID : int;
 class MapObject;
 class MapObjectType;
 class StreamIO;
@@ -33,3 +34,5 @@ public:
   int field_04;
 };
 static_assert(8 == sizeof(Sheet), "Incorrect Sheet size.");
+
+} // Tethys

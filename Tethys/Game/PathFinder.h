@@ -5,6 +5,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/Game/CommandPacket.h"
 
+namespace Tethys {
+
 class MapObject;
 class StreamIO;
 
@@ -170,3 +172,5 @@ public:
 };
 
 END_PACKED
+
+} // Tethys

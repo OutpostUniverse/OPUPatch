@@ -3,6 +3,8 @@
 
 #include "Tethys/Game/ScBase.h"
 
+namespace Tethys {
+
 /// Exported interface wrapping ScBase.  Represents mission objects such as AI unit groups, Triggers, etc.
 class ScStub : public OP2Class<ScStub> {
 public:
@@ -36,3 +38,5 @@ public:
 public:
   int id_;
 };
+
+} // Tethys

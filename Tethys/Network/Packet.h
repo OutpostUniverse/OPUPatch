@@ -4,6 +4,8 @@
 #include "Tethys/Common/Types.h"
 #include "Tethys/Game/GameStartInfo.h"
 
+namespace Tethys {
+
 BEGIN_PACKED
 
 
@@ -187,3 +189,5 @@ public:
 };
 
 END_PACKED
+
+} // Tethys

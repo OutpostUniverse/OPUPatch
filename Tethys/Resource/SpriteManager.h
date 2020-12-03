@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class GFXSpriteBitmap;
 
 struct ImageInfo {
@@ -79,3 +81,5 @@ public:
   FrameComponentInfo** ppFrameComponentInfo_;
   FrameOptionalInfo**  ppFrameOptionalInfo_;
 };
+
+} // Tethys

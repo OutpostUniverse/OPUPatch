@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/Resource/StreamIO.h"
 
+namespace Tethys {
+
 class ResManager : public OP2Class<ResManager> {
 public:
   int  Init()             { return Thunk<0x470F70, &$::Init>();             }
@@ -38,3 +40,5 @@ public:
 };
 
 inline ResManager& g_resManager = *ResManager::GetInstance();
+
+} // Tethys

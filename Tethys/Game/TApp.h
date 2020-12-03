@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 enum class GameTermReasons : int;
 
 struct GameStartInfo;
@@ -147,3 +149,5 @@ public:
 static_assert(sizeof(TApp) == 0x18C,  "Incorrect TApp size.");
 
 inline TApp& g_tApp = *TApp::GetInstance();
+
+} // Tethys

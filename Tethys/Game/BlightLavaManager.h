@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/API/Location.h"
 
+namespace Tethys {
+
 class StreamIO;
 class MapObject;
 
@@ -70,3 +72,5 @@ public:
 };
 
 END_PACKED
+
+} // Tethys

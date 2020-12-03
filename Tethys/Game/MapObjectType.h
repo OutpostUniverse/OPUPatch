@@ -5,13 +5,15 @@
 #include "Tethys/API/Location.h"
 #include "Tethys/Game/Sheet.h"
 
+namespace Tethys {
+
 class MapObject;
 class StreamIO;
 enum class SoundID : int;
 
 /// Map object type IDs, including structures, vehicles, disasters, beacons, weapons fire, etc.
 /// @note Can be either int, uint8, or uint16 depending on context.
-enum map_id : int {
+enum MapID : int {
   mapAny                       = (~0),  ///< Use to specify 'all' or 'any'
   mapNone                      = 0x00,  ///< Use to specify 'none'.  @note Create maps to MaxObjectType.
 
@@ -147,7 +149,6 @@ enum map_id : int {
 
   mapMaxObject                 = 0x73,  ///< 'MAX_OBJECT_TYPE';  Also happens to be the base type for lab buildings.
 };
-using MapID = map_id;
 
 /// Vehicle track types.
 enum class TrackType : uint32 {
@@ -2271,3 +2272,5 @@ OP2_MO_TYPE_FOR_DEF(mapWreckage,                   Wreckage);
 
 /// Template alias to get the MapObjectType subclass associated with the given MapID.
 template <MapID ID>  using MapObjTypeFor = typename TethysImpl::MapObjTypeForImpl<ID>::Type;
+
+} // Tethys

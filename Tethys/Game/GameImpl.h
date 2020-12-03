@@ -6,6 +6,8 @@
 #include "Tethys/Game/CommandPacket.h"
 #include "Tethys/Game/GameStartInfo.h"
 
+namespace Tethys {
+
 class TFileDialog;
 class GameNetLayer;
 class StreamIO;
@@ -109,3 +111,5 @@ public:
 };
 
 inline auto& g_gameImpl = *GameImpl::GetInstance();
+
+} // Tethys

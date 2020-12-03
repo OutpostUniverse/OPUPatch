@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class MemoryMappedFile : OP2Class<MemoryMappedFile> {
 public:
    MemoryMappedFile() { InternalCtor<0x484530>(); }
@@ -21,3 +23,5 @@ public:
   int    field_0C;
   HANDLE hFileMapping_;
 };
+
+} // Tethys

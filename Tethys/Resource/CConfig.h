@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class CConfig : public OP2Class<CConfig> {
 public:
    CConfig(const char* pFilename) { InternalCtor<0x410750, const char*>(pFilename); }
@@ -40,3 +42,5 @@ public:
 static_assert(sizeof(CConfig) == 260, "Incorrect CConfig size.");
 
 inline CConfig& g_configFile = *CConfig::GetInstance();
+
+} // Tethys

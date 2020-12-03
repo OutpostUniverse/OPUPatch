@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 struct ButtonDisplayInfo;
 class  MapObject;
 
@@ -222,3 +224,5 @@ public:
 // ** TODO
 // extern HCURSOR mouseCursorTable[size_t(CursorType::Count)];        // 0x56EA08
 // extern char* mouseCursorResourceTable[size_t(CursorType::Count)];  // 0x4E9878 union{ WORD resID, LPCTSTR pFilename }
+
+} // Tethys

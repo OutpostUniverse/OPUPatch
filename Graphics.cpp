@@ -14,6 +14,7 @@
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/API/GameMap.h"
 
+using namespace Tethys;
 using namespace Patcher;
 using namespace Patcher::Util;
 

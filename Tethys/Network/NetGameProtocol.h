@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class NetGameSession;
 class NetGameProtocol;
 class NetTransportLayer;
@@ -67,3 +69,5 @@ public:
   int              field_1C;
   NetGameSession*  pSession_;
 };
+
+} // Tethys

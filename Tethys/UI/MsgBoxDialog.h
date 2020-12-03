@@ -3,6 +3,8 @@
 
 #include "Tethys/UI/IWnd.h"
 
+namespace Tethys {
+
 class MsgBoxDlg : public IDlgWnd {
 public:
   MsgBoxDlg() : IDlgWnd(UseInternalCtorChain) { InternalCtor<0x497DC0>(); }
@@ -46,3 +48,5 @@ public:
   char  message_[256];
   char  buttonText_[256];
 };
+
+} // Tethys

@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class StreamIO;
 
 /// Internal class used to parse text files such as techtrees.  Sheet text files use @ref SheetParser instead.
@@ -52,3 +54,5 @@ public:
   uint8*    pBuffer_;
 };
 static_assert(sizeof(SheetParser) == 0x220, "Incorrect SheetParser size.");
+
+} // Tethys

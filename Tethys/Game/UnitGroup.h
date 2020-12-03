@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 class IWnd;
 
 class UnitSelectionHistory : public OP2Class<UnitSelectionHistory> {
@@ -88,3 +90,5 @@ struct PackedUnitGroup {
 };
 static_assert(sizeof(PackedUnitGroup) == 65, "Incorrect PackedUnitGroup size.");
 END_PACKED
+
+} // Tethys

@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 struct Packet;
 
 struct TrafficCounters {
@@ -34,3 +36,5 @@ public:
 public:
   int playerNetID_;
 };
+
+} // Tethys

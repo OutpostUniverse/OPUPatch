@@ -3,6 +3,8 @@
 
 #include "Tethys/UI/IWnd.h"
 
+namespace Tethys {
+
 class TFileDialog : public IDlgWnd {
   using $ = TFileDialog;
 public:
@@ -73,3 +75,5 @@ public:
   int field_2C[17374];
 };
 static_assert(sizeof(LoadGameDialog) == 0x10FA4, "Incorrect LoadGameDialog size.");
+
+} // Tethys

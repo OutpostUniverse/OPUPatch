@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 union Rgb555 {
   operator uint16&() { return u16All; }
 
@@ -70,3 +72,5 @@ public:
   int field_44C;
 };
 static_assert(sizeof(GFXPalette) == 0x454, "Incorrect GFXPalette size.");
+
+} // Tethys

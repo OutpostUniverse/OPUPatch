@@ -8,6 +8,8 @@
 #include "Patches.h"
 #include "Util.h"
 
+using namespace Tethys;
+
 // =====================================================================================================================
 BOOL APIENTRY DllMain(
   HINSTANCE  hInstDll,

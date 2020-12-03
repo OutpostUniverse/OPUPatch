@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/Resource/SoundID.h"
 
+namespace Tethys {
+
 struct DirectSoundBuffer;
 
 struct SoundBufferInfo {
@@ -137,3 +139,5 @@ public:
 
 inline auto& g_soundManager = *SoundManager::GetInstance();
 inline auto& g_musicManager = *MusicManager::GetInstance();
+
+} // Tethys

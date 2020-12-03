@@ -3,6 +3,8 @@
 
 #include "Tethys/Common/Memory.h"
 
+namespace Tethys {
+
 /// Bitfields typically representing pixel X/Y coordinates for path finding waypoints.
 struct Waypoint {
   uint32 x : 15;  ///< In pixels (max = 1024 tiles)
@@ -19,26 +21,26 @@ struct PackedMapRect {
 };
 
 
-/// Struct typically representing tile X/Y coordinates on the map.
-struct LOCATION : public OP2Class<LOCATION> {
+/// Exported struct typically representing tile X/Y coordinates on the map.
+struct Location : public OP2Class<Location> {
 public:
-  constexpr LOCATION()                     : x(INT_MIN), y(INT_MIN) { }
-  constexpr LOCATION(int tileX, int tileY) : x(tileX),   y(tileY)   { }
+  constexpr Location()                     : x(INT_MIN), y(INT_MIN) { }
+  constexpr Location(int tileX, int tileY) : x(tileX),   y(tileY)   { }
 
-  constexpr bool operator==(const LOCATION& other) const { return (x == other.x) && (y == other.y); }
+  constexpr bool operator==(const Location& other) const { return (x == other.x) && (y == other.y); }
   constexpr operator bool()                        const { return (x != INT_MIN) && (y != INT_MIN); }
 
-  LOCATION& Add(const LOCATION& vector) { Thunk<0x475A30, void(const LOCATION&)>(vector); return *this; }
-  static LOCATION FASTCALL Difference(const LOCATION& a, const LOCATION& b)
+  Location& Add(const Location& vector) { Thunk<0x475A30, void(const Location&)>(vector); return *this; }
+  static Location FASTCALL Difference(const Location& a, const Location& b)
     { return OP2Thunk<0x4759D0, &$::Difference>(a, b); }
 
-  LOCATION& operator+=(const LOCATION& vector)       { return Add(vector);                      }
-  LOCATION   operator+(const LOCATION& vector) const { return LOCATION(*this).Add(vector);      }
-  LOCATION   operator-(const LOCATION& vector) const { return Difference(vector, *this);        }
-  LOCATION   operator+(int scalar)             const { return *this + LOCATION(scalar, scalar); }
-  LOCATION   operator-(int scalar)             const { return *this - LOCATION(scalar, scalar); }
+  Location& operator+=(const Location& vector)       { return Add(vector);                      }
+  Location   operator+(const Location& vector) const { return Location(*this).Add(vector);      }
+  Location   operator-(const Location& vector) const { return Difference(vector, *this);        }
+  Location   operator+(int scalar)             const { return *this + Location(scalar, scalar); }
+  Location   operator-(int scalar)             const { return *this - Location(scalar, scalar); }
 
-  LOCATION& Clip() { Thunk<0x475960>();  return *this; }  ///< Wraps X coordinate around the map, clips Y to edge
+  Location& Clip() { Thunk<0x475960>();  return *this; }  ///< Wraps X coordinate around the map, clips Y to edge
 
   int Norm() { return Thunk<0x401E50, &$::Norm>(); }  ///< ftol(sqrt(x*x + y*y) + 0.5)
 
@@ -54,19 +56,18 @@ public:
   int x;
   int y;
 };
-using Location = LOCATION;
 
 
-/// Struct typically representing a rectangular tile area on the map.
-struct MAP_RECT : public OP2Class<MAP_RECT> {
+/// Exported struct typically representing a rectangular tile area on the map.
+struct MapRect : public OP2Class<MapRect> {
 public:
-  constexpr MAP_RECT() : x1(INT_MIN), y1(INT_MIN), x2(INT_MIN), y2(INT_MIN) { }
-  constexpr MAP_RECT(int leftTile, int topTile, int rightTile, int bottomTile)
+  constexpr MapRect() : x1(INT_MIN), y1(INT_MIN), x2(INT_MIN), y2(INT_MIN) { }
+  constexpr MapRect(int leftTile, int topTile, int rightTile, int bottomTile)
     : x1(leftTile), y1(topTile), x2(rightTile), y2(bottomTile) { }
-  constexpr MAP_RECT(const Location& topLeftTile, const Location& bottomRightTile)
+  constexpr MapRect(const Location& topLeftTile, const Location& bottomRightTile)
     : x1(topLeftTile.x), y1(topLeftTile.y), x2(bottomRightTile.x), y2(bottomRightTile.y) { }
 
-  constexpr bool operator==(const MAP_RECT& other) const
+  constexpr bool operator==(const MapRect& other) const
     { return (x1 == other.x1) && (y1 == other.y1) && (x2 == other.x2) && (y2 == other.y2); }
   constexpr operator bool() const { return (x1 != INT_MIN) && (y1 != INT_MIN) && (x2 != INT_MIN) && (y2 != INT_MIN); }
 
@@ -78,10 +79,10 @@ public:
   int      Check(const Location& ptToCheck) { return Thunk<0x475D50, &$::Check>(ptToCheck); }
   Location RandPt() const                   { return Thunk<0x475CC0, &$::RandPt>();         }
 
-  MAP_RECT& Clip()                      { Thunk<0x475AF0>();                             return *this; }
-  MAP_RECT& Inflate(int wide, int high) { Thunk<0x475A60, void(int, int)>(wide, high);   return *this; }
-  MAP_RECT& Offset(int right, int down) { Thunk<0x475BD0, void(int, int)>(right, down);  return *this; }
-  MAP_RECT& FromPtSize(const Location& a, const Location& b)
+  MapRect& Clip()                      { Thunk<0x475AF0>();                             return *this; }
+  MapRect& Inflate(int wide, int high) { Thunk<0x475A60, void(int, int)>(wide, high);   return *this; }
+  MapRect& Offset(int right, int down) { Thunk<0x475BD0, void(int, int)>(right, down);  return *this; }
+  MapRect& FromPtSize(const Location& a, const Location& b)
     { Thunk<0x475C10, void(const Location&, const Location&)>(a, b);  return *this; }
 
   constexpr RECT GetPixels(bool centered = false) const {
@@ -98,10 +99,11 @@ public:
   int x2;
   int y2;
 };
-using MapRect = MAP_RECT;
 
 
 struct PatrolRoute {
   int             field_00;
   const Location* pWaypoints;  ///< Max waypoints = 8, set Location.x = -1 for last waypoint in list if list is short
 };
+
+} // Tethys

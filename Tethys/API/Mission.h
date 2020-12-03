@@ -17,6 +17,8 @@
 
 #include "Tethys/Common/Types.h"
 
+namespace Tethys {
+
 #ifndef MISSION_API
 # define MISSION_API DLLAPI
 #endif  // MISSION_API
@@ -99,3 +101,5 @@ struct SaveRegion {
   void*  pData;
   size_t size;
 };
+
+} // Tethys

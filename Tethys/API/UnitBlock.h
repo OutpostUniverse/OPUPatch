@@ -3,6 +3,8 @@
 
 #include "Tethys/API/Unit.h"
 
+namespace Tethys {
+
 struct UnitRecord {
   constexpr UnitRecord(
     MapID type, int x, int y, int a, int rot, MapID weapon, UnitClassification cls, uint16 cargo, uint16 amount)
@@ -43,3 +45,5 @@ public:
   UnitRange   classRange_[16];
   UnitRecord* pUnitRecordTable_;
 };
+
+} // Tethys

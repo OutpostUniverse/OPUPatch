@@ -4,6 +4,8 @@
 #include "Tethys/Common/Memory.h"
 #include "Tethys/API/Mission.h"
 
+namespace Tethys {
+
 class MapObject;
 class StreamIO;
 class ScBase;
@@ -97,3 +99,5 @@ public:
   DefaultScGroupInfo defaultScGroupInfo_[6];
   AIModDesc*         pDescBlock_;
 };
+
+} // Tethys
