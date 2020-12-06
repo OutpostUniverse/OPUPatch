@@ -101,7 +101,7 @@ enum class Truck_Cargo : int {
   RareMetal,
   CommonRubble,
   RareRubble,
-  Spaceport,     ///< Starship module/satellite;  MapID = truckCargoAmount 
+  Spaceport,     ///< Starship module/satellite;  MapID = truckCargoAmount
   Wreckage,      ///< Wreckage;  Tech ID = 8000 + truckCargoAmount
   GeneBank,
 
@@ -266,7 +266,7 @@ public:
   /// Returns the MapID of this map object's type.
   MapID GetTypeID() const { return GetType()->type_; }
 
-  ///@{ Helper functions to get the position of this map object.  @see also Building::GetTileRect().
+  ///@{ Helper functions to get the position of this map object.
   int      GetTileX() const { return pixelX_ / 32;               }
   int      GetTileY() const { return pixelY_ / 32;               }
   Location GetTile()  const { return { GetTileX(), GetTileY() }; }
@@ -302,7 +302,7 @@ public:
     uint8   creatorAndOwnerNum_;  ///< Owner and creator player index packed as a single uint8.
   };
 
-  int16 damage_;  ///< Current damage; hitpoints is (max HP - damage).  @note This is signed.  Can potentially overflow.
+  int16 damage_;  ///< Current damage; hitpoints is (max HP - damage).  @note This is signed, can potentially overflow.
 
   uint8      isBusy_;           ///< Boolean indicating whether this unit is busy.
   uint8      command_;          ///< @see CommandType.

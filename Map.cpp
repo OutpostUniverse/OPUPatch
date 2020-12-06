@@ -8,8 +8,8 @@
 #include <algorithm>
 
 using namespace Tethys;
-using namespace Patcher;
 using namespace Patcher::Util;
+using namespace Patcher::Registers;
 
 static constexpr uint32 MaxMapWidth  = 1024;
 static constexpr uint32 MaxMapHeight = 512;
@@ -36,7 +36,7 @@ union MapFlags {
 bool SetLargeMapPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   static uint8 lightAdjustTable[MaxMapWidth * 2] = { };
@@ -113,7 +113,7 @@ bool SetLargeMapPatch(
 bool SetCustomMapFlagsPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {

@@ -2,15 +2,23 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include "Tethys/Game/TApp.h"
-#include "Tethys/Game/GameStartInfo.h"
-
 #include "Patches.h"
 #include "Util.h"
+#include "Library.h"
 
 #include <list>
 
 using namespace Tethys;
+
+// =====================================================================================================================
+static uint32 GetOP2Version() {
+  static Library op2(nullptr);
+  static auto*const pTApp      = op2.Get<void*>("?gTApp@@3VTApp@@A");
+  static auto*const pfnVersion = op2.Get<uint32 FASTCALL(void*)>("?Version@TApp@@QAEKXZ");
+
+  static const uint32 version = (pfnVersion != nullptr) ? pfnVersion(pTApp) : 0;
+  return version;
+}
 
 // =====================================================================================================================
 BOOL APIENTRY DllMain(
@@ -40,8 +48,7 @@ DLLAPI void InitMod(
   };
 
   // Requires official patch 1.2.7 (unpatched English CD version is 1.2.5, localized CDs are {2-5}.2.{7-9})
-  const uint32 version = g_tApp.GetVersion();
-  if ((version >= 0x01020007) && (version < 0x02000000)) {
+  if ((GetOP2Version() >= 0x01020007) && (GetOP2Version() < 0x02000000)) {
     RegisterPatch(&SetGameVersion);
 
     // Stream

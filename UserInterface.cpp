@@ -33,8 +33,8 @@
 #include <set>
 
 using namespace Tethys;
-using namespace Patcher;
 using namespace Patcher::Util;
+using namespace Patcher::Registers;
 
 static constexpr uint32 MaxNumMessagesLogged = 64;                           // ** TODO Try to increase this?
 static constexpr uint32 MaxLogMessageLen     = sizeof(ListItem::text) - 10;  // ** TODO Try to increase this?
@@ -93,8 +93,8 @@ static std::string FindResourceReplacement(
 bool SetUiResourceReplacePatch(
   bool enable)
 {
-  static PatchContext op2Patcher;
-  static PatchContext shellPatcher("OP2Shell.dll", true);
+  static Patcher::PatchContext op2Patcher;
+  static Patcher::PatchContext shellPatcher("OP2Shell.dll", true);
   bool success = true;
 
   if (enable) {
@@ -245,7 +245,7 @@ static void __fastcall CommunicationsReport_SetJumpButtonEnabled(
 bool SetChatLengthPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -332,7 +332,7 @@ bool SetChatLengthPatch(
 bool SetFontPatch(
   const char* pNewFont)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   static std::string  fontStr;
 
   bool success   = true;
@@ -385,7 +385,7 @@ bool SetFontPatch(
 bool SetControlGroupHotkeyPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -413,7 +413,7 @@ bool SetControlGroupHotkeyPatch(
 bool SetUiHighlightFix(
   bool enable)
 {
-  static PatchContext patcher("odasl.dll", true);
+  static Patcher::PatchContext patcher("odasl.dll", true);
   bool success = true;
 
   if (enable) {
@@ -462,7 +462,7 @@ bool SetUiHighlightFix(
 bool SetIpWindowFocusPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -485,7 +485,7 @@ bool SetIpWindowFocusPatch(
 bool SetMiniMapFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -505,7 +505,7 @@ bool SetMiniMapFix(
 bool SetVehicleCargoDisplayPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable && (patcher.NumPatches() == 0)) {
@@ -610,7 +610,7 @@ bool SetVehicleCargoDisplayPatch(
 bool SetSavantNotificationPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -749,7 +749,7 @@ bool SetSavantNotificationPatch(
 bool SetMissionListNamePatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {

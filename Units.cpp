@@ -17,8 +17,8 @@
 #include "Util.h"
 
 using namespace Tethys;
-using namespace Patcher;
 using namespace Patcher::Util;
+using namespace Patcher::Registers;
 
 static constexpr uint32 MaxUnits = 2048;
 static_assert(MaxUnits <= 2048,                  "MaxUnits cannot exceed 2048 (map encodes unit index in 11 bits).");
@@ -35,27 +35,24 @@ static constexpr uint32 StructureLimits[] = { 950, 350, 200, 150, 100, 96  };
 bool SetUnitLimitPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable && (patcher.NumPatches() == 0)) {
     // In MapImpl::AllocateSpaceForMap()
     patcher.LowLevelHook(0x435660, [](Ebx<MapImpl*> pThis) {
-      static constexpr size_t AllocSize = (MapObjectSize * (MaxUnits + 1));
-      auto*const pMapObjArray  = static_cast<MapObject*>(OP2Alloc(AllocSize));
-      pThis->pMapObjArray_     = reinterpret_cast<AnyMapObj*>(pMapObjArray);
-      pThis->ppMapObjFreeList_ = static_cast<MapObject**>(OP2Alloc(MaxUnits * 4));
+      static constexpr size_t AllocSize = MapObjectSize * MaxUnits;
+      auto*const pMapObjArray  = pThis->pMapObjArray_ = static_cast<AnyMapObj*>(OP2Alloc(AllocSize));
+      pThis->ppMapObjFreeList_ = static_cast<MapObject**>(OP2Alloc(sizeof(MapObject*) * MaxUnits));
 
       if (pMapObjArray != nullptr) {
         memset(pMapObjArray, 0xEA, AllocSize);
 
-        for (uint32 i = 1; i <= MaxUnits; ++i) {
-          pMapObjArray->pNext_ = reinterpret_cast<MapObject*>(~0);
-        }
+        for (uint32 i = 1; i < MaxUnits; pThis->pMapObjArray_[i++]->pNext_ = reinterpret_cast<MapObject*>(~0));
 
         pThis->pMapObjListBegin_ = &pMapObjArray[0];
         pThis->pMapObjListEnd_   = &pThis->pMapObjArray_[MaxUnits];
-        pMapObjArray[0].pPrev_   = &pMapObjArray[0];
+        pMapObjArray[0]->pPrev_  = &pMapObjArray[0];
       }
 
       return 0x4356BE;
@@ -77,17 +74,16 @@ bool SetUnitLimitPatch(
     // In Unit scalar destructor
     patcher.Write<uint32>(0x439CBA, (MaxUnits - 1));  // and eax, 1023 => 2047 (numFreeUnits % 2048)
 
-    static uint32 minimapUnitCache[MaxUnits] = { };
-    memcpy(&minimapUnitCache[0], OP2Mem(0x574484), (4 * 1024));
+    static uint32 miniMapUnitCache[MaxUnits] = { };
+    memcpy(&miniMapUnitCache[0], OP2Mem(0x574484), (4 * 1024));
 
-    // In Minimap::DrawBackground()
-    patcher.LowLevelHook(0x48CCB0, [](Edx<void*>& pCache) { pCache = &minimapUnitCache[0]; });
-    // In Minimap::DrawUnitOnMinimap()
-    patcher.LowLevelHook(0x48CDA8, [](Ebx<void*>& pCache) { pCache = &minimapUnitCache[0]; });
+    // In MiniMap::DrawBackground()
+    patcher.LowLevelHook(0x48CCB0, [](Edx<void*>& pCache) { pCache = &miniMapUnitCache[0]; });
+    // In MiniMap::DrawUnitOnMinimap()
+    patcher.LowLevelHook(0x48CDA8, [](Ebx<void*>& pCache) { pCache = &miniMapUnitCache[0]; });
 
     static MapObject* unitDrawList[MaxUnits]   = { };
     static MapObject* entityDrawList[MaxUnits] = { };
-
     memcpy(&unitDrawList[0],   OP2Mem(0x57C000), sizeof(MapObjDrawList::pUnitDrawList_));
     memcpy(&entityDrawList[0], OP2Mem(0x57C7FC), sizeof(MapObjDrawList::pEntityDrawList_));
 
@@ -143,7 +139,7 @@ bool SetUnitLimitPatch(
     patcher.Write<uint32>(0x435AAE, MaxUnits);        // mov  eax, 1024 => 2048 (freeUnitListNumElements)
     // In MapImpl::SaveUnits() and related functions
     patcher.Write<uint32>(0x435BDA, (MaxUnits       * MapObjectSize));  // cmp  ebx, (1024 * 120) => (2048 * 120)
-    patcher.Write<uint32>(0x435BEB, ((MaxUnits - 1) * MapObjectSize));  // push      (1023 * 120) => (2047 * 120)
+    patcher.Write<uint32>(0x435BEC, ((MaxUnits - 1) * MapObjectSize));  // push      (1023 * 120) => (2047 * 120)
     patcher.Write<uint32>(0x435C75, ((MaxUnits - 1) * MapObjectSize));  // push      (1023 * 120) => (2047 * 120)
     patcher.Write<uint32>(0x435D52, (MaxUnits       * MapObjectSize));  // cmp  edi, (1024 * 120) => (2048 * 120)
     patcher.Write<uint32>(0x435D64, MaxUnits);                          // mov  esi, 1024         => 2048
@@ -174,7 +170,7 @@ bool SetUnitLimitPatch(
 bool SetUnitTypeLimitPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   constexpr size_t MaxUnitTypes         = 255;
@@ -213,7 +209,7 @@ bool SetUnitTypeLimitPatch(
 bool SetDrawLightningFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   static uint32 numLightningCalls = 0;
@@ -252,7 +248,7 @@ bool SetDrawLightningFix(
 bool SetTransferUnitToGaiaFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable && (patcher.NumPatches() == 0)) {
@@ -273,7 +269,7 @@ bool SetTransferUnitToGaiaFix(
 bool SetMissileFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -312,7 +308,7 @@ bool SetMissileFix(
 bool SetBuildWallFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -348,7 +344,7 @@ bool SetBuildWallFix(
 bool SetWreckageFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -437,7 +433,7 @@ bool SetWreckageFix(
 bool SetNoAlliedDockDamageFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -469,7 +465,7 @@ bool SetNoAlliedDockDamageFix(
 bool SetAllyEdwardSurveyMinesPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -507,7 +503,7 @@ bool SetAllyEdwardSurveyMinesPatch(
 bool SetMultipleRepairPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -531,7 +527,7 @@ bool SetMultipleRepairPatch(
 bool SetOreRoutePatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -600,7 +596,7 @@ bool SetOreRoutePatch(
 bool SetTurretAnimationPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {

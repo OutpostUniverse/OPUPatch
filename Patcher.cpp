@@ -31,6 +31,7 @@ namespace Patcher {
 
 using namespace Impl;
 using namespace Util;
+using namespace Registers;
 
 // Internal typedefs
 

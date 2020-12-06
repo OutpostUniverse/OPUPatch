@@ -1,5 +1,5 @@
 
-// ** TODO This should probably be moved into op2ext due to overlap with mod loader functionality.
+// ** TODO Most of this should probably be moved into op2ext due to overlap with mod loader functionality.
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -23,8 +23,8 @@
 #include <unordered_set>
 
 using namespace Tethys;
-using namespace Patcher;
 using namespace Patcher::Util;
+using namespace Patcher::Registers;
 
 using MissionList = std::vector<std::pair<std::string, std::unique_ptr<AIModDesc, void(*)(AIModDesc*)>>>;
 
@@ -71,7 +71,7 @@ static std::vector<std::filesystem::path> GetSearchPaths(
   }
 
   // Search OPU subdirectories under 2) map dir, 3) mod dirs, 4) base dir, then 5) OPU dir.
-  // ** TODO Search all mod dirs here, for now mod dirs are checked with highest priority by op2ext's hook
+  // ** TODO Search all mod dirs here, for now mod dirs are just checked with highest priority by op2ext's hook
   const bool useMap = (g_curMapPath != opuPath/BaseDir) && (g_curMapPath != opuPath) && (g_curMapPath != installPath);
   const std::filesystem::path bases[] = { (useMap ? g_curMapPath : ""), opuPath/BaseDir, opuPath };
 
@@ -108,7 +108,7 @@ static std::vector<std::filesystem::path> GetSearchPaths(
         if (std::filesystem::exists(assetDir)) {
           if (searchForMission && (it->first == ".dll") && (it->second == "maps")) {
             // Search a) top level of [base]/maps/* subdirectories iff we are searching for mission DLLs.
-            // This lets e.g. OPU/base/maps/AxnesHome/ml6_21.dll be found.
+            // This lets e.g. OPU/base/maps/AxensHome/ml6_21.dll be found.
             for (auto& p : std::filesystem::directory_iterator(assetDir, SearchOptions)) {
               if (p.is_directory()) {
                 AddPath(p);
@@ -291,7 +291,7 @@ static int __fastcall PopulateMultiplayerMissionListHook(
   const auto missions = GetMissionList(minMissionType, maxMissionType, maxPlayers);
 
   for (const auto& [filename, pAIModDesc] : missions) {
-    char*const pFilenameBuf = static_cast<char*>(ShellAlloc(filename.length() + 1));
+    char*const pFilenameBuf = static_cast<char*>(OP2Alloc(filename.length() + 1));
     if (pFilenameBuf != nullptr) {
       strncpy_s(pFilenameBuf, filename.length() + 1, filename.data(), _TRUNCATE);
       const LRESULT entry = SendMessageA(hComboBoxWnd, CB_ADDSTRING, 0, LPARAM(pAIModDesc->pLevelDesc));
@@ -430,24 +430,20 @@ void InitModuleSearchPaths() {
   const std::filesystem::path base(opuPath/BaseDir);
 
   // If this is called before TApp::Init(), then we need to init g_resManager's directories.
-  if (g_resManager.installedDir_[0] == '\0') {
-    g_resManager.InitInstalledDir();
-  }
-  if (g_resManager.cdDir_[0] == '\0') {
-    g_resManager.InitCDDir();
-  }
+  g_resManager.InitInstalledDir();
+  g_resManager.InitCDDir();
 
   // Set current directory to [install dir]/OPU if current directory was set to default.
-  if (std::filesystem::current_path() == std::filesystem::canonical(g_resManager.installedDir_)) {
+  if ((std::filesystem::current_path()/"") == (std::filesystem::path(g_resManager.installedDir_)/"")) {
     SetCurrentDirectoryW((g_resManager.installedDir_/opuPath).wstring().data());
   }
 
   // Add default DLL search paths.
-  AddModuleSearchPaths({ "", opuPath }, true);  // ** TODO remove this, op2ext handles these
-  AddModuleSearchPaths({ base, base/"maps", base/"libs" });
+  AddModuleSearchPaths({ "", opuPath, opuPath/"libs" }, true);  // ** TODO remove this, op2ext handles these
+  AddModuleSearchPaths({ base, base/"libs" });
   // ** TODO should add search paths for all mods
 
-  // OPUPatch needs to keep some DLLs loaded to patch them; load them here so they get loaded from the correct path.
+  // OPUPatch needs to keep some DLLs loaded to patch them;  load them here so they get loaded from the correct path.
   if (hModules.empty()) {
     for (const char* pFilename : { "OP2Shell.dll", "odasl.dll" }) {
       const HMODULE hModule = LoadLibraryAltSearchPath(pFilename);
@@ -466,8 +462,8 @@ void InitModuleSearchPaths() {
 bool SetFileSearchPathPatch(
   bool enable)
 {
-  static PatchContext op2Patcher;
-  static PatchContext shellPatcher;
+  static Patcher::PatchContext op2Patcher;
+  static Patcher::PatchContext shellPatcher;
 
   static const std::wstring oldPathEnv(GetPathEnv());
   static const auto oldCwd(std::filesystem::current_path());
@@ -566,9 +562,11 @@ bool SetFileSearchPathPatch(
     // In StartSierraNW() (SierraNW.dll)
     op2Patcher.HookCall(0x47D2B1, &LoadLibraryAltSearchPath);
     // In StartSNWValid() (SNWValid.dll)
-    op2Patcher.LowLevelHook(0x47D56C, [](Ebp<void*>& pfn) { pfn = &LoadLibraryAltSearchPath; });
+    op2Patcher.LowLevelHook(0x47D56C,     [](Ebp<decltype(&LoadLibraryA)>& pfn) { pfn = &LoadLibraryAltSearchPath; });
     // In TApp::Init() (Out2res.dll)
     op2Patcher.HookCall(0x485C76, &LoadLibraryAltSearchPath);
+    // In OP2Shell::Init() (op2shres.dll)
+    shellPatcher.LowLevelHook(0x13007B9D, [](Ebx<decltype(&LoadLibraryA)>& pfn) { pfn = &LoadLibraryAltSearchPath; });
 
     success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -593,7 +591,7 @@ bool SetFileSearchPathPatch(
 bool SetChecksumPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -665,7 +663,7 @@ bool SetCodecPatch(
 {
   constexpr DWORD IndeoFourCC = mmioFOURCC('i', 'v', '4', '1');
 
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   static bool useLocalIndeo = false;
          bool success       = true;
 
@@ -675,7 +673,7 @@ bool SetCodecPatch(
     // work around some issues that cause the Indeo codec to crash when registered as a function via ICInstall().
     auto IndeoDriverProc = [](DWORD_PTR dwDriverId, HDRVR hDrvr, UINT msg, LONG lParam1, LONG lParam2) {
       static HMODULE hMod       = LoadLibraryAltSearchPath("ir41_32.ax");
-      static auto    driverProc = (hMod != nullptr) ? DRIVERPROC(GetProcAddress(hMod, "DriverProc")) : nullptr;
+      static auto    driverProc = (hMod != NULL) ? DRIVERPROC(GetProcAddress(hMod, "DriverProc")) : nullptr;
       
       LRESULT result = 0;
       

@@ -7,7 +7,7 @@
 #include "Tethys/Game/ScBase.h"
 
 using namespace Tethys;
-using namespace Patcher;
+using namespace Patcher::Registers;
 
 // ** TODO: * Finish extended array.  Needs to work with saved games (it might work as is?)
 //          * Fix the DestWaypoints leak during ScGroup::TakeUnit() (causes the "acid trip" bug)
@@ -90,7 +90,7 @@ static ScBase* __fastcall ScStubFactory_Create(
 bool SetScStubPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   static auto*const pOldScStubArray = OP2Mem<ScStubList*>(0x56C358);

@@ -17,8 +17,8 @@
 #include <string>
 
 using namespace Tethys;
-using namespace Patcher;
 using namespace Patcher::Util;
+using namespace Patcher::Registers;
 
 // =====================================================================================================================
 // Fixes replicating players list always failing when the system's LAN is behind a NAT layer.
@@ -26,7 +26,7 @@ using namespace Patcher::Util;
 bool SetNatFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -49,7 +49,7 @@ bool SetNatFix(
 bool SetNetGameSpeedPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -69,7 +69,7 @@ bool SetNetGameSpeedPatch(
 bool SetBindAnyNetAdapterFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -95,7 +95,7 @@ bool SetBindAnyNetAdapterFix(
 bool SetNoCheatsPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -120,7 +120,7 @@ bool SetNoCheatsPatch(
 bool SetSigsDllCheckPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -147,7 +147,7 @@ bool SetSigsDllCheckPatch(
 bool SetQuickJoinPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {

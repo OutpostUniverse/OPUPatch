@@ -136,14 +136,14 @@ using uint32  = uint32_t;
 using uint64  = uint64_t;
 using uintptr = uintptr_t;
 
-/// Forward declaration of Register enum class, an array of which is passed to PatchContext::LowLevelHook().
-enum class Register : uint8;
+/// Forward declaration of Registers::Register enum class, an array of which is passed to PatchContext::LowLevelHook().
+namespace Registers { enum class Register : uint8; }
 
+namespace Util {
 /// Constant to specify to PatchContext::Hook() that the first lambda capture (which must be by value) is pfnTrampoline.
 /// For other functor types, it is recommended that you use a pointer-to-member-variable or offsetof() instead.
 constexpr size_t SetCapturedTrampoline = 0;
 
-namespace Util {
 /// Enum specifying a function's calling convention.
 enum class Call : uint32 {
 #define PATCHER_CALLING_CONVENTION_ENUM_DEF(conv, name) name,
@@ -206,6 +206,12 @@ template <typename... T>             using ToVoid         = void;
 template <bool B, class T, class F>  using Conditional    = typename std::conditional<B, T, F>::type;
 template <typename T>                using TypeStorage    = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
 template <typename T, size_t N>      using Array          = T[N];
+
+template <size_t N, typename T, typename = void>  struct TupleElementImpl { typedef struct NotFound{} Type; };
+template <size_t N, typename T>  struct TupleElementImpl<N, T, EnableIf<(N < std::tuple_size<T>::value)>>
+  { using Type = typename std::tuple_element<N, T>::type; };
+
+template <size_t N, typename T>  using TupleElement = typename TupleElementImpl<N, T>::Type;
 ///@}
 
 ///@{ @internal  Template metafunction used to obtain function call signature information from a callable.
@@ -319,7 +325,8 @@ struct FuncSig {
   using Function = Conditional<NumParams == 0, R(A...), R(T, A...)>;                    ///< Signature w/o convention.
   using Pfn      = AddConvention<Function, Call>;                                       ///< Function pointer signature.
   using Return   = R;                                                                   ///< Function return type.
-  using Params   = Conditional<NumParams == 0, std::tuple<A...>, std::tuple<T, A...>>;  ///< Function params as a tuple.
+  using Params   = Conditional<NumParams == 0, std::tuple<A...>, std::tuple<T, A...>>;  ///< Parameters as a tuple.
+  template <size_t N>  using Param = TupleElement<N, Params>;                           ///< Nth parameter's type.
   static constexpr size_t ParamSizes[]    = { ArgSize<T>(),     ArgSize<A>()...     };  ///< Aligned sizes of params.
   static constexpr bool   ParamIsVector[] = { IsVectorArg<T>(), IsVectorArg<A>()... };  ///< Are params float/vector?
   static constexpr bool   IsVariadic      = Variadic;                                   ///< Is function variadic?
@@ -342,7 +349,7 @@ struct FuncSig<R, Call, true, T, A...> : public FuncSig<R, Call, false, T, A...>
 struct RtFuncSig {
   /// Conversion constructor for the compile-time counterpart to this type, FuncSig.
   template <typename R, Util::Call C, bool V, typename... A>
-  constexpr RtFuncSig(FuncSig<R, C, V, A...>)
+  constexpr RtFuncSig(const FuncSig<R, C, V, A...>&)
     : returnSize(SizeOfType<R>()),
       numParams(FuncSig<R, C, V, A...>::NumParams),
       pParamSizes(&FuncSig<R, C, V, A...>::ParamSizes[0]),
@@ -502,27 +509,25 @@ private:
   void*                pState_;  ///< If created from a state-bound functor, pointer to the state managed by pObj_.
   FunctorDeleterFunc*  pfnDel_;  ///< If created from a state-bound functor, pointer to the function to delete pObj_.
 };
+
+
+///@{ @internal  Helper metafunctions for implementing register type and by reference deduction for LowLevelHook().
+template <typename... Ts>
+constexpr EnableIf<sizeof...(Ts) == 0, uint32>          MakeByRefMask(uint32 mask = 0, uint32 x = 1) { return mask; }
+template <typename T, typename... Ts>  constexpr uint32 MakeByRefMask(uint32 mask = 0, uint32 x = 1)
+  { return MakeByRefMask<Ts...>(mask | ((std::is_pointer<T>::value || std::is_reference<T>::value) ? x : 0u), x << 1); }
+
+template <typename    T>  struct ByRefMask : public ByRefMask<typename FuncTraitsNoThis<T>::Params>{};
+template <typename... A>  struct ByRefMask<std::tuple<A...>> { static constexpr uint32 Mask = MakeByRefMask<A...>(); };
+
+template <typename    T>  struct RegIds : public RegIds<typename FuncTraitsNoThis<T>::Params>{};
+template <typename... A>  struct RegIds<std::tuple<A...>> {
+  using Arr = Conditional<(sizeof...(A) == 0), std::nullptr_t, Registers::Register[sizeof...(A) + (sizeof...(A) == 0)]>;
+  static constexpr Arr Ids = { RemoveCvRefPtr<A>::RegisterId... };
+};
+///@}
 } // Impl
 
-
-/// Options passed to PatchContext::LowLevelHook() to tweak callback behavior.
-struct LowLevelHookOptions {
-  // ** TODO
-  union {
-    struct {
-      ///@{ Flags that are set automatically if callback function signature is known at compile time.
-      uint32 argsAsStructPtr    :  1;  ///< Args are passed to the callback as a pointer to a struct containing them.
-      uint32 useFixedReturnAddr :  1;  ///< Use a fixed return address (for hook functions that return void).
-      uint32 noRelocReturnAddr  :  1;  ///< Do not adjust custom return address for module base relocation.
-      ///@}
-      uint32 noShortReturnAddr  :  1;  ///< Custom return address cannot overlap overwritten area (5 bytes on x86).
-      uint32 reserved           : 28;
-    };
-    uint32 flags;  ///< All flags packed as a uint32.
-  };
-
-  uintptr fixedReturnAddress;  ///< Only meaningful if useFixedReturnAddr is set.  0 = return to original code.
-};
 
 namespace LowLevelHookOpt {
 enum : uint32 {
@@ -540,26 +545,9 @@ template <typename R, Util::Call C, bool V, typename... A>  constexpr uint32 Get
 
 
 namespace Impl {
-///@{ @internal  Helper metafunctions for implementing register type and by reference deduction for LowLevelHook().
-template <typename... Ts>
-constexpr EnableIf<sizeof...(Ts) == 0, uint32>          MakeByRefMask(uint32 mask = 0, uint32 x = 1) { return mask; }
-template <typename T, typename... Ts>  constexpr uint32 MakeByRefMask(uint32 mask = 0, uint32 x = 1)
-  { return MakeByRefMask<Ts...>(mask | ((std::is_pointer<T>::value || std::is_reference<T>::value) ? x : 0u), x << 1); }
-
-template <typename T>     struct ByRefMask : public ByRefMask<typename FuncTraitsNoThis<T>::Params>{};
-template <typename... A>  struct ByRefMask<std::tuple<A...>> { static constexpr uint32 Mask = MakeByRefMask<A...>(); };
-
-template <typename T>     struct RegIds : public RegIds<typename FuncTraitsNoThis<T>::Params>{};
-template <typename... A>  struct RegIds<std::tuple<A...>> {
-  using RegisterArray = Conditional<(sizeof...(A) == 0), std::nullptr_t, Register[sizeof...(A) + (sizeof...(A) == 0)]>;
-  static constexpr RegisterArray Ids = { RemoveCvRefPtr<A>::RegisterId... };
-};
-///@}
-
-
 /// Transparent wrapper around a type that has a Register enum value attached to it, allowing for deducing the desired
 /// register for the arg for LowLevelHook() at compile time.
-template <Register Id, typename T>
+template <Registers::Register Id, typename T>
 class RegisterArg {
   using Type     = RemoveRef<T>;
   using Element  = Conditional<std::is_array<T>::value, RemoveExtents<Type>, RemovePtr<Type>>;
@@ -582,13 +570,14 @@ public:
   template <typename U>  Type& operator=(U&&      src) { return (data_ = std::forward<U>(src)); }  ///< Move-assignment.
   template <typename U>  Type& operator=(const U& src) { return (data_ = src);                  }  ///< Copy-assignment.
 
-  static constexpr Register RegisterId = Id;   ///< Register associated with this argument.
+  static constexpr Registers::Register RegisterId = Id;   ///< Register associated with this argument.
 
 private:
   DataType  data_;
 };
 } // Impl
 
+namespace Registers {
 #if PATCHER_X86_32
 /// x86_32 Register types passed to PatchContext::LowLevelHook().
 enum class Register : uint8 { Eax = 0, Ecx, Edx, Ebx, Esi, Edi, Ebp, GprLast = Ebp, Esp, Eflags, Count };
@@ -629,6 +618,7 @@ template <typename T>  using R15    = Impl::RegisterArg<Register::R15,    T>;
 template <typename T>  using Rflags = Impl::RegisterArg<Register::Rflags, T>;
 ///@}
 #endif
+} // Registers
 
 
 /// Export insertion/modification info passed to PatchContext::EditExports().

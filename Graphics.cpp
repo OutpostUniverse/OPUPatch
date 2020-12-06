@@ -15,8 +15,8 @@
 #include "Tethys/API/GameMap.h"
 
 using namespace Tethys;
-using namespace Patcher;
 using namespace Patcher::Util;
+using namespace Patcher::Registers;
 
 // =====================================================================================================================
 // Disable DirectDraw mode, always forcing windowed mode (pure GDI mode).  Also fixes crash bugs with 4k resolutions and
@@ -24,7 +24,7 @@ using namespace Patcher::Util;
 bool SetWindowFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -118,7 +118,7 @@ static bool IsDwmCompositionEnabled(
   BOOL dwmEnabled = IsWindows8OrGreater();
 
   if (dwmEnabled == false) {
-    static auto*const pfnIsCompositionEnabled = dwmApi.GetFunction<HRESULT WINAPI(BOOL*)>("DwmIsCompositionEnabled");
+    static auto*const pfnIsCompositionEnabled = dwmApi.Get<HRESULT WINAPI(BOOL*)>("DwmIsCompositionEnabled");
 
     if (pfnIsCompositionEnabled != nullptr) {
       pfnIsCompositionEnabled(&dwmEnabled);
@@ -134,7 +134,7 @@ static bool IsDwmCompositionEnabled(
 bool SetDwmFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -155,7 +155,7 @@ bool SetDwmFix(
     }
 
     static auto*const pfnDwmSetWindowAttribute =
-      dwmApi.GetFunction<HRESULT WINAPI(HWND, DWORD, LPCVOID, DWORD)>("DwmSetWindowAttribute");
+      dwmApi.Get<HRESULT WINAPI(HWND, DWORD, LPCVOID, DWORD)>("DwmSetWindowAttribute");
 
     // Prevent the default Aero window frame from being drawn over the game's custom frame.
     if (pfnDwmSetWindowAttribute != nullptr) {
@@ -185,7 +185,7 @@ bool SetDpiFix(
 
   static Library user32("User32.dll");
   static auto*const pfnSetThreadDpiAwarenessContext =
-    user32.GetFunction<DPI_AWARENESS_CONTEXT WINAPI(DPI_AWARENESS_CONTEXT)>("SetThreadDpiAwarenessContext");
+    user32.Get<DPI_AWARENESS_CONTEXT WINAPI(DPI_AWARENESS_CONTEXT)>("SetThreadDpiAwarenessContext");
   static DPI_AWARENESS_CONTEXT oldCtx = {};
 
   if (pfnSetThreadDpiAwarenessContext != nullptr) {
@@ -207,7 +207,7 @@ bool SetDpiFix(
 bool SetAlphaBlendPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {

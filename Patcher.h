@@ -25,6 +25,7 @@ public:
   using TargetPtr   = Impl::TargetPtr;
   using FunctionPtr = Impl::FunctionPtr;
   using Offset      = Impl::Offset;
+  using Register    = Registers::Register;
 
   /// Default constructor creates a patcher context for the process's base module.
   PatchContext() : PatchContext(static_cast<const char*>(nullptr), false) { }
@@ -38,14 +39,12 @@ public:
   PatchContext(const PatchContext&)            = delete;
   PatchContext& operator=(const PatchContext&) = delete;
 
-  
   ~PatchContext();  ///< Destructor.  Reverts all patches owned by this context and releases any owned module reference.
 
   /// Gets the status of this context.  This can be called once after multiple Write/Memcpy/Hook/etc. calls, rather than
   /// checking the returned status of each call individually.
   PatcherStatus GetStatus() const { return status_; }
 
-  
   PatcherStatus ResetStatus();  ///< Resets the tracked status of this context for non-fatal errors (for user handling).
 
   void* GetModule() const { return hModule_; }  ///< Gets the OS module handle associated with this context.
@@ -93,7 +92,7 @@ public:
   ///
   /// Examples:  Hook(&Function,   &NewFunction,                  &global_pfnOriginal)
   ///            Hook(0x439AB0,    0x439AF2,                      &global_pfnOriginal)
-  ///            Hook(0x507470,    SetCapturedTrampoline,         [pfn = (int(*)(int))0](int a) { return pfn(a * 2); })
+  ///            Hook(0x507470,    Util::SetCapturedTrampoline,   [F = (int(*)(int))0](int a) -> int { return F(a*2); })
   ///            Hook(&StdcallFn,  &Functor::member_pfnOriginal,  Util::StdcallFunctor(Functor{}))
   ///         ** Hook(&Class::Fn,  &HookClass::Fn,                &HookClass::static_pfnOriginal)
   ///         ** Hook(&Class::Fn,  Util::ThiscallLambdaPtr([](Class* pThis, int a) { return pThis->b - a; }))
@@ -112,8 +111,8 @@ public:
   }
   ///@}
 
-  /// Hooks a function call instruction in module memory, replacing its original target address, and optionally returns
-  /// a pointer to the original function if possible.  New function's signature must match the original's.
+  ///@{ Hooks a call instruction in module memory, replacing its original target function, and optionally returns a
+  ///   pointer to the original function if possible, else nullptr.  New function's signature must match the original's.
   ///
   /// @param [in]  pAddress           Address of the call instruction to fix up.
   /// @param [in]  pfnNewFunction     The hook function or address to call instead.
@@ -135,8 +134,8 @@ public:
   ///@{ Hooks an instruction (almost) anywhere in module memory.  Read and write access to the state of standard
   ///   registers is provided via function args, and control flow can be manipulated via the returned value.
   ///
-  /// Examples:  LowLevelHook(0x402044,  [](Eax<int>& a, Esi<bool> b) { ++a;  return b ? 0 : 0x402107; })
-  ///            LowLevelHook(0x5200AF,  { Register::Eax, Register::Edx },  [](int64& val) { val = -val; })
+  /// Examples:  LowLevelHook(0x402044,  [](Registers::Eax<int>& a, Esi<bool> b) { ++a;  return b ? 0 : 0x402107; })
+  ///            LowLevelHook(0x5200AF,  { Registers::Register::Eax, Register::Edx },  [](int64& val) { val = -val; })
   ///
   /// Available registers: [Eax, Ecx, Edx, Ebx, Esi, Edi, Ebp, Esp, Eflags].  Arg types must fit within register size.
   /// To write to registers, declare args with >& or >*, e.g. Eax<int>&, Ecx<int>*, Ebp<char*>&, Edi<int*>*

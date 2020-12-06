@@ -10,29 +10,8 @@
 # include <cpuid.h>
 #endif
 
-#include <string>
-
 
 inline HINSTANCE g_hInst = nullptr;  // HINSTANCE of this DLL.  DllMain must set this during DLL_PROCESS_ATTACH!
-
-
-// Splits a string and returns the tokens in a STL-compatible container (must support insert(iterator, value))
-template <typename Container>
-void TokenizeString(
-  const std::string_view&  in,
-  const std::string_view&  delimiters,
-  Container*               pOut)
-{
-  for (size_t curPos = 0, lastPos = 0;  lastPos < in.length();  lastPos = curPos + 1) {
-    curPos = in.find_first_of(delimiters, lastPos);
-    if (curPos == std::string_view::npos) {
-      curPos = in.length();
-    }
-    if (curPos != lastPos) {
-      pOut->insert(pOut->end(), Container::value_type(in.data() + lastPos, size_t(curPos - lastPos)));
-    }
-  }
-}
 
 
 /// Returns true if the virtual machine hypervisor bit of cpuid is set.

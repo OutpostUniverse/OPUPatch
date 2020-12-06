@@ -11,8 +11,8 @@
 #include "Resources.h"
 
 using namespace Tethys;
-using namespace Patcher;
 using namespace Patcher::Util;
+using namespace Patcher::Registers;
 
 // =====================================================================================================================
 // Sets the game version per OP2_MAJOR_VERSION, OP2_MINOR_VERSION, OP2_STEPPING_VERSION defined in Version.h.
@@ -22,7 +22,7 @@ using namespace Patcher::Util;
 bool SetGameVersion(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -30,7 +30,7 @@ bool SetGameVersion(
     patcher.ReplaceReferencesToGlobal(0x4E973C, 1, OP2_VERSION_QUAD_STR);
 
     // For saved games
-    // ** TODO Freeze this at the last version to make a saved game format change until back compat code is written
+    // ** TODO Until back compat code is written, freeze this at the last version affecting the saved game format
     patcher.ReplaceReferencesToGlobal(0x4D6380, 1, "OUTPOST2 1.4.0-OPU SAVE");
 
     // For UI display
@@ -52,7 +52,7 @@ bool SetGameVersion(
 bool SetNoCdPatch(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -78,14 +78,14 @@ bool SetNoCdPatch(
 bool SetDefaultIniSettingsPatch(
   bool enable)
 {
-  static PatchContext op2Patcher;
-  static PatchContext shellPatcher("OP2Shell.dll", true);
+  static Patcher::PatchContext op2Patcher;
+  static Patcher::PatchContext shellPatcher("OP2Shell.dll", true);
   bool success = true;
 
   if (enable) {
+    // Change default game speed from 5 to 10.
     constexpr uint8 DefaultGameSpeed = 10;
 
-    // Change default game speed from 5 to 10.
     // In GameFrame::Init(), TApp::OnLoadScript(), TethysGame::LoadDebugMap(), MPLobby::ShowHostGame(), ::Show???()
     for (uintptr loc : { 0x49B6B6, 0x48760E, 0x489189, 0x45F208, 0x45F58A }) {
       op2Patcher.Write(loc, DefaultGameSpeed);
@@ -106,12 +106,12 @@ bool SetDefaultIniSettingsPatch(
 }
 
 // =====================================================================================================================
-// Fixes an issue with TethysGame::ForceMorale*() when playerNum is not set to all players, that would force it to 100
+// Fixes an issue with TethysGame::ForceMorale*() when playerNum is not set to all players, that would force it to 99
 // no matter what unless called twice.
 bool SetForceMoraleFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -139,7 +139,7 @@ bool SetForceMoraleFix(
 bool SetGlobalMusicFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
@@ -160,7 +160,7 @@ bool SetGlobalMusicFix(
 bool SetPrintfFloatFix(
   bool enable)
 {
-  static PatchContext patcher;
+  static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {

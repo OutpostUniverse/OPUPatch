@@ -92,10 +92,11 @@ public:
   void SetDamage(int damage)
     { if (IsLive() && ((GetMapObject()->damage_ = damage) >= GetMaxHitpoints())) { DoDeath(); } }
 
-  bool IsHostile(Unit   other) const
-    { return IsLive() && other.IsLive() && GameImpl::GetInstance()->player_[GetOwner()].alliedBy_[other.GetOwner()]; }
-  bool IsHostileTo(Unit other) const {
-    return IsLive() && other.IsLive() && GameImpl::GetInstance()->player_[GetOwner()].GetAlliedTo()[other.GetOwner()];
+  bool IsHostile(Unit   what) const {
+    return IsLive() && what.IsLive() && (GameImpl::GetInstance()->player_[GetOwner()].alliedBy_[what.GetOwner()] == 0);
+  }
+  bool IsHostileTo(Unit what) const {
+    return IsLive() && what.IsLive() && GameImpl::GetInstance()->player_[GetOwner()].GetHostileTo()[what.GetOwner()];
   }
   void SetAutoTargeted(bool on) { SetFlag(MoFlagOppFiredUpon, on); }  ///< Set if unit can be auto-targeted by enemies.
 
