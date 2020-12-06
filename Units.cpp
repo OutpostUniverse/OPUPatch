@@ -41,14 +41,14 @@ bool SetUnitLimitPatch(
   if (enable && (patcher.NumPatches() == 0)) {
     // In MapImpl::AllocateSpaceForMap()
     patcher.LowLevelHook(0x435660, [](Ebx<MapImpl*> pThis) {
-      static constexpr size_t AllocSize = MapObjectSize * MaxUnits;
+      static constexpr size_t AllocSize = MapObjectSize * (MaxUnits + 1);
       auto*const pMapObjArray  = pThis->pMapObjArray_ = static_cast<AnyMapObj*>(OP2Alloc(AllocSize));
       pThis->ppMapObjFreeList_ = static_cast<MapObject**>(OP2Alloc(sizeof(MapObject*) * MaxUnits));
 
       if (pMapObjArray != nullptr) {
         memset(pMapObjArray, 0xEA, AllocSize);
 
-        for (uint32 i = 1; i < MaxUnits; pThis->pMapObjArray_[i++]->pNext_ = reinterpret_cast<MapObject*>(~0));
+        for (uint32 i = 1; i <= MaxUnits; pThis->pMapObjArray_[i++]->pNext_ = reinterpret_cast<MapObject*>(~0));
 
         pThis->pMapObjListBegin_ = &pMapObjArray[0];
         pThis->pMapObjListEnd_   = &pThis->pMapObjArray_[MaxUnits];
