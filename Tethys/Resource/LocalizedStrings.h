@@ -415,6 +415,7 @@ enum StringIndex : size_t {
   Music                                             = 398, ///< "Music"
   SoundEffects                                      = 399, ///< "Sound Effects"
   AmbientAnimations                                 = 400, ///< "Ambient Animations"
+  /// @note The German version of the game has an extra entry for "Graphics Level of Detail" here (401).
   StructureShadows                                  = 401, ///< "Structure Shadows"
   VehicleShadows                                    = 402, ///< "Vehicle Shadows"
   GameSpeed                                         = 403, ///< "Game Speed"
@@ -558,7 +559,7 @@ enum StringIndex : size_t {
   DEBUG                                             = 537, ///< " DEBUG"
   RELEASE                                           = 538, ///< " RELEASE"
   DEMO                                              = 539, ///< " DEMO"
-  ONLINE                                            = 540, ///< " ONLINE"
+  ONLINE                                            = 540, ///< " ONLINE"  @note This entry is missing in translations.
   Build                                             = 541, ///< " Build "
   CouldntResolveDataReference$sIn$s                 = 542, ///< "Couldn't resolve data reference %s in %s"
   missionScript                                     = 543, ///< "mission script"
@@ -938,58 +939,8 @@ enum StringIndex : size_t {
   Hard                                   = 15, ///< "Hard"
   Outpost2OnlineManual                   = 16, ///< "Outpost 2 Online Manual"
   Version                                = 17, ///< "Version"
-  Version__2                             = 18, ///< "Version"
-  Version__3                             = 19, ///< "Version"
   StringTableSize
 };
-}
-
-namespace TethysImpl {
-// Helper function to handle replacing and reverting localized strings.  Returns the new string, or nullptr on failure.
-template <auto PfnGetStringTable, size_t OldStringTablePtrIndex>
-inline char* SetLocalizedStringHelper(size_t strIndex, const char* pString) {
-  // Allocate-once a table of overwritten strings so we can restore them later.
-  // The pointer to the table is stored near the end of the alignment padding at the end of Outpost2.exe's DSEG section.
-  constexpr size_t   NumStrings    = sizeof(PfnGetStringTable()) / sizeof(char*);
-  static auto***     pppOldStrings = OP2Mem<char***>(0x586FFC - (sizeof(void*) * OldStringTablePtrIndex));
-  static auto**const ppOldStrings  = *pppOldStrings =
-    (*pppOldStrings == nullptr) ? static_cast<char**>(OP2Calloc(NumStrings, sizeof(char*))) : *pppOldStrings;
-
-  char*     pNewStr = nullptr;
-  char**const ppStr = ((strIndex < NumStrings) && (ppOldStrings != nullptr)) ? &PfnGetStringTable()[strIndex] : nullptr;
-
-  if (ppStr != nullptr) {
-    const bool isReplaced = (ppOldStrings[strIndex] != nullptr) && (*ppStr != ppOldStrings[strIndex]);
-
-    if (pString != nullptr) {
-      // Replace string, allocating a new buffer to copy pString into, and record the original string pointer if needed.
-      const size_t allocSize = strlen(pString) + 1;
-      pNewStr = static_cast<char*>(OP2Alloc(allocSize));
-
-      if (pNewStr != nullptr) {
-        if (isReplaced) {
-          OP2Free(*ppStr);
-        }
-        else {
-          ppOldStrings[strIndex] = *ppStr;
-        }
-
-        strncpy_s(pNewStr, allocSize, pString, _TRUNCATE);
-        *ppStr = pNewStr;
-      }
-    }
-    else {
-      // Reset to original string.
-      if (isReplaced) {
-        OP2Free(*ppStr);
-        *ppStr = ppOldStrings[strIndex];
-      }
-      pNewStr = *ppStr;
-    }
-  }
-
-  return pNewStr;
-}
 }
 
 /// Gets the Outpost2.exe localized string table (table and string data are mutable).  @see LocalizedString.
@@ -999,16 +950,9 @@ inline auto& GetLocalizedStringTable() { return OP2Mem<0x4E88F8, char*(&)[Locali
 inline char* GetLocalizedString(size_t strIndex)
   { return (strIndex < LocalizedString::StringTableSize) ? GetLocalizedStringTable()[strIndex] : nullptr; }
 
-/// Sets the specified string in the Outpost2 localized string table.  @see LocalizedString.
-inline bool SetLocalizedString(size_t strIndex, const char* pString)
-  { return (TethysImpl::SetLocalizedStringHelper<&GetLocalizedStringTable, 0>(strIndex, pString) != nullptr); }
-
-/// Resets the specified string in the Outpost2 localized string table to original value.  @see LocalizedString.
-inline bool ResetLocalizedString(size_t strIndex) { return SetLocalizedString(strIndex, nullptr); }
-
 /// Gets the OP2Shell.dll localized string table (table and string data are mutable).  @see ShellLocalizedString.
 inline auto& GetShellLocalizedStringTable() {
-  const HMODULE hShell = TApp::GetInstance()->hShellLib_;
+  const HMODULE hShell = GetModuleHandleA("OP2Shell.dll");
   return *reinterpret_cast<char*(*)[ShellLocalizedString::StringTableSize]>(
            (hShell != NULL) ? ((uint8*)(hShell) - OP2ShellBase + 0x130123D8) : nullptr);
 }
@@ -1016,20 +960,5 @@ inline auto& GetShellLocalizedStringTable() {
 /// Gets the specified string from the OP2Shell localized string table.  @see ShellLocalizedString.
 inline char* GetShellLocalizedString(size_t strIndex)
   { return (strIndex < ShellLocalizedString::StringTableSize) ? GetShellLocalizedStringTable()[strIndex] : nullptr; }
-
-/// Sets the specified string in the OP2Shell localized string table.  @see ShellLocalizedString.
-inline bool SetShellLocalizedString(size_t strIndex, const char* pString)
-  { return (TethysImpl::SetLocalizedStringHelper<&GetShellLocalizedStringTable, 1>(strIndex, pString) != nullptr); }
-
-/// Resets the specified string in the OP2Shell localized string table to original value.  @see ShellLocalizedString.
-inline bool ResetShellLocalizedString(size_t strIndex) { return SetShellLocalizedString(strIndex, nullptr); }
-
-/// Resets all localized strings to their original values.
-inline bool ResetAllLocalizedStrings() {
-  bool result = true;
-  for (size_t i = 0; i <      LocalizedString::StringTableSize; result &=      ResetLocalizedString(i++));
-  for (size_t i = 0; i < ShellLocalizedString::StringTableSize; result &= ResetShellLocalizedString(i++));
-  return result;
-}
 
 } // Tethys

@@ -99,7 +99,8 @@ bool SetDefaultIniSettingsPatch(
   }
 
   if ((enable == false) || (success == false)) {
-    success &= (op2Patcher.RevertAll() == PatcherStatus::Ok) && (shellPatcher.RevertAll() == PatcherStatus::Ok);
+    success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
+    success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
   }
 
   return success;

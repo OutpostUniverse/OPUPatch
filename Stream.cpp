@@ -6,6 +6,7 @@
 #include <vfw.h>
 
 #include "Patcher.h"
+#include "Library.h"
 
 #include "Tethys/Game/TApp.h"
 #include "Tethys/Game/MissionManager.h"
@@ -36,6 +37,28 @@ static constexpr char BaseDir[] = "base";
 static std::filesystem::path g_curMapPath;
 
 static bool g_searchForMission = false;
+
+
+// =====================================================================================================================
+static std::vector<std::filesystem::path> GetModPaths() {
+  static std::vector<std::filesystem::path> paths;
+
+  static Library op2Ext("op2ext.dll");
+  static auto*const pfnGetModuleDirectoryCount = op2Ext.Get<size_t CDECL()>("GetModuleDirectoryCount");
+  static auto*const pfnGetModuleDirectory      =
+    op2Ext.Get<size_t CDECL(size_t moduleIndex, char* buffer, size_t bufferSize)>("GetModuleDirectory");
+
+  if (paths.empty() && (pfnGetModuleDirectoryCount != nullptr) && (pfnGetModuleDirectory != nullptr)) {
+    char buf[MAX_PATH] = "";
+    for (size_t i = 0, count = pfnGetModuleDirectoryCount(); i < count; ++i) {
+      if (pfnGetModuleDirectory(i, &buf[0], MAX_PATH) == 0) {
+        paths.emplace_back(&buf[0]);
+      }
+    }
+  }
+
+  return paths;
+}
 
 
 // =====================================================================================================================
@@ -71,9 +94,18 @@ static std::vector<std::filesystem::path> GetSearchPaths(
   }
 
   // Search OPU subdirectories under 2) map dir, 3) mod dirs, 4) base dir, then 5) OPU dir.
-  // ** TODO Search all mod dirs here, for now mod dirs are just checked with highest priority by op2ext's hook
-  const bool useMap = (g_curMapPath != opuPath/BaseDir) && (g_curMapPath != opuPath) && (g_curMapPath != installPath);
-  const std::filesystem::path bases[] = { (useMap ? g_curMapPath : ""), opuPath/BaseDir, opuPath };
+  // ** TODO For now mod dirs also get checked with highest priority by op2ext's hook
+  std::vector<std::filesystem::path> bases;
+
+  if ((g_curMapPath != opuPath/BaseDir) && (g_curMapPath != opuPath) && (g_curMapPath != installPath)) {
+    bases.push_back(g_curMapPath);
+  }
+
+  const auto& modPaths = GetModPaths();
+  bases.insert(bases.end(), modPaths.begin(), modPaths.end());
+
+  bases.push_back(opuPath/BaseDir);
+  bases.push_back(opuPath);
 
   for (const auto& base : bases) {
     if (base.empty() == false) {
@@ -472,6 +504,9 @@ bool SetFileSearchPathPatch(
          bool success = true;
 
   if (enable) {
+    // Replace ResManager::GetFilePath()
+    op2Patcher.Hook(0x471590, &GetFilePathHook);
+
     if (inited == false) {
       InitModuleSearchPaths();
       if (shellPatcher.GetModule() == GetModuleHandleA(nullptr)) {
@@ -479,9 +514,6 @@ bool SetFileSearchPathPatch(
       }
       inited = true;
     }
-
-    // Replace ResManager::GetFilePath()
-    op2Patcher.Hook(0x471590, &GetFilePathHook);
 
     // Replace PopulateMultiplayerMissionList()
     op2Patcher.Hook(0x497780, &PopulateMultiplayerMissionListHook);
@@ -579,7 +611,8 @@ bool SetFileSearchPathPatch(
       inited = false;
     }
 
-    success &= (op2Patcher.RevertAll() == PatcherStatus::Ok) && (shellPatcher.RevertAll() == PatcherStatus::Ok);
+    success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
+    success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
   }
 
   return success;

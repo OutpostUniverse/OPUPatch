@@ -30,6 +30,7 @@ bool SetChatLengthPatch(bool enable);
 bool SetUiHighlightFix(bool enable);
 bool SetIpWindowFocusPatch(bool enable);
 bool SetMiniMapFix(bool enable);
+bool SetLocalizationPatch(bool enable);
 bool SetFontPatch(const char* pNewFont);  // ** WIP
 bool SetVehicleCargoDisplayPatch(bool enable);
 bool SetMissionListNamePatch(bool enable);

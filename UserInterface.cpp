@@ -20,6 +20,7 @@
 #include "Tethys/UI/GameFrame.h"
 
 #include "Tethys/Resource/StreamIO.h"
+#include "Tethys/Resource/ResManager.h"
 #include "Tethys/Resource/Font.h"
 #include "Tethys/Resource/SoundManager.h"
 #include "Tethys/Resource/LocalizedStrings.h"
@@ -294,7 +295,7 @@ bool SetChatLengthPatch(
       pThis->chatLength_ = strlen(pText);
       strncpy_s(&g_chatBarMessage[0], MaxChatMessageLen, pText, _TRUNCATE);
       InvalidateRect(pThis->hWnd_, &pThis->chatRect_, FALSE);
-      }));
+    }));
     // In DansRule::OnPaint()
     patcher.LowLevelHook(0x499F22, [](Edx<char*>& pChatMessage) { pChatMessage = &g_chatBarMessage[0]; });
     // In DansRule::WndProc()
@@ -327,13 +328,79 @@ bool SetChatLengthPatch(
 }
 
 // =====================================================================================================================
+// Converts escaped characters to real characters (in ini strings).
+static std::string UnEscapeString(
+  const std::string_view& in)
+{
+  static constexpr std::pair<const char*, const char*> pReplacements[] = {
+    { "\\a", "\a" },  { "\\b",  "\b" },  { "\\f", "\f" },  { "\\n",  "\n" },  { "\\r", "\r" },  { "\\t", "\t" },
+    { "\\v", "\v" },  { "\\\\", "\\" },  { "\\'", "\'" },  { "\\\"", "\"" },  { "\\?", "\?" }
+  };
+
+  std::string out(in);
+
+  for (const auto [pEscaped, pUnescaped] : pReplacements) {
+    for (size_t p = out.length(); ((p = out.rfind(pEscaped, p)) != std::string::npos); out.replace(p, 2, pUnescaped));
+  }
+
+  return out;
+}
+
+// =====================================================================================================================
+// Sets localized string table entries in Outpost2.exe and OP2Shell.dll based on settings in language.ini.
+// ** TODO replaced UI dialogs lose localization, some ingame UI strings aren't localized like "SHOW &RESOURCES",
+//    mission DLLs aren't localized
+bool SetLocalizationPatch(
+  bool enable)
+{
+  static Patcher::PatchContext op2Patcher;
+  static Patcher::PatchContext shellPatcher("OP2Shell.dll", true);
+  bool success = true;
+
+  if (enable) {
+    char confPath[MAX_PATH] = "";
+
+    if (g_resManager.GetFilePath("language.ini", &confPath[0])) {
+      auto PatchStrings = [confPath](const char* pSectionName, auto& stringTable, Patcher::PatchContext* pPatcher) {
+        bool success       = true;
+        char setting[1024] = "";
+
+        for (size_t i = 0; (success && (i < TethysUtil::ArrayLen(stringTable))); ++i) {
+          const size_t len = GetPrivateProfileStringA(
+            pSectionName, std::to_string(i).data(), "", &setting[0], sizeof(setting), &confPath[0]);
+
+          if ((len != 0) && (setting[0] != '\0')) {
+            std::string str = UnEscapeString(setting);
+            char*const pBuf = static_cast<char*>(OP2Alloc(str.length() + 1));
+            strncpy_s(pBuf, str.length() + 1, str.data(), _TRUNCATE);
+            success &= (pPatcher->Write(&stringTable[i], &pBuf[0]) == PatcherStatus::Ok);
+          }
+        }
+
+        return success;
+      };
+
+      success = PatchStrings("Game",  GetLocalizedStringTable(),      &op2Patcher) &&
+                PatchStrings("Shell", GetShellLocalizedStringTable(), &shellPatcher);
+    }
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
+    success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
 // Replaces usage of Arial in the game's UI with the given font.
 // ** TODO Figure out how to make antialiasing look better.  Replacing main menu fonts requires replacing all dialogs.
 bool SetFontPatch(
   const char* pNewFont)
 {
   static Patcher::PatchContext patcher;
-  static std::string  fontStr;
+  static std::string fontStr;
 
   bool success   = true;
   bool isDefault = ((pNewFont == nullptr) || (_stricmp(pNewFont, "Arial") == 0));

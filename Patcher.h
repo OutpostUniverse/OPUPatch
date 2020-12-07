@@ -72,7 +72,7 @@ public:
   PatcherStatus WriteBytes(TargetPtr pAddress, Span<uint8> bytes)
     { return Memcpy(pAddress, bytes.Data(), bytes.Length()); }
 
-  /// Writes no-ops to module memory up to size in bytes.  If @ref size is 0, then overwrite a whole instruction.
+  /// Writes no-ops to module memory up to size in bytes.  If @ref size is 0, then overwrite a whole single instruction.
   /// @note  32-bit x86 only.
   PatcherStatus WriteNop(TargetPtr pAddress, size_t size = 0);
 

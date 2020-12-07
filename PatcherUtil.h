@@ -768,8 +768,7 @@ auto PmfCast(
     decltype(pmf)  pmfIn;
     void*          pOut;
     size_t         vftOffset;
-  };
-  pmfIn = pmf;
+  } cast = {pmf};
 
   // Test if this is a virtual PMF, which requires special compiler-specific handling and an object instance.
   // Non-virtual PMFs are straightforward to convert, and do not require an object instance.
@@ -805,13 +804,13 @@ auto PmfCast(
   if (std::is_polymorphic<T>::value && (Vcalls[0].bytes.Size() != 0)) {
 # if PATCHER_INCREMENTAL_LINKING
     // Incremental linking (debug) gives us a pointer to a jump thunk to the vcall thunk.
-    auto*const pReader = static_cast<uint8*>(pOut);
-    pOut = (pReader[0] == 0xE9) ? (pReader + 5 + reinterpret_cast<int32&>(pReader[1])) : pOut;
+    auto*const pReader = static_cast<uint8*>(cast.pOut);
+    cast.pOut = (pReader[0] == 0xE9) ? (pReader + 5 + reinterpret_cast<int32&>(pReader[1])) : cast.pOut;
 # endif
 
     for (const auto& vcall : Vcalls) {
-      auto*const pOperand = static_cast<uint8*>(PtrInc(pOut, vcall.bytes.Size()));
-      if ((memcmp(pOut, &vcall.bytes[0], vcall.bytes.Size()) == 0) && (*pOperand & vcall.operandBase)) {
+      auto*const pOperand = static_cast<uint8*>(PtrInc(cast.pOut, vcall.bytes.Size()));
+      if ((memcmp(cast.pOut, &vcall.bytes[0], vcall.bytes.Size()) == 0) && (*pOperand & vcall.operandBase)) {
         // We need an object instance to get the vftable pointer, which is typically initialized during the constructor.
         void**const pVftable = GetVftable(pThis);
 
@@ -820,23 +819,23 @@ auto PmfCast(
           (*pOperand == vcall.operandBase + 0x80) ? reinterpret_cast<uint32&>(pOperand[1]) :  // Dword operand size.
           0;
 
-        pOut = (pVftable != nullptr) ? pVftable[(offset / sizeof(void*))] : nullptr;
+        cast.pOut = (pVftable != nullptr) ? pVftable[(offset / sizeof(void*))] : nullptr;
         break;
       }
     }
   }
 #elif PATCHER_UNIX_ABI
   // In the Itanium ABI (used by GCC, Clang, etc. for x86), virtual PMFs have the low bit set to 1.
-  if (std::is_polymorphic<T>::value && (vftOffset & 1)) {
+  if (std::is_polymorphic<T>::value && (cast.vftOffset & 1)) {
     // We need an object instance to get the vftable pointer, which is typically initialized during the constructor.
     void**const pVftable = GetVftable(pThis);
-    pOut = (pVftable != nullptr) ? pVftable[((vftOffset - 1) / sizeof(void*))] : nullptr;
+    cast.pOut = (pVftable != nullptr) ? pVftable[((cast.vftOffset - 1) / sizeof(void*))] : nullptr;
   }
 #else
   static_assert(std::is_void<T>::value, "PmfCast is only supported in MSVC, GCC, ICC, or Clang.");
 #endif
 
-  return reinterpret_cast<typename Impl::FuncTraits<decltype(pmf)>::Pfn>(pOut);
+  return reinterpret_cast<typename Impl::FuncTraits<decltype(pmf)>::Pfn>(cast.pOut);
 }
 
 /// Helper macro to get the raw address of a class member function without requiring an object instance.

@@ -102,6 +102,55 @@ static void AppendString(char** ppWriter, const std::string& src)
 // Gets the length of an array.
 template <typename T, size_t N>  static constexpr uint32 ArrayLen(const T (&src)[N]) { return static_cast<uint32>(N); }
 
+/*class Disassembler {
+public:
+  constexpr Disassembler() : hDisassembler_(NULL), refCount_(0) { }
+
+  void Blah() {
+    // If size == 0, then overwrite the whole instruction at pAddress.
+    csh       hDisasm;
+    cs_insn*  pInsns = nullptr;
+    size_t    count  = 0;
+
+    Status status = TranslateCsError(cs_open(CS_ARCH_X86, CS_MODE_32, &hDisasm));
+    const bool csOpened = (status == Status::Ok);
+
+    if (status == Status::Ok) {
+      // Disassemble to get the size of the instruction.
+      count   = cs_disasm(hDisasm, static_cast<const uint8*>(pAddress), sizeof(pInsns->bytes), pAddress, 1, &pInsns);
+      status_ = (count != 0) ? TranslateCsError(cs_errno(hDisasm)) : Status::FailDisassemble;
+    }
+
+    if (status_ == Status::Ok) {
+      size = pInsns[0].size;
+      if (size == 0) {
+        status_ = Status::FailDisassemble;
+      }
+    }
+
+    if (pInsns != nullptr) {
+      cs_free(pInsns, count);
+    }
+
+    if (csOpened) {
+      cs_close(&hDisasm);
+    }
+  }
+  
+  // Translates a Capstone error code to a PatcherStatus.
+  static Status TranslateCsError(cs_err capstoneError) {
+    switch (capstoneError) {
+    case CS_ERR_OK:                          return Status::Ok;
+    case CS_ERR_MEM:  case CS_ERR_MEMSETUP:  return Status::FailMemAlloc;
+    default:                                 return Status::FailDisassemble;
+    }
+  }
+
+private:
+  csh     hDisassembler_;
+  uint32  refCount_;
+};*/
+
 // We need to allocate memory such that it can be executed, which requires an extra private heap created with the
 // HEAP_CREATE_ENABLE_EXECUTE flag.
 class Allocator {
@@ -815,8 +864,6 @@ uint32 PatchContext::BeginDeProtect(
   void*   pAddress,
   size_t  size)
 {
-  // ** TODO  See https://nullprogram.com/blog/2016/03/31/ for how to use mprotect in *nix
-
   DWORD attr = 0;
 
   if ((status_ == Status::Ok) && (CalculateModuleHash(hModule_) != moduleHash_)) {
@@ -1012,14 +1059,15 @@ static void* CreateFunctorThunk(
     size_t numRegisterSizeParams = 0;  // Excluding pFunctor and pReturnAddress
     for (uint32 i = 2; i < sig.numParams; (sig.pParamSizes[i++] <= RegisterSize) ? ++numRegisterSizeParams : 0);
 
-    // pfnCallback.Pfn() is always cdecl;  Signature().Convention refers to the original function Pfn() wraps.
-    // We need to translate from the "input" calling convention to cdecl, then do the expected stack cleanup.
-    const auto WriteCall = [&pWriter, &pfnCallback, functorAddr] {
+    // pfnCallback.Pfn() is always cdecl;  Signature().convention refers to the original function Pfn() wraps.
+    // We need to translate from the input calling convention to cdecl by pushing any register args used by the input
+    // convention to the stack, then push the functor obj address and do the call, then do any expected stack cleanup.
+    auto WriteCall = [&pWriter, &pfnCallback, functorAddr] {
       CatValue(&pWriter,  Op1_4{ 0x68, functorAddr });                                           // push pFunctor
       CatValue(&pWriter, Call32{ 0xE8, PcRelPtr(pWriter, sizeof(Call32), pfnCallback.Pfn()) });  // call pFunction
     };
 
-    const auto WriteCallAndCalleeCleanup = [&pWriter, &sig, &WriteCall, functorAddr] {
+    auto WriteCallAndCalleeCleanup = [&pWriter, &sig, &WriteCall, functorAddr] {
       const auto stackDelta = static_cast<int32>(sig.totalParamSize);
       if (sig.returnSize > (RegisterSize * 2)) {
         pWriter = nullptr;  // ** TODO need to handle oversized return types
@@ -1603,7 +1651,7 @@ static size_t CreateLowLevelHookTrampoline(
   uint32 stackRegIndex  = UINT_MAX;
   uint32 firstArgIndex  = 0;
 
-  const auto AddRegisterToStack = [&stackRegisters, &returnRegIndex, &stackRegIndex](Register reg) {
+  auto AddRegisterToStack = [&stackRegisters, &returnRegIndex, &stackRegIndex](Register reg) {
     if ((reg == ReturnRegister) && (returnRegIndex == UINT_MAX)) {
       returnRegIndex = stackRegisters.size();
     }
@@ -1650,13 +1698,13 @@ static size_t CreateLowLevelHookTrampoline(
   // Write the low-level hook trampoline code.
   uint8* pWriter = static_cast<uint8*>(pLowLevelHook);
 
-  const auto Push = [&pWriter](Register r)
+  auto Push = [&pWriter](Register r)
     { const auto& insn = PushInsns[static_cast<uint32>(r)];  CatBytes(&pWriter, &insn[0], insn.Size()); };
-  const auto Pop  = [&pWriter](Register r)
+  auto Pop  = [&pWriter](Register r)
     { const auto& insn = PopInsns[static_cast<uint32>(r)];   CatBytes(&pWriter, &insn[0], insn.Size()); };
 
-  Register   spareRegister        = Register::Count;
-  const auto PushAdjustedStackReg = [&pWriter, &stackRegisters, &spareRegister, &Push](size_t index, size_t offset) {
+  Register spareRegister        = Register::Count;
+  auto     PushAdjustedStackReg = [&pWriter, &stackRegisters, &spareRegister, &Push](size_t index, size_t offset) {
     if (offset == 0) {
       Push(StackRegister);  // push esp
     }
@@ -1715,7 +1763,7 @@ static size_t CreateLowLevelHookTrampoline(
     }
   }
 
-  const auto PopNil = [&pWriter, pLowLevelHook](int8 count = 1) {
+  auto PopNil = [&pWriter, pLowLevelHook](int8 count = 1) {
 #if PATCHER_X86_32
     constexpr uint8 SkipPop[] = { 0x83, 0xC4, 0x00 };        // add esp, 0x0
 #elif PATCHER_X86_64
