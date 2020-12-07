@@ -102,40 +102,46 @@ static void AppendString(char** ppWriter, const std::string& src)
 // Gets the length of an array.
 template <typename T, size_t N>  static constexpr uint32 ArrayLen(const T (&src)[N]) { return static_cast<uint32>(N); }
 
-/*class Disassembler {
+// Capstone disassembler helper class.
+class Disassembler {
 public:
-  constexpr Disassembler() : hDisassembler_(NULL), refCount_(0) { }
+  Disassembler() : hDisasm_(NULL), refCount_(0) { }
 
-  void Blah() {
-    // If size == 0, then overwrite the whole instruction at pAddress.
-    csh       hDisasm;
-    cs_insn*  pInsns = nullptr;
-    size_t    count  = 0;
-
-    Status status = TranslateCsError(cs_open(CS_ARCH_X86, CS_MODE_32, &hDisasm));
-    const bool csOpened = (status == Status::Ok);
-
-    if (status == Status::Ok) {
-      // Disassemble to get the size of the instruction.
-      count   = cs_disasm(hDisasm, static_cast<const uint8*>(pAddress), sizeof(pInsns->bytes), pAddress, 1, &pInsns);
-      status_ = (count != 0) ? TranslateCsError(cs_errno(hDisasm)) : Status::FailDisassemble;
+  void Acquire() {
+    std::lock_guard<std::mutex> lock(lock_);
+    if ((++refCount_ == 1) && (TranslateCsError(cs_open(CS_ARCH_X86, CS_MODE_32, &hDisasm_)) != Status::Ok)) {
+      refCount_ = 0;
     }
+  }
 
-    if (status_ == Status::Ok) {
-      size = pInsns[0].size;
-      if (size == 0) {
-        status_ = Status::FailDisassemble;
+  void Release() {
+    std::lock_guard<std::mutex> lock(lock_);
+    if ((refCount_ != 0) && (--refCount_ == 0)) {
+      cs_close(&hDisasm_);
+    }
+  }
+
+  // Disassembles a number of instructions.
+  std::vector<cs_insn> Disassemble(const void* pAddress, size_t numInsns) const {
+    std::vector<cs_insn> out(numInsns);
+
+    if (refCount_ != 0) {
+      cs_insn* pInsns = nullptr;
+      size_t   count  = cs_disasm(
+        hDisasm_, (const uint8*)pAddress, sizeof(pInsns->bytes) * numInsns, uintptr(pAddress), numInsns, &pInsns);
+
+      if (pInsns != nullptr) {
+        if (GetLastError() == Status::Ok) {
+          out.insert(out.end(), pInsns, pInsns + count);
+        }
+        cs_free(pInsns, count);
       }
     }
 
-    if (pInsns != nullptr) {
-      cs_free(pInsns, count);
-    }
-
-    if (csOpened) {
-      cs_close(&hDisasm);
-    }
+    return out;
   }
+
+  Status GetLastError() const { return TranslateCsError(cs_errno(hDisasm_)); }
   
   // Translates a Capstone error code to a PatcherStatus.
   static Status TranslateCsError(cs_err capstoneError) {
@@ -147,9 +153,11 @@ public:
   }
 
 private:
-  csh     hDisassembler_;
+  csh     hDisasm_;
   uint32  refCount_;
-};*/
+
+  std::mutex  lock_;
+};
 
 // We need to allocate memory such that it can be executed, which requires an extra private heap created with the
 // HEAP_CREATE_ENABLE_EXECUTE flag.
@@ -236,8 +244,9 @@ static constexpr uint32 ReadOnlyProtectFlags   = (PAGE_READONLY | PAGE_EXECUTE_R
 
 // Internal globals
 
-static Allocator  g_allocator;
-static std::mutex g_codeThreadLock;
+static Disassembler g_disasm;
+static Allocator    g_allocator;
+static std::mutex   g_codeThreadLock;
 
 // =====================================================================================================================
 // Gets the index of the first set bit in a bitmask through an output parameter, and returns (mask != 0).
@@ -355,6 +364,7 @@ PatchContext::PatchContext(
   moduleHash_(CalculateModuleHash(hModule_)),
   status_(Status::FailInvalidModule)
 {
+  g_disasm.Acquire();
   g_allocator.Acquire();
   InitModule();
 }
@@ -370,6 +380,7 @@ PatchContext::PatchContext(
   moduleHash_(CalculateModuleHash(hModule_)),
   status_(Status::FailInvalidModule)
 {
+  g_disasm.Acquire();
   g_allocator.Acquire();
   InitModule();
 }
@@ -380,6 +391,7 @@ PatchContext::~PatchContext() {
   UnlockThreads();
   ReleaseModule();
   g_allocator.Release();
+  g_disasm.Release();
 }
 
 // =====================================================================================================================
@@ -437,6 +449,7 @@ Status PatchContext::SetModule(
   bool        addReference)
 {
   RevertAll();
+  UnlockThreads();
   ReleaseModule();
 
   status_           = Status::FailInvalidModule;
@@ -522,32 +535,11 @@ Status PatchContext::WriteNop(
 
   if ((status_ == Status::Ok) && (size == 0)) {
     // If size == 0, then overwrite the whole instruction at pAddress.
-    csh       hDisasm;
-    cs_insn*  pInsns = nullptr;
-    size_t    count  = 0;
-
-    status_ = TranslateCsError(cs_open(CS_ARCH_X86, CS_MODE_32, &hDisasm));
-    const bool csOpened = (status_ == Status::Ok);
+    const auto& insns = g_disasm.Disassemble(pAddress, 1);
+    status_ = (insns.size() != 0) ? g_disasm.GetLastError() : Status::FailDisassemble;
 
     if (status_ == Status::Ok) {
-      // Disassemble to get the size of the instruction.
-      count   = cs_disasm(hDisasm, static_cast<const uint8*>(pAddress), sizeof(pInsns->bytes), pAddress, 1, &pInsns);
-      status_ = (count != 0) ? TranslateCsError(cs_errno(hDisasm)) : Status::FailDisassemble;
-    }
-
-    if (status_ == Status::Ok) {
-      size = pInsns[0].size;
-      if (size == 0) {
-        status_ = Status::FailDisassemble;
-      }
-    }
-
-    if (pInsns != nullptr) {
-      cs_free(pInsns, count);
-    }
-
-    if (csOpened) {
-      cs_close(&hDisasm);
+      size = insns[0].size;
     }
   }
 
@@ -1138,11 +1130,11 @@ static void* CreateFunctorThunk(
 
 // =====================================================================================================================
 static void CopyInstructions(
-  uint8**   ppWriter,
-  cs_insn*  pInsns,
-  size_t*   pCount,
-  uint8*    pOverwrittenSize,
-  uint8     offsetLut[MaxOverwriteSize])
+  uint8**         ppWriter,
+  const cs_insn*  pInsns,
+  size_t*         pCount,
+  uint8*          pOverwrittenSize,
+  uint8           offsetLut[MaxOverwriteSize])
 {
   assert(
     (ppWriter != nullptr) && (pInsns != nullptr) && (pCount != nullptr) && (*pCount != 0) && (offsetLut != nullptr));
@@ -1248,25 +1240,9 @@ static Status CreateTrampoline(
 {
   assert((pAddress != nullptr) && (ppTrampoline != nullptr) && (pOverwrittenSize != nullptr));
   assert((prologSize % CodeAlignment) == 0);
-
-  csh       hDisasm;
-  cs_insn*  pInsns = nullptr;
-  size_t    count  = 0;
-
-  Status     status   = TranslateCsError(cs_open(CS_ARCH_X86, CS_MODE_32, &hDisasm));
-  const bool csOpened = (status == Status::Ok);
-
-  if (status == Status::Ok) {
-    // We need to disassemble at most sizeof(Jmp32) instructions.
-    count = cs_disasm(hDisasm,
-                      static_cast<const uint8*>(pAddress),
-                      (sizeof(pInsns->bytes) * sizeof(Jmp32)),
-                      reinterpret_cast<uintptr>(pAddress),
-                      sizeof(Jmp32),
-                      &pInsns);
-
-    status = (count != 0) ? TranslateCsError(cs_errno(hDisasm)) : Status::FailDisassemble;
-  }
+  
+  const auto insns  = g_disasm.Disassemble(pAddress, sizeof(Jmp32));
+  Status     status = (insns.size() != 0) ? g_disasm.GetLastError() : Status::FailDisassemble;
 
   void*  pTrampoline = nullptr;
   size_t allocSize   = 0;
@@ -1277,8 +1253,8 @@ static Status CreateTrampoline(
   if (status == Status::Ok) {
     // Calculate how many instructions will actually be overwritten by the Jmp32 and their total size.
     bool foundEnd = false;
-    for (uint32 i = 0; ((i < count) && (overwrittenSize < sizeof(Jmp32))); ++i) {
-      const auto& insn = pInsns[i];
+    for (uint32 i = 0, count = insns.size(); ((i < count) && (overwrittenSize < sizeof(Jmp32))); ++i) {
+      const auto& insn = insns[i];
 
       // Assume int 3, nop, or unknown instructions are padders.
       if (foundEnd && (insn.bytes[0] != 0xCC) && (insn.bytes[0] != 0x90) && (insn.id != X86_INS_INVALID)) {
@@ -1338,7 +1314,7 @@ static Status CreateTrampoline(
 
     // Our trampoline needs to be able to reissue instructions overwritten by the jump to it.
     uint8* pWriter = (static_cast<uint8*>(pTrampoline) + prologSize);
-    CopyInstructions(&pWriter, pInsns, &oldCount, &overwrittenSize, offsetLut);
+    CopyInstructions(&pWriter, insns.data(), &oldCount, &overwrittenSize, offsetLut);
 
     // Complete the trampoline by writing a jmp instruction to the original function.
     CatValue<Jmp32>(&pWriter, { 0xE9, PcRelPtr(pWriter, sizeof(Jmp32), PtrInc(pAddress, *pOverwrittenSize)) });
@@ -1347,17 +1323,6 @@ static Status CreateTrampoline(
     const size_t remainingSize = allocSize - PtrDelta(pWriter, pTrampoline);
     if (remainingSize > 0) {
       memset(pWriter, 0xCC, remainingSize);
-    }
-  }
-
-  if (pInsns != nullptr) {
-    cs_free(pInsns, count);
-  }
-
-  if (csOpened) {
-    const cs_err csError = cs_close(&hDisasm);
-    if (status == Status::Ok) {
-      status = TranslateCsError(csError);
     }
   }
 

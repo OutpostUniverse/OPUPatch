@@ -192,6 +192,10 @@ bool SetDpiFix(
     if (enable) {
       oldCtx  = pfnSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
       success = (oldCtx != NULL);
+
+      if (success) {
+        atexit([] { SetDpiFix(false); });
+      }
     }
     else if (oldCtx != NULL) {
       success = (pfnSetThreadDpiAwarenessContext(oldCtx) != NULL);

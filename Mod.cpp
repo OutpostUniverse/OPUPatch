@@ -26,75 +26,62 @@ BOOL APIENTRY DllMain(
 DLLAPI void InitMod(
   const char* pIniSectionName)
 {
-  using SetPatchFunc = bool(bool);
-  static std::list<SetPatchFunc*> pfnPatches;
-
-  auto RegisterPatch = [](SetPatchFunc* pfnSetPatch) {
-    static bool result = true;
-    result = result && pfnSetPatch(true);
-    if (result) {
-      pfnPatches.push_front(pfnSetPatch);
-    }
-  };
-
-  RegisterPatch(&SetGameVersion);
+  bool success = SetGameVersion(true);
 
   // Stream
-  RegisterPatch(&SetFileSearchPathPatch);
-  //RegisterPatch(&SetChecksumPatch);
-  RegisterPatch(&SetCodecPatch);
+  success &= SetFileSearchPathPatch(true);
+  //success &= SetChecksumPatch(true);
+  success &= SetCodecPatch(true);
 
   // Misc
-  RegisterPatch(&SetNoCdPatch);
-  RegisterPatch(&SetDefaultIniSettingsPatch);
-  RegisterPatch(&SetForceMoraleFix);
-  RegisterPatch(&SetPrintfFloatFix);
-  RegisterPatch(&SetGlobalMusicFix);
+  success &= SetNoCdPatch(true);
+  success &= SetDefaultIniSettingsPatch(true);
+  success &= SetForceMoraleFix(true);
+  success &= SetPrintfFloatFix(true);
+  success &= SetGlobalMusicFix(true);
 
   // Netplay
-  RegisterPatch(&SetNatFix);
-  RegisterPatch(&SetNetGameSpeedPatch);
-  RegisterPatch(&SetBindAnyNetAdapterFix);
-  RegisterPatch(&SetNoCheatsPatch);
-  RegisterPatch(&SetSigsDllCheckPatch);
+  success &= SetNatFix(true);
+  success &= SetNetGameSpeedPatch(true);
+  success &= SetBindAnyNetAdapterFix(true);
+  success &= SetNoCheatsPatch(true);
+  success &= SetSigsDllCheckPatch(true);
 
   // UI
-  RegisterPatch(&SetUiResourceReplacePatch);
-  RegisterPatch(&SetChatLengthPatch);
-  RegisterPatch(&SetUiHighlightFix);
-  RegisterPatch(&SetIpWindowFocusPatch);
-  RegisterPatch(&SetMiniMapFix);
-  RegisterPatch(&SetLocalizationPatch);
-  RegisterPatch(&SetVehicleCargoDisplayPatch);
-  RegisterPatch(&SetMissionListNamePatch);
-  RegisterPatch(&SetSavantNotificationPatch);
-  RegisterPatch(&SetControlGroupHotkeyPatch);
+  success &= SetUiResourceReplacePatch(true);
+  success &= SetChatLengthPatch(true);
+  success &= SetUiHighlightFix(true);
+  success &= SetIpWindowFocusPatch(true);
+  success &= SetMiniMapFix(true);
+  success &= SetLocalizationPatch(true);
+  success &= SetVehicleCargoDisplayPatch(true);
+  success &= SetMissionListNamePatch(true);
+  success &= SetSavantNotificationPatch(true);
+  success &= SetControlGroupHotkeyPatch(true);
 
   // Graphics
-  RegisterPatch(&SetWindowFix);
-  RegisterPatch(&SetDwmFix);
-  RegisterPatch(&SetDpiFix);
-  RegisterPatch(&SetAlphaBlendPatch);
+  success &= SetWindowFix(true);
+  success &= SetDwmFix(true);
+  success &= SetDpiFix(true);
+  success &= SetAlphaBlendPatch(true);
 
   // ScStub
-  RegisterPatch(&SetScStubPatch);
+  success &= SetScStubPatch(true);
 
   // Map
-  RegisterPatch(&SetLargeMapPatch);
-  RegisterPatch(&SetCustomMapFlagsPatch);
+  success &= SetLargeMapPatch(true);
+  success &= SetCustomMapFlagsPatch(true);
 
   // Units
-  RegisterPatch(&SetUnitLimitPatch);
-  RegisterPatch(&SetDrawLightningFix);
-  RegisterPatch(&SetTransferUnitToGaiaFix);
-  RegisterPatch(&SetBuildWallFix);
-  RegisterPatch(&SetWreckageFix);
-  RegisterPatch(&SetMissileFix);
-  RegisterPatch(&SetNoAlliedDockDamageFix);
-  RegisterPatch(&SetAllyEdwardSurveyMinesPatch);
-  RegisterPatch(&SetMultipleRepairPatch);
-  RegisterPatch(&SetOreRoutePatch);
-  RegisterPatch(&SetTurretAnimationPatch);
-
-  atexit([] { for (SetPatchFunc* pfn : pfnPatches) { pfn(false); }  pfnPatches.clear(); });
+  success &= SetUnitLimitPatch(true);
+  success &= SetDrawLightningFix(true);
+  success &= SetTransferUnitToGaiaFix(true);
+  success &= SetBuildWallFix(true);
+  success &= SetWreckageFix(true);
+  success &= SetMissileFix(true);
+  success &= SetNoAlliedDockDamageFix(true);
+  success &= SetAllyEdwardSurveyMinesPatch(true);
+  success &= SetMultipleRepairPatch(true);
+  success &= SetOreRoutePatch(true);
+  success &= SetTurretAnimationPatch(true);
 }

@@ -601,6 +601,10 @@ bool SetFileSearchPathPatch(
     shellPatcher.LowLevelHook(0x13007B9D, [](Ebx<decltype(&LoadLibraryA)>& pfn) { pfn = &LoadLibraryAltSearchPath; });
 
     success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
+
+    if (success) {
+      atexit([] { SetFileSearchPathPatch(false); });
+    }
   }
 
   if ((enable == false) || (success == false)) {
@@ -749,6 +753,10 @@ bool SetCodecPatch(
           ICInstall(ICTYPE_VIDEO, IndeoFourCC, LPARAM(StdcallLambdaPtr(IndeoDriverProc)), nullptr, ICINSTALL_FUNCTION);
         success &= useLocalIndeo;
       }
+    }
+
+    if (success) {
+      atexit([] { SetCodecPatch(false); });
     }
   }
 

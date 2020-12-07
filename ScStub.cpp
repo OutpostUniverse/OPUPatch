@@ -127,6 +127,10 @@ bool SetScStubPatch(
     patcher.Hook(0x47B410, &ScStubFactory_Create);
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
+
+    if (success) {
+      atexit([] { SetScStubPatch(false); });
+    }
   }
 
 #if SCSTUB_USE_EXTENDED_ARRAY
