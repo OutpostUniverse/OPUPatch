@@ -116,6 +116,8 @@ static std::vector<std::filesystem::path> GetSearchPaths(
         { ".map",   "maps"     },
         { ".txt",   "sheets"   },
         { ".txt",   "techs"    },
+        { ".txt",   "story"    },
+        { ".rtf",   "story"    },
         { ".bmp",   "tilesets" },
         { ".bmp",   "sprites"  },
         { ".prt",   "sprites"  },
@@ -129,7 +131,6 @@ static std::vector<std::filesystem::path> GetSearchPaths(
         { ".flac",  "music"    },
         { ".avi",   "movies"   },
         { ".mp4",   "movies"   },
-        { ".rtf",   "story"    },
         { ".op2",   "saves"    }
       };
 
