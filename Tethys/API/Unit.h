@@ -42,9 +42,9 @@ class Unit : public OP2Class<Unit> {
 public:
   Unit() : id_(0) { }
   explicit Unit(int unitID) : id_(unitID) { }
+  Unit& operator=(const Unit& unit) = default;
 
-  Unit& operator=(const Unit& unit)       = default;
-  bool operator==(const Unit& unit) const = default;
+  bool operator==(const Unit& unit) const { return id_ == unit.id_; }
 
   ///@{ Allow conversion from MapObject pointers/references.
   explicit Unit(MapObject* pMapObject) : id_((pMapObject != nullptr) ? pMapObject->index_         : 0) { }

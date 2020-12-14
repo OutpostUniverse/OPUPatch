@@ -1,5 +1,5 @@
 
-// ** TODO Most of this should probably be moved into op2ext due to overlap with mod loader functionality.
+// ** TODO A lot of this should probably be moved into op2ext due to overlap with mod loader functionality.
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -7,6 +7,7 @@
 
 #include "Patcher.h"
 #include "Library.h"
+#include "Util.h"
 
 #include "Tethys/Game/TApp.h"
 #include "Tethys/Game/MissionManager.h"
@@ -14,14 +15,15 @@
 #include "Tethys/Resource/ResManager.h"
 #include "Tethys/UI/IWnd.h"
 
-#include <iostream>
-#include <sstream>
-#include <filesystem>
-#include <memory>
 #include <vector>
 #include <map>
 #include <set>
 #include <unordered_set>
+#include <iostream>
+#include <sstream>
+#include <charconv>
+#include <filesystem>
+#include <memory>
 
 using namespace Tethys;
 using namespace Patcher::Util;
@@ -40,13 +42,13 @@ static bool g_searchForMission = false;
 
 
 // =====================================================================================================================
+// Gets op2ext mod directories.
 static std::vector<std::filesystem::path> GetModPaths() {
   static std::vector<std::filesystem::path> paths;
 
   static Library op2Ext("op2ext.dll");
   static auto*const pfnGetModuleDirectoryCount = op2Ext.Get<size_t CDECL()>("GetModuleDirectoryCount");
-  static auto*const pfnGetModuleDirectory      =
-    op2Ext.Get<size_t CDECL(size_t moduleIndex, char* buffer, size_t bufferSize)>("GetModuleDirectory");
+  static auto*const pfnGetModuleDirectory      = op2Ext.Get<size_t CDECL(size_t, char*, size_t)>("GetModuleDirectory");
 
   if (paths.empty() && (pfnGetModuleDirectoryCount != nullptr) && (pfnGetModuleDirectory != nullptr)) {
     char buf[MAX_PATH] = "";
@@ -60,8 +62,35 @@ static std::vector<std::filesystem::path> GetModPaths() {
   return paths;
 }
 
+// =====================================================================================================================
+// Gets base subdirectory paths: current map, mods, OPU/base, then OPU.
+static std::vector<std::filesystem::path> GetBasePaths() {
+  static std::vector<std::filesystem::path> bases;
+  static std::filesystem::path              mapPath;
+
+  if ((bases.empty()) || (mapPath != g_curMapPath)) {
+    static const auto installPath(std::filesystem::path(g_resManager.installedDir_));
+    static const auto opuPath(installPath/OPUDir);
+
+    bases.clear();
+    mapPath = g_curMapPath;
+
+    if ((mapPath != opuPath/BaseDir) && (mapPath != opuPath) && (mapPath != installPath)) {
+      bases.push_back(mapPath);
+    }
+
+    const auto& modPaths = GetModPaths();
+    bases.insert(bases.end(), modPaths.begin(), modPaths.end());
+
+    bases.push_back(opuPath/BaseDir);
+    bases.push_back(opuPath);
+  }
+
+  return bases;
+}
 
 // =====================================================================================================================
+// Gets file search paths for a particular asset type.
 static std::vector<std::filesystem::path> GetSearchPaths(
   std::string  extension        = "",
   bool         searchForMission = false,
@@ -69,9 +98,6 @@ static std::vector<std::filesystem::path> GetSearchPaths(
 {
   constexpr auto SearchOptions = std::filesystem::directory_options::follow_directory_symlink |
                                  std::filesystem::directory_options::skip_permission_denied;
-
-  const auto installPath(std::filesystem::path(g_resManager.installedDir_));
-  const auto opuPath(installPath/OPUDir);
 
   std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
@@ -95,76 +121,60 @@ static std::vector<std::filesystem::path> GetSearchPaths(
 
   // Search OPU subdirectories under 2) map dir, 3) mod dirs, 4) base dir, then 5) OPU dir.
   // ** TODO For now mod dirs also get checked with highest priority by op2ext's hook
-  std::vector<std::filesystem::path> bases;
-
-  if ((g_curMapPath != opuPath/BaseDir) && (g_curMapPath != opuPath) && (g_curMapPath != installPath)) {
-    bases.push_back(g_curMapPath);
-  }
-
-  const auto& modPaths = GetModPaths();
-  bases.insert(bases.end(), modPaths.begin(), modPaths.end());
-
-  bases.push_back(opuPath/BaseDir);
-  bases.push_back(opuPath);
-
+  const auto& bases = GetBasePaths();
   for (const auto& base : bases) {
-    if (base.empty() == false) {
-      static const std::multimap<std::string, std::string> assetDirs = {
-        { ".ax",    "libs"     },
-        { ".dll",   "libs"     },
-        { ".dll",   "maps"     },
-        { ".map",   "maps"     },
-        { ".txt",   "sheets"   },
-        { ".txt",   "techs"    },
-        { ".txt",   "story"    },
-        { ".rtf",   "story"    },
-        { ".bmp",   "tilesets" },
-        { ".bmp",   "sprites"  },
-        { ".prt",   "sprites"  },
-        { ".raw",   "sprites"  },
-        { ".ani",   "cursors"  },
-        { ".wav",   "sounds"   },
-        { ".wav",   "voices"   },
-        { ".wav",   "music"    },
-        { ".mp3",   "music"    },
-        { ".ogg",   "music"    },
-        { ".flac",  "music"    },
-        { ".avi",   "movies"   },
-        { ".mp4",   "movies"   },
-        { ".op2",   "saves"    }
-      };
+    static const std::multimap<std::string, std::string> assetDirs = {
+      { ".ax",    "libs"     },
+      { ".dll",   "libs"     },
+      { ".dll",   "maps"     },
+      { ".map",   "maps"     },
+      { ".txt",   "sheets"   },
+      { ".txt",   "techs"    },
+      { ".txt",   "story"    },
+      { ".rtf",   "story"    },
+      { ".bmp",   "tilesets" },
+      { ".bmp",   "sprites"  },
+      { ".prt",   "sprites"  },
+      { ".raw",   "sprites"  },
+      { ".ani",   "cursors"  },
+      { ".wav",   "sounds"   },
+      { ".wav",   "voices"   },
+      { ".wav",   "music"    },
+      { ".mp3",   "music"    },
+      { ".ogg",   "music"    },
+      { ".flac",  "music"    },
+      { ".avi",   "movies"   },
+      { ".mp4",   "movies"   },
+      { ".op2",   "saves"    }
+    };
 
-      const auto range = assetDirs.equal_range(extension);
-      for (auto it = range.first; it != range.second; ++it) {
-        const auto assetDir = base/it->second;
+    const auto range = assetDirs.equal_range(extension);
+    for (auto it = range.first; it != range.second; ++it) {
+      const auto assetDir = base/it->second;
 
-        if (std::filesystem::exists(assetDir)) {
-          if (searchForMission && (it->first == ".dll") && (it->second == "maps")) {
-            // Search a) top level of [base]/maps/* subdirectories iff we are searching for mission DLLs.
-            // This lets e.g. OPU/base/maps/AxensHome/ml6_21.dll be found.
-            for (auto& p : std::filesystem::directory_iterator(assetDir, SearchOptions)) {
-              if (p.is_directory()) {
-                AddPath(p);
-              }
+      if (std::filesystem::exists(assetDir)) {
+        if (searchForMission && (it->first == ".dll") && (it->second == "maps")) {
+          // Search a) top level of [base]/maps/* subdirectories iff we are searching for mission DLLs.
+          // This lets e.g. OPU/base/maps/AxensHome/ml6_21.dll be found.
+          for (auto& p : std::filesystem::directory_iterator(assetDir, SearchOptions)) {
+            if (p.is_directory()) {
+              AddPath(p);
             }
           }
-
-          // Search b) [base]/[asset] directory.
-          AddPath(assetDir);
         }
-      }
 
-      if (std::filesystem::exists(base)) {
-        // Search c) [base] directory.
-        AddPath(base);
+        // Search b) [base]/[asset] directory.
+        AddPath(assetDir);
       }
+    }
+
+    if (std::filesystem::exists(base)) {
+      // Search c) [base] directory.
+      AddPath(base);
     }
   }
 
-  // Search 6) OPU root directory.
-  searchPaths.emplace_back(opuPath);
-
-  // Search 7) all OPU/[base]/maps/* subdirectories if we are searching for .map files.
+  // Search 6) all OPU/[base]/maps/* subdirectories if we are searching for .map files.
   // This lets e.g. OPU/base/maps/misc/ademo1.dll refer to OPU/base/maps/campaign/eden04.map.
   if (extension == ".map") {
     for (const auto& base : bases) {
@@ -179,7 +189,7 @@ static std::vector<std::filesystem::path> GetSearchPaths(
   }
 
   if (excludeStockDirs == false) {
-    // Search 8) Outpost2.exe directory, then 9) Outpost 2 CD directory if available.
+    // Search 7) Outpost2.exe directory, then 8) Outpost 2 CD directory if available.
     AddPath(g_resManager.installedDir_);
     AddPath(g_resManager.cdDir_);
   }
@@ -188,6 +198,7 @@ static std::vector<std::filesystem::path> GetSearchPaths(
 }
 
 // =====================================================================================================================
+// Gets the path to a game file as per GetSearchPaths().
 static std::filesystem::path GetFilePath(
   const std::filesystem::path&  filename,
   bool                          searchForMission = false)
@@ -214,13 +225,13 @@ static std::filesystem::path GetFilePath(
 }
 
 // =====================================================================================================================
-// Replacement function for ResManager::GetFilePath()
+// Replacement function for ResManager::GetFilePath().
 static ibool __fastcall GetFilePathHook(
   ResManager*  pThis,  int,
   char*        pResName,
   char*        pOutputFilename)
 {
-  const std::filesystem::path path = GetFilePath(pResName);
+  const std::filesystem::path path = GetFilePath(pResName, g_searchForMission);
 
   if (pOutputFilename != nullptr) {
     pOutputFilename[0] = '\0';
@@ -234,6 +245,7 @@ static ibool __fastcall GetFilePathHook(
 
 
 // =====================================================================================================================
+// Gets the list of mission DLLs matching the specified type(s) and player count.
 static MissionList GetMissionList(
   MissionType  minMissionType,
   MissionType  maxMissionType,
@@ -302,6 +314,7 @@ static MissionList GetMissionList(
 }
 
 // =====================================================================================================================
+// malloc using OP2Shell's heap.
 static void* ShellAlloc(
   size_t size)
 {
@@ -311,7 +324,7 @@ static void* ShellAlloc(
 }
 
 // =====================================================================================================================
-// Replacement function for PopulateMultiplayerMissionList()
+// Replacement function for PopulateMultiplayerMissionList().
 static int __fastcall PopulateMultiplayerMissionListHook(
   HWND         hComboBoxWnd,
   int          maxPlayers,
@@ -324,8 +337,7 @@ static int __fastcall PopulateMultiplayerMissionListHook(
   const auto missions = GetMissionList(minMissionType, maxMissionType, maxPlayers);
 
   for (const auto& [filename, pAIModDesc] : missions) {
-    char*const pFilenameBuf = static_cast<char*>(OP2Alloc(filename.length() + 1));
-    if (pFilenameBuf != nullptr) {
+    if (char*const pFilenameBuf = static_cast<char*>(OP2Alloc(filename.length() + 1));  pFilenameBuf != nullptr) {
       strncpy_s(pFilenameBuf, filename.length() + 1, filename.data(), _TRUNCATE);
       const LRESULT entry = SendMessageA(hComboBoxWnd, CB_ADDSTRING, 0, LPARAM(pAIModDesc->pLevelDesc));
       SendMessageA(hComboBoxWnd, CB_SETITEMDATA, entry, LPARAM(pFilenameBuf));
@@ -339,7 +351,7 @@ static int __fastcall PopulateMultiplayerMissionListHook(
 }
 
 // =====================================================================================================================
-// Replacement function for SinglePlayerGameDialog::PopulateMissionList()
+// Replacement function for SinglePlayerGameDialog::PopulateMissionList().
 static void __fastcall PopulateSinglePlayerMissionListHook(
   IDlgWnd* pThis)
 {
@@ -350,9 +362,8 @@ static void __fastcall PopulateSinglePlayerMissionListHook(
   SendMessageA(hListBoxWnd, LB_RESETCONTENT, 0, 0);
   SendMessageA(hListBoxWnd, WM_SETREDRAW,    0, 0);
 
-  for (const auto& [filename, pAIModDesc] : GetMissionList(type)) {
-    char*const pFilenameBuf = static_cast<char*>(ShellAlloc(filename.length() + 1));
-    if (pFilenameBuf != nullptr) {
+  for (const auto& [filename, pAIModDesc] : GetMissionList()) {
+    if (char*const pFilenameBuf = static_cast<char*>(ShellAlloc(filename.length() + 1));  pFilenameBuf != nullptr) {
       strncpy_s(pFilenameBuf, filename.length() + 1, filename.data(), _TRUNCATE);
       const LRESULT listEntry = SendMessageA(hListBoxWnd, LB_ADDSTRING, 0, LPARAM(pAIModDesc->pLevelDesc));
       SendMessageA(hListBoxWnd, LB_SETITEMDATA, listEntry, LPARAM(pFilenameBuf));
@@ -365,6 +376,7 @@ static void __fastcall PopulateSinglePlayerMissionListHook(
 
 
 // =====================================================================================================================
+// Gets PATH environment variable.
 static std::wstring GetPathEnv() {
   std::unique_ptr<wchar_t[]> pTmp(new wchar_t[_MAX_ENV]);
   pTmp[0] = L'\0';
@@ -448,9 +460,12 @@ static void RemoveModuleSearchPaths(
 static HMODULE WINAPI LoadLibraryAltSearchPath(
   const char* pFilename)
 {
-  const std::filesystem::path path = GetFilePath(pFilename, g_searchForMission);
+  std::filesystem::path path = GetFilePath(pFilename, g_searchForMission);
   if (path.is_absolute()) {
     AddModuleSearchPaths({ path.parent_path() }, true);
+  }
+  else {
+    path = pFilename;
   }
   return LoadLibraryExW(path.wstring().data(), NULL, path.is_absolute() ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
 }
@@ -474,24 +489,27 @@ void InitModuleSearchPaths() {
   // Add default DLL search paths.
   AddModuleSearchPaths({ "", opuPath, opuPath/"libs" }, true);  // ** TODO remove this, op2ext handles these
   AddModuleSearchPaths({ base, base/"libs" });
-  // ** TODO should add search paths for all mods
+  const auto& modPaths = GetModPaths();
+  for (auto it = modPaths.rbegin(); it != modPaths.rend(); ++it) {
+    AddModuleSearchPaths({ *it, (*it)/"libs" }, true);
+  }
 
   // OPUPatch needs to keep some DLLs loaded to patch them;  load them here so they get loaded from the correct path.
   if (hModules.empty()) {
     for (const char* pFilename : { "OP2Shell.dll", "odasl.dll" }) {
-      const HMODULE hModule = LoadLibraryAltSearchPath(pFilename);
-      if (hModule != NULL) {
+      if (const HMODULE hModule = LoadLibraryAltSearchPath(pFilename);  hModule != NULL) {
         hModules.push_back(hModule);
       }
     }
 
     if (hModules.empty() == false) {
-      atexit([] { for (HMODULE hModule : hModules) { FreeLibrary(hModule); }  hModules.clear(); });
+      static const auto cleanup = atexit([] { for (HMODULE h : hModules) { FreeLibrary(h); }  hModules.clear(); });
     }
   }
 }
 
 // =====================================================================================================================
+// Hooks game file search path logic, allowing for loading files from context-based subdirs under the Outpost2/OPU dir.
 bool SetFileSearchPathPatch(
   bool enable)
 {
@@ -538,8 +556,7 @@ bool SetFileSearchPathPatch(
         const ibool result = F(pResManager, pResName, pOut);
         g_searchForMission = false;
 
-        const std::filesystem::path path(result ? pOut : "");
-        if (path.is_absolute()) {
+        if (const std::filesystem::path path(result ? pOut : "");  path.is_absolute()) {
           g_curMapPath = path.parent_path();
         }
 
@@ -561,9 +578,9 @@ bool SetFileSearchPathPatch(
 
       path                  = std::filesystem::absolute(path);
       g_curMapPath          = path.parent_path();
-      g_searchForMission    = true;
       preMissionPathEnv     = GetPathEnv();
       AddModuleSearchPaths({ g_curMapPath, g_curMapPath/"libs" }, true);
+      g_searchForMission    = true;
       const HMODULE hModule = LoadLibraryAltSearchPath(path.string().data());
       g_searchForMission    = false;
 
@@ -604,7 +621,7 @@ bool SetFileSearchPathPatch(
     success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
 
     if (success) {
-      atexit([] { SetFileSearchPathPatch(false); });
+      static const auto cleanup = atexit([] { SetFileSearchPathPatch(false); });
     }
   }
 
@@ -625,6 +642,78 @@ bool SetFileSearchPathPatch(
 
 
 // =====================================================================================================================
+// Checksums a tech tree, factoring out non-breaking deltas like localization, definition order, whitespace, etc.
+static uint32 ChecksumTech(
+  const char* pFilename)
+{
+  uint32 checksum = 0;
+
+  // Get tech file contents (use OpenStream to search in VOLs too).
+  std::stringstream techFile;
+  if (auto*const pStream = g_resManager.OpenStream(pFilename);  pStream != nullptr) {
+    for (char c = '\0'; pStream->Read(1, &c); techFile << c);
+    g_resManager.ReleaseStream(pStream);
+  }
+
+  // Use a sorted map, since OP2 sorts techs by ID. Map of TechID: list of normalized strings within BEGIN_TECH/END_TECH
+  std::map<int, std::vector<std::string>> techInfos;
+  int curTech = -1;
+
+  for (std::string l; std::getline(techFile, l);) {
+    // Strip side whitespace.
+    const size_t left  = l.find_first_not_of(" \t\r");
+    const size_t right = l.find_last_not_of(" \t\r");
+    const std::string_view line((left  != std::string::npos) ? (l.begin() + left)      : l.end(),
+                                (right != std::string::npos) ? (l.begin() + right + 1) : l.end());
+
+    if (line.empty() || (line[0] == ';')) {
+      // Ignore blank lines and comments.
+      continue;
+    }
+    else if (curTech == -1) {
+      if (line.find("BEGIN_TECH") == 0) {
+        // Extract tech ID, ignore name string.
+        if (size_t pos = line.find_last_of(" \t");  pos != std::string::npos) {
+          const auto [p, ec] = std::from_chars(line.data() + pos + 1, line.data() + line.size(), curTech);
+        }
+      }
+    }
+    else {
+      if (line.find("END_TECH") == 0) {
+        curTech = -1;
+      }
+      else if ((line.find("TEASER") == 0) || (line.find("DESCRIPTION") == 0)) {
+        // Ignore TEASER and DESCRIPTION to factor out localization.
+        continue;
+      }
+      else if (line.find("IMPROVE_DESC") == 0) {
+        // Include the IMPROVE_DESC token in the checksum since it has side effects, but ignore the string value.
+        techInfos[curTech].emplace_back("IMPROVE_DESC");
+      }
+      else {
+        // Normalize whitespace in inner parts of line.
+        for (size_t pos = 0; ((pos = l.find("\t", pos)) != std::string::npos); l[pos++] = ' ');
+        const auto end = std::copy_if(
+          line.begin(), line.end(), l.begin(), [](const char& c) { return (c != ' ') || ((&c)[1] != ' '); });
+        techInfos[curTech].emplace_back(l.begin(), end);
+      }
+    }
+  }
+
+  // Checksum the normalized tech definition contents.
+  for (auto& [techID, techInfo] : techInfos) {
+    std::sort(techInfo.begin(), techInfo.end());
+    checksum ^= TApp::Checksum(techID);
+    for (const auto& line : techInfo) {
+      checksum ^= TApp::ChecksumData(line.data(), line.size());
+    }
+  }
+
+  return checksum;
+}
+
+
+// =====================================================================================================================
 // Changes netplay game start checksum validation logic.
 bool SetChecksumPatch(
   bool enable)
@@ -635,18 +724,17 @@ bool SetChecksumPatch(
   if (enable) {
     // Reimplement ChecksumScript()
     patcher.Hook(0x44FFE0, FastcallLambdaPtr([](int pOut[14], const char* pFilename) -> ibool {
-      static const uint32 op2extChecksum   = g_resManager.ChecksumStream("op2ext.dll");
+      static const uint32 op2ExtChecksum   = g_resManager.ChecksumStream("op2ext.dll");
       static const uint32 opuPatchChecksum = g_resManager.ChecksumStream("OPUPatch.dll");
 
       AIModDesc* pAIModDesc = nullptr;
-      const std::filesystem::path scriptPath = GetFilePath(pFilename, true);
-      if (scriptPath.empty() == false) {
+      if (const std::filesystem::path scriptPath = GetFilePath(pFilename, true);  scriptPath.empty() == false) {
         pAIModDesc = MissionManager::GetModuleDesc(scriptPath.string().data());
       }
 
       int  i      = 0;
       bool result = true;
-      auto AddChecksum = [pOut, &result, &i](uint32 checksum) { pOut[i] = checksum;  result &= (checksum != 0); };
+      auto AddChecksum = [pOut, &result, &i](uint32 checksum) { pOut[i++] = checksum;  result &= (checksum != 0); };
 
       // Checksum sheets
       for (const char* p : { "building.txt", "mines.txt", "morale.txt", "space.txt", "vehicle.txt", "weapons.txt" }) {
@@ -655,12 +743,11 @@ bool SetChecksumPatch(
 
       // Normally, edentek.txt, ply_tek.txt, and multitek.txt get checksummed here.
       // Use these 3 slots instead for the actual map's tech checksum, op2ext.dll, and OPUPatch.dll.
-      // ** TODO tech checksum could be smarter to factor out localization etc. for now we checksum spoof the files
-      AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pTechtreeName));
-      AddChecksum(op2extChecksum);
+      AddChecksum((pAIModDesc == nullptr) ? 0 : ChecksumTech(pAIModDesc->pTechtreeName));
+      AddChecksum(op2ExtChecksum);
       AddChecksum(opuPatchChecksum);
 
-      // Checksum OP2Shell.dll (seems pointless, maybe we can reuse this for something else)
+      // Checksum OP2Shell.dll (seems pointless, multiplayer setup dialogs are all handled inside Outpost2.exe)
       AddChecksum(g_tApp.ChecksumShell());
 
       // Checksum Outpost2.exe (seems pointless as long as this is a const, maybe we can reuse this for something else)
@@ -673,8 +760,8 @@ bool SetChecksumPatch(
       AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pMapName));
 
       // Overall checksum
-      pOut[i] = TApp::Checksum(pOut, sizeof(int) * i);
-      assert(i == 13);
+      AddChecksum(TApp::ChecksumData(pOut, sizeof(int) * i));
+      assert(i == 14);
 
       if (pAIModDesc != nullptr) {
         MissionManager::FreeModuleDesc(pAIModDesc);
@@ -695,69 +782,65 @@ bool SetChecksumPatch(
 
 
 // =====================================================================================================================
-// Locally injects the Indeo 4.1 codec needed for game cutscenes if it is not installed in the OS.
-bool SetCodecPatch(
+// Locally injects the Indeo 4.1 codec needed for game cutscenes if it is not registered in the OS.
+bool SetCodecFix(
   bool enable)
 {
   constexpr DWORD IndeoFourCC = mmioFOURCC('i', 'v', '4', '1');
 
-  static Patcher::PatchContext patcher;
   static bool useLocalIndeo = false;
          bool success       = true;
 
   if (enable) {
-    // Fucking drivers, how do they work?
-    // Microsoft VfW API is a piece of shit and the documentation is an even bigger piece of shit,
-    // work around some issues that cause the Indeo codec to crash when registered as a function via ICInstall().
-    auto IndeoDriverProc = [](DWORD_PTR dwDriverId, HDRVR hDrvr, UINT msg, LONG lParam1, LONG lParam2) {
-      static HMODULE hMod       = LoadLibraryAltSearchPath("ir41_32.ax");
-      static auto    driverProc = (hMod != NULL) ? DRIVERPROC(GetProcAddress(hMod, "DriverProc")) : nullptr;
-      
-      LRESULT result = 0;
-      
-      if (driverProc != nullptr) {
-        // When registered as a function, the codec crashes if ICM_GETINFO is sent, so we handle that ourselves here.
-        // This is also the first message sent, so we send the real codec DRV_LOAD and DRV_ENABLE messages as would get
-        // sent otherwise (for some reason they aren't sent to function-based codecs).
-        if (msg == ICM_GETINFO) {
-          if ((driverProc(dwDriverId, hDrvr, DRV_LOAD,   lParam1, lParam2) != 0) &&
-              (driverProc(dwDriverId, hDrvr, DRV_ENABLE, lParam1, lParam2) != 0) &&
-              (lParam2 >= sizeof(ICINFO)))
-          {
-            auto*const pInfo = (ICINFO*)(lParam1);
-            pInfo->dwSize           = sizeof(ICINFO);
-            pInfo->fccType          = ICTYPE_VIDEO;
-            pInfo->fccHandler       = IndeoFourCC;
-            pInfo->dwFlags          = VIDCF_DRAW;
-            pInfo->dwVersion        = 0;
-            pInfo->dwVersionICM     = ICVERSION;
-            pInfo->szName[0]        = '\0';
-            pInfo->szDescription[0] = '\0';
-            result = sizeof(ICINFO);
-          }
-        }
-        else {
-          result = driverProc(dwDriverId, hDrvr, msg, lParam1, lParam2);
-        }
-      }
-      
-      return result;
-    };
-
     // Check for Indeo 4.1 codec and install as a function if missing.
     if (useLocalIndeo == false) {
       ICINFO icInfo;
       const bool indeo41Present = ICInfo(ICTYPE_VIDEO, IndeoFourCC, &icInfo);
 
       if (indeo41Present == false) {
-        useLocalIndeo =
-          ICInstall(ICTYPE_VIDEO, IndeoFourCC, LPARAM(StdcallLambdaPtr(IndeoDriverProc)), nullptr, ICINSTALL_FUNCTION);
+        static const HMODULE hMod          = LoadLibraryAltSearchPath("ir41_32.ax");
+        static auto*const    pfnDriverProc = (hMod != NULL) ? DRIVERPROC(GetProcAddress(hMod, "DriverProc")) : nullptr;
+        static const auto    cleanup       = (hMod != NULL) ? atexit([] { FreeLibrary(hMod); }) : 0;
+
+        // Work around some issues that cause the Indeo codec to crash when registered as a function via ICInstall().
+        auto IndeoDriverProc = [](DWORD_PTR dwDriverId, HDRVR hDrvr, UINT msg, LONG lParam1, LONG lParam2) {
+          LRESULT result = 0;
+      
+          // When registered as a function, the codec crashes if ICM_GETINFO is sent, so we handle that ourselves here.
+          // This is also the first message sent, so we send the real codec DRV_LOAD and DRV_ENABLE messages as would
+          // get sent otherwise (for some reason they aren't sent to function-based codecs).
+          if (msg == ICM_GETINFO) {
+            if ((pfnDriverProc(dwDriverId, hDrvr, DRV_LOAD,   lParam1, lParam2) != 0) &&
+                (pfnDriverProc(dwDriverId, hDrvr, DRV_ENABLE, lParam1, lParam2) != 0) &&
+                (lParam2 >= sizeof(ICINFO)))
+            {
+              auto*const pInfo = (ICINFO*)(lParam1);
+              pInfo->dwSize           = sizeof(ICINFO);
+              pInfo->fccType          = ICTYPE_VIDEO;
+              pInfo->fccHandler       = IndeoFourCC;
+              pInfo->dwFlags          = VIDCF_DRAW;
+              pInfo->dwVersion        = 0;
+              pInfo->dwVersionICM     = ICVERSION;
+              pInfo->szName[0]        = '\0';
+              pInfo->szDescription[0] = '\0';
+              result = sizeof(ICINFO);
+            }
+          }
+          else {
+            result = pfnDriverProc(dwDriverId, hDrvr, msg, lParam1, lParam2);
+          }
+      
+          return result;
+        };
+
+        useLocalIndeo = (pfnDriverProc != NULL) && ICInstall(
+          ICTYPE_VIDEO, IndeoFourCC, LPARAM(StdcallLambdaPtr(IndeoDriverProc)), nullptr, ICINSTALL_FUNCTION);
         success &= useLocalIndeo;
       }
     }
 
     if (success) {
-      atexit([] { SetCodecPatch(false); });
+      static const auto cleanup = atexit([] { SetCodecFix(false); });
     }
   }
 

@@ -53,7 +53,8 @@ enum class CellType : int {
   Count
 };
 
-inline bool operator==(CellType first, int second) { return int(first) == second; }
+inline bool operator==(CellType first, int      second) { return int(first) == second; }
+inline bool operator==(int      first, CellType second) { return first == int(second); }
 
 /// Data describing each map tile.
 union TileData {
@@ -113,7 +114,7 @@ struct TerrainType {
   uint16 lastTile;      ///< Last tile index in this terrain type.
 
   uint16 bulldozed;     ///< Index of bulldozed tile for this terrain type.
-  uint16 rubbleStart;   ///< Start tile index of rubble.  4 common rubble, followed by 4 rare rubble.
+  uint16 rubbleStart;   ///< Start tile index of rubble.  4 common rubble tiles, followed by 4 rare rubble tiles.
 
   uint16 playerTube[6]; ///< (Unused?) Index of legacy per-player tube tiles for this terrain type.
 

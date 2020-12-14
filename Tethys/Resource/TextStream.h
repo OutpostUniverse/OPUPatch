@@ -13,15 +13,15 @@ public:
    TextStream() { InternalCtor<0x48EFF0>(); }
   ~TextStream() { Thunk<0x48F000>();        }
 
-  int  Open(const char* pFilename) { return Thunk<0x48F020, &$::Open>(pFilename); }
-  void Close()                     { return Thunk<0x48F050, &$::Close>();         }
+  ibool Open(const char* pFilename) { return Thunk<0x48F020, &$::Open>(pFilename); }
+  void  Close()                     { return Thunk<0x48F050, &$::Close>();         }
 
-  void ResetToLastToken()                        { return Thunk<0x48F070, &$::ResetToLastToken>();              }
-  int  SkipRestOfLine()                          { return Thunk<0x48F090, &$::SkipRestOfLine>();                }
-  int  ReadInt(int* pValue)                      { return Thunk<0x48F0E0, &$::ReadInt>(pValue);                 }
-  int  ReadToken(char*  pToken,  int bufferSize) { return Thunk<0x48F210, &$::ReadToken>(pToken, bufferSize);   }
-  int  ReadString(char* pString, int bufferSize) { return Thunk<0x48F330, &$::ReadString>(pString, bufferSize); }
-  int  FindLineOfLastReadToken()                 { return Thunk<0x48F430, &$::FindLineOfLastReadToken>();       }
+  void  ResetToLastToken()                        { return Thunk<0x48F070, &$::ResetToLastToken>();              }
+  ibool SkipRestOfLine()                          { return Thunk<0x48F090, &$::SkipRestOfLine>();                }
+  ibool ReadInt(int* pValue)                      { return Thunk<0x48F0E0, &$::ReadInt>(pValue);                 }
+  ibool ReadToken(char*  pToken,  int bufferSize) { return Thunk<0x48F210, &$::ReadToken>(pToken, bufferSize);   }
+  ibool ReadString(char* pString, int bufferSize) { return Thunk<0x48F330, &$::ReadString>(pString, bufferSize); }
+  ibool FindLineOfLastReadToken()                 { return Thunk<0x48F430, &$::FindLineOfLastReadToken>();       }
 
 public:
   StreamIO* pStream_;

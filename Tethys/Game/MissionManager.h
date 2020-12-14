@@ -19,11 +19,6 @@ struct AIModDesc {
   int     checksum;
 };
 
-struct DefaultScGroupInfo {
-  int defaultScGroupIndex;
-  int flag;
-};
-
 /// Internal MissionManager class.
 class MissionManager : public OP2Class<MissionManager> {
 public:
@@ -90,6 +85,12 @@ public:
   static MissionManager* GetInstance() { return OP2Mem<0x4EFD18, MissionManager*>(); }
 
 public:
+  struct DefaultScGroupInfo {
+    int   defaultScGroupIndex;  ///< Initialized to -1 if human, or to a FightGroup index if AI
+    ibool isUserManaged;        ///< Initialized to false.  If false, when SetDefaultGroup() is called, the old
+                                ///  default group is destroyed and this gets set to true.
+  };
+
   HINSTANCE          hModule_;
   int  (CDECL*       pfnInitProc_)();
   void (CDECL*       pfnAIProc_)();

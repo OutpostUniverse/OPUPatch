@@ -39,7 +39,7 @@ using namespace Patcher::Registers;
 
 static constexpr uint32 MaxNumMessagesLogged = 64;                           // ** TODO Try to increase this?
 static constexpr uint32 MaxLogMessageLen     = sizeof(ListItem::text) - 10;  // ** TODO Try to increase this?
-static constexpr uint32 MaxChatMessageLen    = min(sizeof(ChatCommand::message), MaxLogMessageLen);
+static constexpr uint32 MaxChatMessageLen    = (std::min)(sizeof(ChatCommand::message), MaxLogMessageLen);
 
 static MessageLogEntry<MaxLogMessageLen> g_messageLogRb[MaxNumMessagesLogged] = { };
 static char g_chatBarMessage[MaxLogMessageLen]   = { };
@@ -82,6 +82,7 @@ static std::string FindResourceReplacement(
 
   std::string result = "";
   if (FindResourceA(static_cast<HMODULE>(g_hInst), &buf[0], pResType) != NULL) {
+    // ** TODO This should search in all loaded modules
     result = buf;
     *phModule = static_cast<HMODULE>(g_hInst);
   }
@@ -129,6 +130,23 @@ bool SetUiResourceReplacePatch(
     // In AviWnd::RegisterClass()
     shellPatcher.LowLevelHook(0x1300129E, [](Esp<void*> pEsp)
       { static_cast<WNDCLASSA*>(PtrInc(pEsp, 20))->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
+
+    // Hook MainMenuDialog::DlgProc() (replace vtbl entry)
+    shellPatcher.Write(0x130110A0, ThiscallLambdaPtr([](IDlgWnd* pThis, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+      static auto*const pfnDialogProc =
+        static_cast<INT_PTR(__thiscall*)(IDlgWnd*, UINT, WPARAM, LPARAM)>(shellPatcher.FixPtr(0x13002900));
+
+      const INT_PTR result = pfnDialogProc(pThis, uMsg, wParam, lParam);
+
+      if (uMsg == WM_INITDIALOG) {
+        if (const HWND hDebugButton = GetDlgItem(pThis->hWnd_, 1033);  hDebugButton != NULL) {
+          // Allow D keyboard shortcut for the hidden debug menu button.
+          SendMessageA(hDebugButton, WM_SETTEXT, 0, LPARAM("&DEBUG TEST..."));
+        }
+      }
+
+      return result;
+    }));
 
     success = ((op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok));
   }
@@ -594,15 +612,14 @@ bool SetVehicleCargoDisplayPatch(
     static_assert(TethysUtil::ArrayLen(TruckCargoStrings) == size_t(TruckCargo::Count),
                   "The TruckCargoStrings table needs to be updated.");
 
-    // Make ConVecs, Cargo Trucks, and Evacuation Transports display their cargo in mouseover tooltips.
     static auto GetCargoStr = [](Vehicle* pVec) -> std::string {
       switch (pVec->GetTypeID()) {
       case mapCargoTruck: {
-        const auto       cargoType  = TruckCargo(max(pVec->truckCargoType_, 0));
-        const char*const pCargoName =
+        const auto        cargoType  = TruckCargo(max(pVec->truckCargoType_, 0));
+        const char*const  pCargoName =
           (cargoType == TruckCargo::Spaceport) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0] :
           (cargoType <  TruckCargo::Count)     ? TruckCargoStrings[size_t(cargoType)] : nullptr;
-        const auto       quantity   = ((pVec->truckCargoAmount_ > 1) && (cargoType <= TruckCargo::RareRubble)) ?
+        const std::string quantity   = ((pVec->truckCargoAmount_ > 1) && (cargoType <= TruckCargo::RareRubble)) ?
           std::to_string(pVec->truckCargoAmount_) : "";
 
         return (pCargoName != nullptr) ? (quantity + ((quantity[0] != '\0') ? " " : "") + pCargoName) : "empty";
@@ -622,6 +639,7 @@ bool SetVehicleCargoDisplayPatch(
     Vehicle::VtblType*const pVtbls[] =
       { MapObj::ConVec::Vtbl(), MapObj::CargoTruck::Vtbl(), MapObj::EvacuationTransport::Vtbl() };
 
+    // Make ConVecs, Cargo Trucks, and Evacuation Transports display their cargo in mouseover tooltips.
     for (auto* pVtbl : pVtbls) {
       patcher.Write(
         &pVtbl->pfnGetMouseOverStr,

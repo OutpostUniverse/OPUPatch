@@ -92,7 +92,7 @@ enum class ActionType : uint8 {
 };
 
 /// Possible values for MapObject::truckCargoType_.
-enum class Truck_Cargo : int {
+enum class TruckCargo : int {
   Empty = 0,
   Food,
   CommonOre,
@@ -107,7 +107,6 @@ enum class Truck_Cargo : int {
 
   Count
 };
-using TruckCargo = Truck_Cargo;
 
 /// Mining beacon ore type.
 enum class OreType : int8 {

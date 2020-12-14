@@ -104,11 +104,14 @@ public:
   static int FASTCALL OP2MessageBox(HWND hOwnerWnd, const char* pMsg, const char* pTitle, uint32 flags)
     { return OP2Thunk<0x41E0E0, &$::OP2MessageBox>(hOwnerWnd, pMsg, pTitle, flags); }
 
-  static uint32 FASTCALL Checksum(const void* pMem, size_t sz) { return OP2Thunk<0x40C050, &$::Checksum>(pMem, sz); }
+  static uint32 FASTCALL ChecksumData(const void* pMemory, size_t size)
+    { return OP2Thunk<0x40C050, &$::ChecksumData>(pMemory, size); }
   static ibool  FASTCALL ChecksumScript(const char* pFilename, int pOut[14])
     { return OP2Thunk<0x44FFE0, ibool FASTCALL(int*, const char*)>(&pOut[0], pFilename); }
   static uint32 FASTCALL ChecksumGameState()               { return OP2Thunk<0x40C0B0, &$::ChecksumGameState>(); }
   static void   SetDebugMsgOnChecksumGameState(bool state) { OP2Mem<0x4DF1A0, ibool&>() = state;                 }
+
+  template <typename T>  static uint32 Checksum(const T& data) { return ChecksumData(&data, sizeof(data)); }
 
 public:
   HINSTANCE hInstance_;

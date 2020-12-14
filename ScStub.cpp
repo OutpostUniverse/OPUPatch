@@ -129,7 +129,7 @@ bool SetScStubPatch(
     success = (patcher.GetStatus() == PatcherStatus::Ok);
 
     if (success) {
-      atexit([] { SetScStubPatch(false); });
+      static const auto cleanup = atexit([] { SetScStubPatch(false); });
     }
   }
 

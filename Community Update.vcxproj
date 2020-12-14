@@ -246,7 +246,6 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
   <ItemGroup>
     <ResourceCompile Include="AboutDialog.rc" />
     <ResourceCompile Include="Icon.rc" />
-    <ResourceCompile Include="MainMenu.rc" />
     <ResourceCompile Include="MultiplayerIpDropdown.rc" />
     <ResourceCompile Include="MultiplayerLobby.rc" />
     <ResourceCompile Include="MultiplayerMethodMenu.rc" />

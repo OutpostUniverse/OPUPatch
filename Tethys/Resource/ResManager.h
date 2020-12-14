@@ -15,7 +15,7 @@ public:
 
   ibool GetFilePath(const char* pFilename, char* pPath) { return Thunk<0x471590, &$::GetFilePath>(pFilename, pPath); }
 
-  /// OpenStream and ChecksumStream will first call GetFilePath, then search in VOLs.
+  /// OpenStream (and ChecksumStream) will first call GetFilePath, then search in VOLs.
   StreamIO* OpenStream(const char*     pFilename)     { return Thunk<0x471170, &$::OpenStream>(pFilename);     }
   StreamIO* CreateStream(const char*   pFilename)     { return Thunk<0x471B60, &$::CreateStream>(pFilename);   }
   void      ReleaseStream(StreamIO* pStream)          { return Thunk<0x4713D0, &$::ReleaseStream>(pStream);    }

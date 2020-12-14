@@ -91,7 +91,7 @@ bool SetUnitLimitPatch(
     patcher.LowLevelHook(0x49E9BF, [](Ebx<void*>& pList) { pList = &unitDrawList[0];   });
     patcher.LowLevelHook(0x49E9F3, [](Ebx<void*>& pList) { pList = &entityDrawList[0]; });
     patcher.LowLevelHook(0x49EA15, [](Ebx<void*>& pList, Eax<int> count)
-                                     { pList = &unitDrawList[0];  return (count > 0) ? 0x49EA1C : 0x49EA2F; });
+      { pList = &unitDrawList[0];  return (count > 0) ? 0x49EA1C : 0x49EA2F; });
     patcher.LowLevelHook(0x49EA55, [](Edi<void*>& pList) { pList = &entityDrawList[0]; });
     patcher.LowLevelHook(0x49EA5C, [](Ecx<void*>  pUnit) { return (pUnit == nullptr) ? 0x49EA69 : 0; });  // Workaround
     patcher.LowLevelHook(0x49EA81, [](Ebx<void*>& pList) { pList = &entityDrawList[0]; });
@@ -469,7 +469,7 @@ bool SetAllyEdwardSurveyMinesPatch(
   bool success = true;
 
   if (enable) {
-    // Replace MiningMeacon::IsBeaconSurveyed vftable entry with our function
+    // Replace MiningMeacon::IsBeaconSurveyed() vftable entry with our function
     static auto*const pfnOldIsBeaconSurveyed = MapObj::MiningBeacon::Vtbl()->pfnIsBeaconSurveyed;
     patcher.Write(&MapObj::MiningBeacon::Vtbl()->pfnIsBeaconSurveyed, ThiscallLambdaPtr(
       [](MapObj::MiningBeacon* pThis, int playerNum) {

@@ -1,18 +1,15 @@
 
-#if defined(_WIN32)
-# if !defined(WIN32_LEAN_AND_MEAN)
-#  define WIN32_LEAN_AND_MEAN
-# endif
-# include <windows.h>
-# include <tlhelp32.h>
-#else
-# include <sys/mman.h>
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN
 #endif
+#include <windows.h>
+#include <tlhelp32.h>
 
 #include <algorithm>
 #include <utility>
 #include <limits>
 #include <mutex>
+#include <memory>
 
 #include <unordered_set>
 #include <map>
@@ -102,14 +99,25 @@ static void AppendString(char** ppWriter, const std::string& src)
 // Gets the length of an array.
 template <typename T, size_t N>  static constexpr uint32 ArrayLen(const T (&src)[N]) { return static_cast<uint32>(N); }
 
+// Translates a Capstone error code to a PatcherStatus.
+static Status TranslateCsError(cs_err capstoneError) {
+  switch (capstoneError) {
+  case CS_ERR_OK:                          return Status::Ok;
+  case CS_ERR_MEM:  case CS_ERR_MEMSETUP:  return Status::FailMemAlloc;
+  default:                                 return Status::FailDisassemble;
+  }
+}
+
 // Capstone disassembler helper class.
+template <cs_arch CsArchitecture, uint32 CsMode>
 class Disassembler {
 public:
-  Disassembler() : hDisasm_(NULL), refCount_(0) { }
+   Disassembler() : hDisasm_(NULL), refCount_(0) { }
+  ~Disassembler() { if (refCount_ != 0) { cs_close(&hDisasm_);  refCount_ = 0; } }
 
   void Acquire() {
     std::lock_guard<std::mutex> lock(lock_);
-    if ((++refCount_ == 1) && (TranslateCsError(cs_open(CS_ARCH_X86, CS_MODE_32, &hDisasm_)) != Status::Ok)) {
+    if ((++refCount_ == 1) && (TranslateCsError(cs_open(CsArchitecture, cs_mode(CsMode), &hDisasm_)) != Status::Ok)) {
       refCount_ = 0;
     }
   }
@@ -123,12 +131,13 @@ public:
 
   // Disassembles a number of instructions.
   std::vector<cs_insn> Disassemble(const void* pAddress, size_t numInsns) const {
-    std::vector<cs_insn> out(numInsns);
+    std::vector<cs_insn> out;
+    out.reserve(numInsns);
 
     if (refCount_ != 0) {
-      cs_insn* pInsns = nullptr;
-      size_t   count  = cs_disasm(
-        hDisasm_, (const uint8*)pAddress, sizeof(pInsns->bytes) * numInsns, uintptr(pAddress), numInsns, &pInsns);
+      cs_insn*      pInsns = nullptr;
+      const size_t  count  = cs_disasm(
+        hDisasm_, (const uint8*)(pAddress), sizeof(pInsns->bytes) * numInsns, uintptr(pAddress), numInsns, &pInsns);
 
       if (pInsns != nullptr) {
         if (GetLastError() == Status::Ok) {
@@ -141,16 +150,11 @@ public:
     return out;
   }
 
+  /*const cs_insn& DisassembleIter(const void* pAddress) const {
+    cs_disasm_iter(hDisasm_, (const uint8**)&pAddress,  )
+  }*/
+
   Status GetLastError() const { return TranslateCsError(cs_errno(hDisasm_)); }
-  
-  // Translates a Capstone error code to a PatcherStatus.
-  static Status TranslateCsError(cs_err capstoneError) {
-    switch (capstoneError) {
-    case CS_ERR_OK:                          return Status::Ok;
-    case CS_ERR_MEM:  case CS_ERR_MEMSETUP:  return Status::FailMemAlloc;
-    default:                                 return Status::FailDisassemble;
-    }
-  }
 
 private:
   csh     hDisasm_;
@@ -163,7 +167,8 @@ private:
 // HEAP_CREATE_ENABLE_EXECUTE flag.
 class Allocator {
 public:
-  Allocator() : hHeap_(NULL), refCount_(0) { }
+   Allocator() : hHeap_(NULL), refCount_(0) { }
+  ~Allocator() { if (hHeap_ != NULL) { HeapDestroy(hHeap_);  hHeap_ = NULL; } }
 
   void Acquire() {
     std::lock_guard<std::mutex> lock(allocatorLock_);
@@ -244,9 +249,10 @@ static constexpr uint32 ReadOnlyProtectFlags   = (PAGE_READONLY | PAGE_EXECUTE_R
 
 // Internal globals
 
-static Disassembler g_disasm;
-static Allocator    g_allocator;
-static std::mutex   g_codeThreadLock;
+static Disassembler<CS_ARCH_X86, CS_MODE_32>  g_disasm;
+
+static Allocator   g_allocator;
+static std::mutex  g_codeThreadLock;
 
 // =====================================================================================================================
 // Gets the index of the first set bit in a bitmask through an output parameter, and returns (mask != 0).
@@ -270,17 +276,6 @@ static uint32 PopCount(
   x = x - ((x >> 1u) & 0x55555555u);
   x = (x & 0x33333333u) + ((x >> 2u) & 0x33333333u);
   return (((x + (x >> 4u)) & 0x0F0F0F0Fu) * 0x01010101u) >> ((sizeof(uint32) - 1u) * 8u);
-}
-
-// =====================================================================================================================
-// Translates a Capstone error code to a Patcher Status.
-static Status TranslateCsError(
-  cs_err  capstoneError)
-{
-  switch (capstoneError) {
-  case CS_ERR_OK:  return Status::Ok;
-  default:         return Status::FailDisassemble;
-  }
 }
 
 // =====================================================================================================================
@@ -602,15 +597,6 @@ Status PatchContext::RevertExports() {
   IMAGE_DATA_DIRECTORY*const pExportDataDir = GetDataDirectory(hModule_, IMAGE_DIRECTORY_ENTRY_EXPORT);
   if (pExportDataDir != nullptr) {
     status_ = Revert(pExportDataDir);
-  }
-  return status_;
-}
-
-// =====================================================================================================================
-Status PatchContext::RevertImports() {
-  IMAGE_DATA_DIRECTORY*const pImportDataDir = GetDataDirectory(hModule_, IMAGE_DIRECTORY_ENTRY_IMPORT);
-  if (pImportDataDir != nullptr) {
-    status_ = Revert(pImportDataDir);
   }
   return status_;
 }
@@ -1022,9 +1008,7 @@ Status PatchContext::ReplaceReferencesToGlobal(
   }
 
   if (status_ != Status::Ok) {
-    for (auto it = (pRefsOut->begin() + startIndex); it != pRefsOut->end(); ++it) {
-      Revert(*it);
-    }
+    for (auto it = (pRefsOut->begin() + startIndex); it != pRefsOut->end(); Revert(*(it++)));
     pRefsOut->erase((pRefsOut->begin() + startIndex), pRefsOut->end());
   }
 
@@ -2178,33 +2162,6 @@ Status PatchContext::EditExports(
     else {
       status_ = Status::FailMemAlloc;
     }
-  }
-
-  return status_;
-}
-
-// =====================================================================================================================
-Status PatchContext::EditImports(
-  Span<ImportInfo>  importInfos)
-{
-  // ** TODO  https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#the-idata-section
-  //          https://docs.microsoft.com/en-us/previous-versions/ms809762(v=msdn.10)#pe-file-imports
-  // Also need IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT, IMAGE_DIRECTORY_ENTRY_IAT, maybe IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT?
-  // See also: IMAGE_THUNK_DATA32, IMAGE_SNAP_BY_ORDINAL32/IMAGE_SNAP_BY_ORDINAL64, IMAGE_ORDINAL32/IMAGE_ORDINAL64,
-  //           IMAGE_IMPORT_BY_NAME
-  IMAGE_DATA_DIRECTORY*const pImportDataDir = GetDataDirectory(hModule_, IMAGE_DIRECTORY_ENTRY_IMPORT);
-
-  if ((status_ == Status::Ok) &&
-      ((pImportDataDir == nullptr) || (pImportDataDir->VirtualAddress == 0) || (pImportDataDir->Size == 0)))
-  {
-    // Not a valid PE image.  We expect any real PE binary to import CRT or Win32 DLLs and thus have an import table.
-    // Not a good assumption?
-    status_ = Status::FailInvalidModule;
-  }
-
-  if (status_ == Status::Ok) {
-    auto*const pOldImportTable =
-      static_cast<IMAGE_IMPORT_DESCRIPTOR*>(PtrInc(hModule_, pImportDataDir->VirtualAddress));
   }
 
   return status_;

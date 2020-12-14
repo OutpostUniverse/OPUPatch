@@ -48,14 +48,14 @@ bool SetLargeMapPatch(
 
     // In MapImpl::AllocateSpaceForMap()
     patcher.LowLevelHook(0x435748, [](Esi<int> curX) {
-      lightAdjustTable[curX]                        = MaxLightLevels - 1;  // Tile
-      lightAdjustTable[g_mapImpl.tileWidth_ + curX] = MaxLightLevels - 10; // Sprite
+      lightAdjustTable[curX]                        = MaxLightLevels - 1;   // Tile
+      lightAdjustTable[g_mapImpl.tileWidth_ + curX] = MaxLightLevels - 10;  // Sprite
       return 0x435787;
     });
     patcher.LowLevelHook(0x435773, [](Eax<uint8> lightLevel, Esi<int> curX)
-                                     { lightAdjustTable[curX]                        = lightLevel;  return 0x435777; });
+      { lightAdjustTable[curX]                        = lightLevel;  return 0x435777; });
     patcher.LowLevelHook(0x435780, [](Eax<uint8> lightLevel, Esi<int> curX)
-                                     { lightAdjustTable[g_mapImpl.tileWidth_ + curX] = lightLevel;  return 0x435787; });
+      { lightAdjustTable[g_mapImpl.tileWidth_ + curX] = lightLevel;  return 0x435787; });
 
     // In Map constructor
     patcher.LowLevelHook(0x4352FF, [] { memset(&lightAdjustTable[0], 0, sizeof(lightAdjustTable)); });

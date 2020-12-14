@@ -333,9 +333,6 @@
     <ResourceCompile Include="Icon.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="MainMenu.rc">
-      <Filter>Resources</Filter>
-    </ResourceCompile>
     <ResourceCompile Include="MultiplayerIpDropdown.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>

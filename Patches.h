@@ -14,7 +14,7 @@ bool SetGlobalMusicFix(bool enable);
 // Stream
 bool SetFileSearchPathPatch(bool enable);
 bool SetChecksumPatch(bool enable);  // ** WIP
-bool SetCodecPatch(bool enable);
+bool SetCodecFix(bool enable);
 
 // Netplay
 bool SetNatFix(bool enable);

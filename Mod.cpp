@@ -28,17 +28,17 @@ DLLAPI void InitMod(
 {
   bool success = SetGameVersion(true);
 
-  // Stream
-  success &= SetFileSearchPathPatch(true);
-  //success &= SetChecksumPatch(true);
-  success &= SetCodecPatch(true);
-
   // Misc
   success &= SetNoCdPatch(true);
   success &= SetDefaultIniSettingsPatch(true);
   success &= SetForceMoraleFix(true);
   success &= SetPrintfFloatFix(true);
   success &= SetGlobalMusicFix(true);
+
+  // Stream
+  success &= SetFileSearchPathPatch(true);
+  //success &= SetChecksumPatch(true);
+  success &= SetCodecFix(true);
 
   // Netplay
   success &= SetNatFix(true);

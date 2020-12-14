@@ -120,6 +120,7 @@ public:
   /// @param [in]  pfnOriginalOffset  (Optional) Offset or pointer-to-member into pfnNewFunction's functor object
   ///                                 state to pfnOriginal.  Use SetCapturedTrampoline for the first lambda capture.
   ///
+  /// @see   Comments of @ref Hook for examples, which has similar usage.
   /// @note  32-bit x86 only.
   PatcherStatus HookCall(TargetPtr pAddress, const FunctionPtr& pfnNewFunction, void* pPfnOriginal = nullptr);
   template <typename T>  PatcherStatus HookCall(TargetPtr pAddress, const FunctionPtr& pfnNewFunction, T** pPfnOriginal)
@@ -192,10 +193,6 @@ public:
   /// Examples:  EditExports({ { 0x401260, "AddUndecoratedExport" },  { 0x402000, "_AddDecoratedCFastcallExport@8"  } })
   ///            EditExports({ { 0x404000, 1 /* By ordinal */     },  { nullptr, "?DeleteDecoratedCppExport@@YAXXZ" } })
   PatcherStatus EditExports(Span<ExportInfo> exportInfos);
-
-  /// Adds or modifies import table entries in the module.
-  /// @warning  Unimplemented.
-  PatcherStatus EditImports(Span<ImportInfo> importInfos);
   
   PatcherStatus Memcpy(TargetPtr pAddress, const void* pSrc, size_t size);            ///< Safe memcpy to module memory.
   PatcherStatus Memset(TargetPtr pAddress, uint8      value, size_t count);           ///< Safe memset to module memory.
@@ -219,7 +216,6 @@ public:
 
   PatcherStatus Revert(TargetPtr pAddress);  ///< Reverts a patch that was previously written at the given address.
   PatcherStatus RevertExports();             ///< Reverts exports that had been injected by EditExports().
-  PatcherStatus RevertImports();             ///< Reverts imports that had been injected by EditImports().
   PatcherStatus RevertAll();                 ///< Reverts all patches this context had applied, and resets the status.
 
   PatcherStatus ReleaseModule();  ///< If this PatchContext has loaded a module, releases its active handle to it.

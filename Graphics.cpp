@@ -14,6 +14,8 @@
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/API/GameMap.h"
 
+#include <algorithm>
+
 using namespace Tethys;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
@@ -66,14 +68,14 @@ bool SetWindowFix(
     patcher.HookCall(0x4999FC, StdcallLambdaPtr(
       [](HDWP hWinPosInfo, HWND hWnd, HWND hWndInsertAfter, int x, int y, int cx, int cy, UINT uFlags) -> HDWP {
         const MapRect clipRect = GameMap::GetClipRect();
-        const int maxDisplayableMapWidth  = 32 * max(64, clipRect.x2 - clipRect.x1 + 1);
+        const int maxDisplayableMapWidth  = 32 * (std::max)(64, clipRect.x2 - clipRect.x1 + 1);
         // ** TODO Displaying the last row of the map causes severe glitches similar to the window being too tall, so we
         // subtract one tile.  We assume the map is 64x64 minimum.
-        const int maxDisplayableMapHeight = 32 * max(63, clipRect.y2 - clipRect.y1 + 1);
+        const int maxDisplayableMapHeight = 32 * (std::max)(63, clipRect.y2 - clipRect.y1 + 1);
         const int origCx = cx;
         const int origCy = cy;
-        cx = min(cx, maxDisplayableMapWidth);
-        cy = min(cy, maxDisplayableMapHeight);
+        cx = (std::min)(cx, maxDisplayableMapWidth);
+        cy = (std::min)(cy, maxDisplayableMapHeight);
         // Center the detail pane in the original area.
         if (cx < origCx) {
           x += (origCx - cx) / 2;
@@ -194,7 +196,7 @@ bool SetDpiFix(
       success = (oldCtx != NULL);
 
       if (success) {
-        atexit([] { SetDpiFix(false); });
+        static const auto cleanup = atexit([] { SetDpiFix(false); });
       }
     }
     else if (oldCtx != NULL) {
@@ -217,11 +219,7 @@ bool SetAlphaBlendPatch(
   if (enable) {
     // Hook acid cloud drawing code.
     patcher.LowLevelHook(*OP2Mem<void**>(0x586521), [](
-        Ebp<Rgb555[256]>  palette,
-        Ecx<uint32>       width,
-        Edi<Rgb555*>&     pDstOut,
-        Esi<uint8*>&      pSrcPaletteIdxOut)
-      {
+      Ebp<Rgb555[256]> palette, Ecx<uint32> width, Edi<Rgb555*>& pDstOut, Esi<uint8*>& pSrcPaletteIdxOut) {
         Rgb555* pDst           = pDstOut;
         uint8*  pSrcPaletteIdx = pSrcPaletteIdxOut;
 
@@ -231,9 +229,7 @@ bool SetAlphaBlendPatch(
             const auto& src = palette[*pSrcPaletteIdx];
             auto dst = *pDst;
             dst = {
-              static_cast<uint16>((dst.b / 2) + (src.b / 2)),
-              static_cast<uint16>((dst.g / 2) + (src.g / 2)),
-              static_cast<uint16>((dst.r / 2) + (src.r / 2))
+              uint16((dst.b / 2) + (src.b / 2)), uint16((dst.g / 2) + (src.g / 2)), uint16((dst.r / 2) + (src.r / 2))
             };
             pDst->u16All = dst.u16All;
           }
