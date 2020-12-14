@@ -24,17 +24,17 @@ static_assert(sizeof(SoundBufferInfo) == 0x24, "Incorrect SoundBufferInfo size."
 // ** TODO
 class SoundManager : public OP2Class<SoundManager> {
 public:
-  int  Init() { return Thunk<0x47DFD0, &$::Init>(); }
-  // 0x47E070 **
+  int  Init()   { return Thunk<0x47DFD0, &$::Init>();   }
+  void Deinit() { return Thunk<0x47E070, &$::Deinit>(); }
   // 0x47E0B0 **
   // 0x47E170 **
   // 0x47E1B0 **
   // 0x47E1F0 **
-  void SetPause(ibool pause) { return Thunk<0x47E370, &$::SetPause>(pause); }
-  // 0x47E4C0 **
-  void StartGame() { return Thunk<0x47E5A0, &$::StartGame>(); }
-  void Pause()     { return Thunk<0x47E6A0, &$::Pause>();     }
-  void Unpause()   { return Thunk<0x47E700, &$::Unpause>();   }
+  void SetPause(ibool pause) { return Thunk<0x47E370, &$::SetPause>(pause);    }
+  void ShutDownAndClose()    { return Thunk<0x47E4C0, &$::ShutDownAndClose>(); }
+  void StartGame()           { return Thunk<0x47E5A0, &$::StartGame>();        }
+  void Pause()               { return Thunk<0x47E6A0, &$::Pause>();            }
+  void Unpause()             { return Thunk<0x47E700, &$::Unpause>();          }
   // 0x47E710 **
   // 0x47E7A0 **
   // 0x47E830 **

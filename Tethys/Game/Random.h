@@ -18,6 +18,13 @@ public:
   static Random* GetInstance()      { return OP2Mem<0x56BE20, Random*>(); }  ///< Main RNG used in gameplay logic.
   static Random* GetLocalInstance() { return OP2Mem<0x574428, Random*>(); }  ///< RNG not synced over the network.
 
+  ///@{ Fulfill C++ UniformRandomBitGenerator requirements.
+  using result_type = uint32;
+  static constexpr result_type (min)() { return 0;       }
+  static constexpr result_type (max)() { return INT_MAX; }
+  result_type operator()() { return Rand(int((max)())); }
+  ///@}
+
 public:
   uint64 seed_;
 };

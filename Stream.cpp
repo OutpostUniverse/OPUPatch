@@ -13,6 +13,8 @@
 #include "Tethys/Game/MissionManager.h"
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/Resource/ResManager.h"
+#include "Tethys/Resource/SoundManager.h"
+#include "Tethys/Resource/MemoryMappedFile.h"
 #include "Tethys/UI/IWnd.h"
 
 #include <vector>
@@ -576,10 +578,11 @@ bool SetFileSearchPathPatch(
         }
       }
 
-      path                  = std::filesystem::absolute(path);
-      g_curMapPath          = path.parent_path();
-      preMissionPathEnv     = GetPathEnv();
+      path              = std::filesystem::absolute(path);
+      g_curMapPath      = path.parent_path();
+      preMissionPathEnv = GetPathEnv();
       AddModuleSearchPaths({ g_curMapPath, g_curMapPath/"libs" }, true);
+
       g_searchForMission    = true;
       const HMODULE hModule = LoadLibraryAltSearchPath(path.string().data());
       g_searchForMission    = false;
@@ -617,6 +620,26 @@ bool SetFileSearchPathPatch(
     op2Patcher.HookCall(0x485C76, &LoadLibraryAltSearchPath);
     // In OP2Shell::Init() (op2shres.dll)
     shellPatcher.LowLevelHook(0x13007B9D, [](Ebx<decltype(&LoadLibraryA)>& pfn) { pfn = &LoadLibraryAltSearchPath; });
+
+    // Try to load sounds from files instead of only from VOLs
+    // In SoundManager::Init()
+    op2Patcher.HookCall(0x47E027, ThiscallLambdaPtr([](ResManager* pThis, const char* pFilename, size_t* pSize) {
+      static std::map<std::string, MemoryMappedFile> soundData;
+      const std::string filename(pFilename);
+
+      auto it    = soundData.find(filename);
+      bool found = (it != soundData.end()) && (it->second.pMappedAddress_ != nullptr);
+      if (found == false) {
+        const auto path = GetFilePath(filename);
+        found = (path.empty() == false) && soundData[filename].OpenFile(path.string().data(), false);
+        it    = soundData.find(filename);
+      }
+
+      if (found) {
+        *pSize = it->second.size_;
+      }
+      return found ? it->second.pMappedAddress_ : pThis->LockStream(pFilename, pSize);
+    }));
 
     success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
 

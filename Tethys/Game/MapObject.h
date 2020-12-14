@@ -9,6 +9,7 @@
 
 namespace Tethys {
 
+class  MapObject;
 union  AnyMapObj;
 struct PathContext;
 struct Waypoint;
@@ -101,7 +102,7 @@ enum class TruckCargo : int {
   RareMetal,
   CommonRubble,
   RareRubble,
-  Spaceport,     ///< Starship module/satellite;  MapID = truckCargoAmount
+  Spacecraft,    ///< Starship module/satellite;  MapID = truckCargoAmount
   Wreckage,      ///< Wreckage;  Tech ID = 8000 + truckCargoAmount
   GeneBank,
 
@@ -131,7 +132,8 @@ enum class OreVariant : int {
   Low    =  2,
 };
 
-namespace TethysImpl { template <MapID>  struct MapObjForImpl { using Type = void; }; }
+
+namespace TethysImpl { template <MapID>  struct MapObjForImpl { using Type = MapObject; }; }
 
 /// Template alias to get the MapObject subclass associated with the given MapID.
 template <MapID ID>  using MapObjFor = typename TethysImpl::MapObjForImpl<ID>::Type;

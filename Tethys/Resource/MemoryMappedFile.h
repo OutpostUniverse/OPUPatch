@@ -7,7 +7,7 @@ namespace Tethys {
 
 class MemoryMappedFile : OP2Class<MemoryMappedFile> {
 public:
-   MemoryMappedFile() { InternalCtor<0x484530>(); }
+   MemoryMappedFile() : hObject_(NULL) { InternalCtor<0x484530>(); }
   ~MemoryMappedFile() {
     Thunk<0x484540>();
     if ((hObject_ != NULL) && (hObject_ != INVALID_HANDLE_VALUE)) {

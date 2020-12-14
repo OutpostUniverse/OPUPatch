@@ -2192,6 +2192,7 @@ OP2_MO_TYPE_FOR_DEF(mapLightTower,                 LightTower);
 OP2_MO_TYPE_FOR_DEF(mapLuxuryWares,                LuxuryWares);
 OP2_MO_TYPE_FOR_DEF(mapLynx,                       Lynx);
 OP2_MO_TYPE_FOR_DEF(mapMagmaWell,                  MagmaWell);
+OP2_MO_TYPE_FOR_DEF(mapMaxObject,                  MaxObjectType);
 OP2_MO_TYPE_FOR_DEF(mapMedicalCenter,              MedicalCenter);
 OP2_MO_TYPE_FOR_DEF(mapMeteorDefense,              MeteorDefense);
 OP2_MO_TYPE_FOR_DEF(mapMHDGenerator,               MHDGenerator);

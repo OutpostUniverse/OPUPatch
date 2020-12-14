@@ -131,6 +131,7 @@ bool SetUiResourceReplacePatch(
     shellPatcher.LowLevelHook(0x1300129E, [](Esp<void*> pEsp)
       { static_cast<WNDCLASSA*>(PtrInc(pEsp, 20))->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
 
+    // Enable D keyboard shortcut for the hidden debug menu button on the main menu dialog.
     // Hook MainMenuDialog::DlgProc() (replace vtbl entry)
     shellPatcher.Write(0x130110A0, ThiscallLambdaPtr([](IDlgWnd* pThis, UINT uMsg, WPARAM wParam, LPARAM lParam) {
       static auto*const pfnDialogProc =
@@ -140,7 +141,6 @@ bool SetUiResourceReplacePatch(
 
       if (uMsg == WM_INITDIALOG) {
         if (const HWND hDebugButton = GetDlgItem(pThis->hWnd_, 1033);  hDebugButton != NULL) {
-          // Allow D keyboard shortcut for the hidden debug menu button.
           SendMessageA(hDebugButton, WM_SETTEXT, 0, LPARAM("&DEBUG TEST..."));
         }
       }
@@ -366,8 +366,7 @@ static std::string UnEscapeString(
 
 // =====================================================================================================================
 // Sets localized string table entries in Outpost2.exe and OP2Shell.dll based on settings in language.ini.
-// ** TODO replaced UI dialogs lose localization, some ingame UI strings aren't localized like "SHOW &RESOURCES",
-//    mission DLLs aren't localized
+// ** TODO replaced UI dialogs lose localization, mission DLLs aren't localized
 bool SetLocalizationPatch(
   bool enable)
 {
@@ -400,6 +399,10 @@ bool SetLocalizationPatch(
 
       success = PatchStrings("Game",  GetLocalizedStringTable(),      &op2Patcher) &&
                 PatchStrings("Shell", GetShellLocalizedStringTable(), &shellPatcher);
+
+      if (success) {
+        OP2Thunk<0x45C710>();  // Call ReportButtonHelpText::Init() to refresh report button mouseover text
+      }
     }
   }
 
@@ -596,29 +599,28 @@ bool SetVehicleCargoDisplayPatch(
   if (enable && (patcher.NumPatches() == 0)) {
     static constexpr int UnitStrSize = sizeof(MapObjectType::unitName_);
 
-    static constexpr const char* TruckCargoStrings[] = {
-      "empty",
-      "Food",
-      "Common Ore",
-      "Rare Ore",
-      "Common Metals",
-      "Rare Metals",
-      "Common Rubble",
-      "Rare Rubble",
-      "Starship Module",
-      "Wreckage",
-      "Gene Bank"
-    };
-    static_assert(TethysUtil::ArrayLen(TruckCargoStrings) == size_t(TruckCargo::Count),
-                  "The TruckCargoStrings table needs to be updated.");
-
     static auto GetCargoStr = [](Vehicle* pVec) -> std::string {
+      static const char*const pTruckCargoStrings[] = {
+        "empty",
+        GetLocalizedString(LocalizedString::Food),
+        GetLocalizedString(LocalizedString::CommonOre),
+        GetLocalizedString(LocalizedString::RareOre),
+        GetLocalizedString(LocalizedString::CommonMetals),
+        GetLocalizedString(LocalizedString::RareMetals),
+        GetLocalizedString(LocalizedString::CommonRubble),
+        GetLocalizedString(LocalizedString::RareRubble),
+        GetLocalizedString(LocalizedString::Spacecraft),
+        GetLocalizedString(LocalizedString::Wreckage),
+        GetLocalizedString(LocalizedString::GeneBank),
+      };
+      static_assert(TethysUtil::ArrayLen(pTruckCargoStrings) == size_t(TruckCargo::Count));
+
       switch (pVec->GetTypeID()) {
       case mapCargoTruck: {
         const auto        cargoType  = TruckCargo(max(pVec->truckCargoType_, 0));
         const char*const  pCargoName =
-          (cargoType == TruckCargo::Spaceport) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0] :
-          (cargoType <  TruckCargo::Count)     ? TruckCargoStrings[size_t(cargoType)] : nullptr;
+          (cargoType == TruckCargo::Spacecraft) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0] :
+          (cargoType <  TruckCargo::Count)      ? pTruckCargoStrings[size_t(cargoType)] : nullptr;
         const std::string quantity   = ((pVec->truckCargoAmount_ > 1) && (cargoType <= TruckCargo::RareRubble)) ?
           std::to_string(pVec->truckCargoAmount_) : "";
 
@@ -631,8 +633,8 @@ bool SetVehicleCargoDisplayPatch(
 
         return std::string(pWeaponName) + ((pWeaponName[0] != '\0') ? " " : "") + pCargoName;
       }
-      case mapEvacuationTransport:  return (pVec->cargo_ != 0) ? "Colonists" : "empty";
-      default:                      return "";
+      case mapEvacuationTransport: return (pVec->cargo_ !=0) ? GetLocalizedString(LocalizedString::Colonists) : "empty";
+      default:                     return "";
       }
     };
 

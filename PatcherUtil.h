@@ -673,6 +673,7 @@ public:
   template <typename... Ts>  constexpr ConstArray(Ts... e) : data_{ T(e)... }, size_(sizeof...(e)) { }
   constexpr operator const Array<T, MaxSize>&() const { return data_; }  ///< Array conversion, provides operator[].
   constexpr size_t Size()                       const { return size_; }  ///< Size in elements.
+
 private:
   const T       data_[MaxSize];
   const size_t  size_;

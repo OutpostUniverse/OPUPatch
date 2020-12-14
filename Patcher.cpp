@@ -852,7 +852,7 @@ uint32 PatchContext::BeginDeProtect(
     const HMODULE hDstModule = GetModuleFromAddress(pAddress);
     // Note:  Heap-allocated memory isn't associated with any module, in which case hModule will be set to nullptr.
     // Patching modules other than the one associated with this context is an error.
-    if ((hDstModule != nullptr) && (CalculateModuleHash(hDstModule) != moduleHash_)) {
+    if ((hDstModule != nullptr) && (hDstModule != hModule_)) {
       status_ = Status::FailInvalidPointer;
     }
   }
@@ -861,7 +861,7 @@ uint32 PatchContext::BeginDeProtect(
     // Query memory page protection information to determine how we need to barrier around making this memory writable.
     MEMORY_BASIC_INFORMATION memInfo;
 
-    if ((VirtualQuery(pAddress, &memInfo, sizeof(memInfo)) >= offsetof(MEMORY_BASIC_INFORMATION, Protect)) &&
+    if ((VirtualQuery(pAddress, &memInfo, sizeof(memInfo)) > offsetof(MEMORY_BASIC_INFORMATION, Protect)) &&
         (memInfo.State  == MEM_COMMIT) &&
         (memInfo.Protect > PAGE_NOACCESS))
     {

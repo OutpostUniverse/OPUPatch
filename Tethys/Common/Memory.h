@@ -35,10 +35,10 @@ template <uintptr Address, typename T = void*>
 T OP2Mem() { static const T p = OP2Mem<T, true>(Address);  return p; }
 
 ///@{ Call OP2 function, with built-in init-once for the function pointer.  Always safe to use for globals.
-template <uintptr Address, typename Fn, typename... Args>
+template <uintptr Address, typename Fn = void(), typename... Args>
 auto OP2Thunk(Args&&... args) { return OP2Mem<Address, TethysImpl::FnToPfn<Fn>>()(std::forward<Args>(args)...); }
 
-template <uintptr Address, auto    Pfn, typename... Args>
+template <uintptr Address, auto Pfn, typename... Args>
 auto OP2Thunk(Args&&... args) { return OP2Mem<Address, decltype(Pfn)>()(std::forward<Args>(args)...); }
 ///@}
 
