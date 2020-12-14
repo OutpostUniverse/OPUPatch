@@ -362,7 +362,7 @@ static void __fastcall PopulateSinglePlayerMissionListHook(
   SendMessageA(hListBoxWnd, LB_RESETCONTENT, 0, 0);
   SendMessageA(hListBoxWnd, WM_SETREDRAW,    0, 0);
 
-  for (const auto& [filename, pAIModDesc] : GetMissionList()) {
+  for (const auto& [filename, pAIModDesc] : GetMissionList(type)) {
     if (char*const pFilenameBuf = static_cast<char*>(ShellAlloc(filename.length() + 1));  pFilenameBuf != nullptr) {
       strncpy_s(pFilenameBuf, filename.length() + 1, filename.data(), _TRUNCATE);
       const LRESULT listEntry = SendMessageA(hListBoxWnd, LB_ADDSTRING, 0, LPARAM(pAIModDesc->pLevelDesc));
