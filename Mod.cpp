@@ -76,6 +76,7 @@ DLLAPI void InitMod(
   success &= SetUnitLimitPatch(true);
   success &= SetDrawLightningFix(true);
   success &= SetTransferUnitToGaiaFix(true);
+  success &= SetDoInfectFix(true);
   success &= SetBuildWallFix(true);
   success &= SetWreckageFix(true);
   success &= SetMissileFix(true);

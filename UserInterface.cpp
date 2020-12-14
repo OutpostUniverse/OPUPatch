@@ -833,6 +833,7 @@ bool SetSavantNotificationPatch(
 
 // =====================================================================================================================
 // Replacement mission info for stock missions in select mission lists.
+// ** TODO In the future, ModuleDesc could be defined in an external file and override baked-in definitions
 bool SetMissionListNamePatch(
   bool enable)
 {

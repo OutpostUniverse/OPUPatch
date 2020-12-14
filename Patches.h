@@ -12,7 +12,7 @@ bool SetGlobalMusicFix(bool enable);
 
 // Stream
 bool SetFileSearchPathPatch(bool enable);
-bool SetChecksumPatch(bool enable);  // ** WIP
+bool SetChecksumPatch(bool enable);
 bool SetCodecFix(bool enable);
 
 // Netplay
@@ -55,6 +55,7 @@ bool SetUnitLimitPatch(bool enable);
 bool SetUnitTypeLimitPatch(bool enable);  // ** WIP
 bool SetDrawLightningFix(bool enable);
 bool SetTransferUnitToGaiaFix(bool enable);
+bool SetDoInfectFix(bool enable);
 bool SetBuildWallFix(bool enable);
 bool SetWreckageFix(bool enable);
 bool SetMissileFix(bool enable);

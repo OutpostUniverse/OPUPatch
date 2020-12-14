@@ -303,6 +303,25 @@ bool SetMissileFix(
 }
 
 // =====================================================================================================================
+// Allow Unit::DoInfect() to work on maps with more than 1 player (human or AI).
+bool SetDoInfectFix(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    success = (patcher.WriteNop(0x476BD1) == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
 // Fixes bugs where invisible perma-walls are left behind if an Earthworker dies while building a wall, and where you
 // can't issue build wall commands in a 3x3 area around another wall being built, lava, or blight.
 bool SetBuildWallFix(
