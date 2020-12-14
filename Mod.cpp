@@ -30,7 +30,6 @@ DLLAPI void InitMod(
 
   // Misc
   success &= SetNoCdPatch(true);
-  success &= SetDefaultIniSettingsPatch(true);
   success &= SetForceMoraleFix(true);
   success &= SetPrintfFloatFix(true);
   success &= SetGlobalMusicFix(true);
@@ -58,6 +57,7 @@ DLLAPI void InitMod(
   success &= SetMissionListNamePatch(true);
   success &= SetSavantNotificationPatch(true);
   success &= SetControlGroupHotkeyPatch(true);
+  success &= SetDefaultIniSettingsPatch(true);
 
   // Graphics
   success &= SetWindowFix(true);

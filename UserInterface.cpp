@@ -912,3 +912,36 @@ bool SetMissionListNamePatch(
 
   return success;
 }
+
+// =====================================================================================================================
+// Changes some game ini setting defaults.
+bool SetDefaultIniSettingsPatch(
+  bool enable)
+{
+  static Patcher::PatchContext op2Patcher;
+  static Patcher::PatchContext shellPatcher("OP2Shell.dll", true);
+  bool success = true;
+
+  if (enable) {
+    // Change default game speed from 5 to 10.
+    constexpr uint8 DefaultGameSpeed = 10;
+
+    // In GameFrame::Init(), TApp::OnLoadScript(), TethysGame::LoadDebugMap(), MPLobby::ShowHostGame(), ::Show???()
+    for (uintptr loc : { 0x49B6B6, 0x48760E, 0x489189, 0x45F208, 0x45F58A }) {
+      op2Patcher.Write(loc, DefaultGameSpeed);
+    }
+    // In PreferencesDialog::DlgProc(), OP2Shell::WndProc() (x3)
+    for (uintptr loc : { 0x13003378, 0x1300825B, 0x130086DF, 0x13008F10 }) {
+      shellPatcher.Write(loc, DefaultGameSpeed);
+    }
+
+    success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
+    success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}

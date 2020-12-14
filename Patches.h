@@ -6,7 +6,6 @@
 // Misc
 bool SetGameVersion(bool enable);
 bool SetNoCdPatch(bool enable);
-bool SetDefaultIniSettingsPatch(bool enable);
 bool SetForceMoraleFix(bool enable);
 bool SetPrintfFloatFix(bool enable);
 bool SetGlobalMusicFix(bool enable);
@@ -36,6 +35,7 @@ bool SetVehicleCargoDisplayPatch(bool enable);
 bool SetMissionListNamePatch(bool enable);
 bool SetSavantNotificationPatch(bool enable);
 bool SetControlGroupHotkeyPatch(bool enable);
+bool SetDefaultIniSettingsPatch(bool enable);
 
 // Graphics
 bool SetWindowFix(bool enable);
