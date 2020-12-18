@@ -5,17 +5,13 @@
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Unit.h"
 
-namespace Tethys {
-
 // ** TODO The Enumerator API will be changed substantially.  The current interface should be considered a placeholder.
+
+namespace Tethys {
 
 class MapObject;
 
-struct UnitNode {
-  UnitNode*  pPrev;  // ?
-  UnitNode*  pNext;
-  MapObject* pUnit;
-};
+namespace API {
 
 /// Group (enumerate all units in a group)
 class GroupEnumerator : public OP2Class<GroupEnumerator> {
@@ -25,6 +21,12 @@ public:
   ibool GetNext(Unit& currentUnit) { return Thunk<0x47A850, &$::GetNext>(currentUnit); }
   
 public:
+  struct UnitNode {
+    UnitNode*  pPrev;  // ?
+    UnitNode*  pNext;
+    MapObject* pUnit;
+  };
+
   UnitNode* pCurrentUnitNode_;
 };
 
@@ -42,7 +44,8 @@ public:
 /// Buildings (enumerate all buildings of a certain type for a certain player)
 class PlayerBuildingEnum : public OP2Class<PlayerBuildingEnum> {
 public:
-  PlayerBuildingEnum(int playerNum, MapID buildingType) { InternalCtor<0x47A4E0, int, MapID>(playerNum, buildingType); }
+  PlayerBuildingEnum(int playerNum, MapID buildingType = MapID::None)
+    { InternalCtor<0x47A4E0, int, MapID>(playerNum, buildingType); }
 
   ibool GetNext(Unit& currentUnit) { return Thunk<0x47A510, &$::GetNext>(currentUnit); }
   
@@ -110,4 +113,5 @@ public:
   int field_00[13];
 };
 
+} // API
 } // Tethys

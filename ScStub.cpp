@@ -7,6 +7,7 @@
 #include "Tethys/Game/ScBase.h"
 
 using namespace Tethys;
+using namespace Tethys::API;
 using namespace Patcher::Registers;
 
 // ** TODO: * Finish extended array.  Needs to work with saved games (it might work as is?)

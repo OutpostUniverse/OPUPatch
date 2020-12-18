@@ -10,7 +10,7 @@
 #include "Tethys/Game/MapImpl.h"
 #include "Tethys/API/Location.h"
 
-namespace Tethys {
+namespace Tethys::API {
 
 /// Enum specifying unit type classifications.  Used by AI and UnitBlock-related interfaces.
 enum class UnitClassification : int {
@@ -69,16 +69,17 @@ public:
   const MapEntityType* GetMapObjectType() const { return IsValid() ? MapEntityType::GetInstance(GetType()) : nullptr; }
   ///@}
 
-  int GetOwner()   const { return IsValid() ? GetMapObject()->ownerNum_   : -1; }
-  int GetCreator() const { return IsValid() ? GetMapObject()->creatorNum_ : -1; }
+  int GetOwner()       const { return IsValid() ? GetMapObject()->ownerNum_            : -1; }
+  int GetCreator()     const { return IsValid() ? GetMapObject()->creatorNum_          : -1; }
+  int GetInstanceNum() const { return IsValid() ? GetMapObject()->unitTypeInstanceNum_ :  0; }
 
-  MapID GetType()     const { return IsValid() ? GetMapObject()->GetTypeID() : mapNone; }
-  bool  IsLive()      const { return IsValid()    && GetMapObject()->IsLive();          }
-  bool  IsBuilding()  const { return IsLive()     && HasFlag(MoFlagBuilding);           }
-  bool  IsFactory()   const { return IsBuilding() && HasFlag(MoFlagBldFactory);         }
-  bool  IsVehicle()   const { return IsLive()     && HasFlag(MoFlagVehicle);            }
-  bool  IsOffensive() const { return IsLive()     && HasFlag(MoFlagOffensive);          }
-  bool  IsEntity()    const { return HasFlag(MoFlagEntity | MoFlagEntChild);            }
+  MapID GetType()     const { return IsValid() ? GetMapObject()->GetTypeID() : MapID::None; }
+  bool  IsLive()      const { return IsValid()    && GetMapObject()->IsLive();              }
+  bool  IsBuilding()  const { return IsLive()     && HasFlag(MoFlagBuilding);               }
+  bool  IsFactory()   const { return IsBuilding() && HasFlag(MoFlagBldFactory);             }
+  bool  IsVehicle()   const { return IsLive()     && HasFlag(MoFlagVehicle);                }
+  bool  IsOffensive() const { return IsLive()     && HasFlag(MoFlagOffensive);              }
+  bool  IsEntity()    const { return HasFlag(MoFlagEntity | MoFlagEntChild);                }
 
   Location GetLocation() const { return IsValid() ? GetMapObject()->GetTile() : Location(); }
   MapRect  GetRect(bool includeBorder = false) const {
@@ -163,8 +164,8 @@ public:
 
   // ---------------------------------------- Specific to weapons/combat units -----------------------------------------
 
-  MapID GetWeapon() const       { return IsLive() ? MapID(GetMapObject()->weapon_) : mapNone; }
-  void  SetWeapon(MapID weapon) {    if (IsLive())      { GetMapObject()->weapon_ = weapon; } }
+  MapID GetWeapon() const       { return IsLive() ? MapID(GetMapObject()->weapon_) : MapID::None; }
+  void  SetWeapon(MapID weapon) {    if (IsLive())      { GetMapObject()->weapon_ = weapon; }     }
 
   void DoAttack(Unit what) { if (what.IsLive()) { DoAttack({ what.id_, -1 }); } } ///< Orders unit to attack target unit
   void DoAttack(Location where);                                                  ///< Orders unit to attack the ground
@@ -176,8 +177,8 @@ public:
 
   // ---------------------------------------------- Specific to vehicles -----------------------------------------------
 
-  MapID GetCargo()       const { return IsValid()   ? MapID(GetMapObject()->cargo_)                  : mapNone; }
-  MapID GetCargoWeapon() const { return IsVehicle() ? MapID(GetMapObject<Vehicle>()->weaponOfCargo_) : mapNone; }
+  MapID GetCargo()       const { return IsValid()   ? MapID(GetMapObject()->cargo_)                  : MapID::None; }
+  MapID GetCargoWeapon() const { return IsVehicle() ? MapID(GetMapObject<Vehicle>()->weaponOfCargo_) : MapID::None; }
   void  SetCargo(MapID cargo, MapID weapon)
     { if (IsVehicle()) { auto* p = GetMapObject<Vehicle>(); p->weapon_ = cargo; p->weaponOfCargo_ = weapon; } }
 
@@ -200,7 +201,8 @@ public:
   void DoDock(Unit at)
     { auto d = at.GetDockLocation();  if (IsLive() && d) { GetMapObject()->CmdDock(d.GetPixelX(), d.GetPixelY()); } }
   void DoDockAtGarage(Unit garage);
-  void DoBuild(Location bottomRight);                                                        ///< [ConVec]
+  void DoBuild(Location  bottomRight);                                                       ///< [ConVec]
+  void DoDeploy(Location center);                                                            ///< [Robo-Miner, GeoCon]
   void DoDismantle(Unit what);                                                               ///< [ConVec]
 	void DoRepair(Unit    what) { if (IsLive()) { GetMapObject()->CmdRepair(what.id_); }    }
 	void DoReprogram(Unit what) { if (IsLive()) { GetMapObject()->CmdReprogram(what.id_); } }  ///< [Spider]
@@ -216,7 +218,7 @@ public:
 
   ///@{ [Factory]
   void GetFactoryCargo(int bay, MapID* pUnitType, MapID* pCargoOrWeaponType) const;
-  void SetFactoryCargo(int bay, MapID   unitType, MapID   cargoOrWeaponType = mapNone) {
+  void SetFactoryCargo(int bay, MapID   unitType, MapID   cargoOrWeaponType = MapID::None) {
     if (IsFactory() && (bay >= 0) && (bay < 6)) {
       auto*const pMo = GetMapObject<FactoryBuilding>();
       pMo->cargoBayContents_[bay]      = unitType;
@@ -224,16 +226,16 @@ public:
     }
   }
 
-  Location FindFactoryOutputLocation(MapID itemToProduce = mapCargoTruck) const
+  Location FindFactoryOutputLocation(MapID itemToProduce = MapID::CargoTruck) const
     { Location loc; MapImpl::GetInstance()->FindFactoryOutputLocation(itemToProduce, GetLocation(), &loc); return loc; }
   ///@}
 
   /// [Garage, StructureFactory, Spaceport]
   bool HasOccupiedBay() const {
-    bool result = (GetType() == mapGarage) && (GetMapObject<MapObj::Garage>()->GetNumOccupiedBays() != 0);
+    bool result = (GetType() == MapID::Garage) && (GetMapObject<MapObj::Garage>()->GetNumOccupiedBays() != 0);
     if ((result == false) && IsFactory()) {
       auto*const pMo = GetMapObject<FactoryBuilding>();
-      for (int i = 0; ((result == false) && (i < 6)); result = (pMo->cargoBayCargoOrWeapon_[i++] != mapNone));
+      for (int i = 0; ((result == false) && (i < 6)); result = (pMo->cargoBayCargoOrWeapon_[i++] != MapID::None));
     }
     return result;
   }
@@ -245,11 +247,10 @@ public:
   ///@}
 
   ///@{ [Spaceport]
-  MapID GetRocketOnPad() const { return IsBuilding() ? GetMapObject<MapObj::Spaceport>()->objectOnPad_ : mapNone; }
-  MapID GetRocketCargo() const { return IsBuilding() ? GetMapObject<MapObj::Spaceport>()->launchCargo_ : mapNone; }
-  void  SetRocketOnPad(MapID rocket, MapID cargo = mapNone) {
-    auto*const pMo = GetMapObject<MapObj::Spaceport>();
-    if (pMo != nullptr) {
+  MapID GetRocketOnPad() const { return IsBuilding() ? GetMapObject<MapObj::Spaceport>()->objectOnPad_ : MapID::None; }
+  MapID GetRocketCargo() const { return IsBuilding() ? GetMapObject<MapObj::Spaceport>()->launchCargo_ : MapID::None; }
+  void  SetRocketOnPad(MapID rocket, MapID cargo = MapID::None) {
+    if (auto*const pMo = GetMapObject<MapObj::Spaceport>();  pMo != nullptr) {
       pMo->objectOnPad_ = rocket;
       pMo->launchCargo_ = cargo;
     }
@@ -275,12 +276,12 @@ public:
   void DoIdle()   { DoSimpleCommand(CommandType::Idle);   }
   void DoUnidle() { DoSimpleCommand(CommandType::Unidle); }
   void DoInfect() { Thunk<0x476B90, &$::DoInfect>();      }
-  void DoProduce(MapID itemToProduce, MapID weaponToProduce = mapNone, uint16 scGroupIndex = -1)  ///< [Factory]
-    { if (IsLive()) { GetMapObject()->CmdProduce(itemToProduce, weaponToProduce, scGroupIndex); } }
-  void DoLaunch(Location target = { }, bool forceEnable = false);                                 ///< [Spaceport]
-  void DoTransferCargo(int bay) { if (IsLive()) { GetMapObject()->CmdTransferCargo(bay); } }      ///< [Factory, Garage]
-	void DoResearch(int techID, int numScientists);                                                 ///< [Lab]
-	void DoTrainScientists(int numToTrain);                                                         ///< [University]
+  void DoProduce(MapID itemType, MapID weaponType = MapID::None, uint16 scGroupIndex = -1)    ///< [Factory]
+    { if (IsLive()) { GetMapObject()->CmdProduce(itemType, weaponType, scGroupIndex); } }
+  void DoLaunch(Location target = { }, bool forceEnable = false);                             ///< [Spaceport]
+  void DoTransferCargo(int bay) { if (IsLive()) { GetMapObject()->CmdTransferCargo(bay); } }  ///< [Factory, Garage]
+	void DoResearch(int techID, int numScientists);                                             ///< [Lab]
+	void DoTrainScientists(int numToTrain);                                                     ///< [University]
 
 protected:
   bool ProcessCommandPacket(const CommandPacket& packet) const
@@ -298,7 +299,7 @@ inline void Unit::GetFactoryCargo(
   MapID* pCargoOrWeaponType
   ) const
 {
-  *pUnitType = *pCargoOrWeaponType = mapNone;
+  *pUnitType = *pCargoOrWeaponType = MapID::None;
   if (IsFactory() && (bay >= 0) && (bay < 6)) {
     auto*const pMo      = GetMapObject<FactoryBuilding>();
     *pUnitType          = MapID(pMo->cargoBayContents_[bay]);
@@ -348,7 +349,7 @@ inline void Unit::DoSetLights(
 inline void Unit::DoBuild(
   Location bottomRight)
 {
-  if (IsLive() && (GetCargoWeapon() != mapNone)) {
+  if (IsLive() && (GetCargoWeapon() != MapID::None)) {
     const auto&   s      = MapObjectType::GetInstance(GetCargoWeapon())->stats_.building;
     CommandPacket packet = { CommandType::Build, sizeof(BuildCommand) };
     packet.data.build.numUnits     = 1;
@@ -356,6 +357,22 @@ inline void Unit::DoBuild(
     packet.data.build.numWaypoints = 1;
     packet.data.build.waypoint[0]  = bottomRight.AsWaypoint(true, false);
     packet.data.build.rect         = MapRect(bottomRight - Location(s.width + 1, s.height + 1), bottomRight).AsPacked();
+    packet.data.build.unknown      = -1;
+    ProcessCommandPacket(packet);
+  }
+}
+
+// =====================================================================================================================
+inline void Unit::DoDeploy(
+  Location center)
+{
+  if (IsLive()) {
+    CommandPacket packet = { CommandType::Build, sizeof(BuildCommand) };
+    packet.data.build.numUnits     = 1;
+    packet.data.build.unitID[0]    = id_;
+    packet.data.build.numWaypoints = 1;
+    packet.data.build.waypoint[0]  = center.AsWaypoint(false, false);
+    packet.data.build.rect         = MapRect(center - Location(1, 0), center).AsPacked();
     packet.data.build.unknown      = -1;
     ProcessCommandPacket(packet);
   }
@@ -542,10 +559,10 @@ inline void Unit::DoResearch(
   int techID,
   int numScientists)
 {
-  if (IsLive()) {
+  if (int techNum = Research::GetInstance()->GetTechNum(techID);  IsLive() && (techNum >= 0)) {
     CommandPacket packet = { CommandType::Research, sizeof(ResearchCommand) };
     packet.data.research.unitID        = id_;
-    packet.data.research.techNum       = Research::GetInstance()->GetTechNum(techID);
+    packet.data.research.techNum       = techNum;
     packet.data.research.numScientists = numScientists;
     ProcessCommandPacket(packet);
   }
@@ -563,4 +580,4 @@ inline void Unit::DoTrainScientists(
   }
 }
 
-} // Tethys
+} // Tethys::API

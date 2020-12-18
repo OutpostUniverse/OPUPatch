@@ -17,6 +17,7 @@
 #include <string>
 
 using namespace Tethys;
+using namespace Tethys::API;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
 

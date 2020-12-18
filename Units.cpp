@@ -17,6 +17,7 @@
 #include "Util.h"
 
 using namespace Tethys;
+using namespace Tethys::API;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
 
@@ -183,16 +184,16 @@ bool SetUnitTypeLimitPatch(
   public:
     ibool Save(StreamIO* pSavedGame) override { return 1; }
     ibool Load(StreamIO* pSavedGame) override { return 1; }
-  } static dummyMapObjType(*static_cast<DummyObjectType*>(pOldMoTypeArray[mapMaxObject]));
+  } static dummyMapObjType(*static_cast<DummyObjectType*>(pOldMoTypeArray[MapID::MaxObject]));
 
   if (enable) {
     // Initialize our extended map object type array.
-    memcpy(&pMoTypeArray[0], pOldMoTypeArray, sizeof(MapObjectType*[mapMaxObject]));
-    for (size_t i = mapMaxObject; i <= MaxUnitTypes; pMoTypeArray[i++] = &dummyMapObjType);
+    memcpy(&pMoTypeArray[0], pOldMoTypeArray, sizeof(MapObjectType*[MapID::MaxObject]));
+    for (size_t i = MapID::MaxObject; i <= MaxUnitTypes; pMoTypeArray[i++] = &dummyMapObjType);
 
     // Replace the map object type array.
-    patcher.ReplaceReferencesToGlobal(&pOldMoTypeArray[0], sizeof(MapObjectType*[mapMaxObject]), &pMoTypeArray[0]);
-    patcher.ReplaceReferencesToGlobal(&pOldMoTypeArray[mapMaxObject], &pMoTypeArray[MaxUnitTypes + 1]);
+    patcher.ReplaceReferencesToGlobal(&pOldMoTypeArray[0], sizeof(MapObjectType*[MapID::MaxObject]), &pMoTypeArray[0]);
+    patcher.ReplaceReferencesToGlobal(&pOldMoTypeArray[MapID::MaxObject], &pMoTypeArray[MaxUnitTypes + 1]);
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -343,8 +344,8 @@ bool SetBuildWallFix(
     // In SetWallOrTubeTile()
     patcher.WriteNop(0x42374B);
     patcher.LowLevelHook(0x423762, [](Esi<MapObject*> pUnit, Eax<bool> isTileClear) {
-      const auto type = pUnit->tubeOrWallType_;
-      return (type == mapTube) ? nullptr : (isTileClear ? OP2Mem<void**>(0x423884)[type - mapTube] : OP2Mem(0x423766));
+      const auto t = pUnit->tubeOrWallType_;
+      return (t == MapID::Tube) ? nullptr : isTileClear ? OP2Mem<void**>(0x423884)[t - MapID::Tube] : OP2Mem(0x423766);
     });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
@@ -497,7 +498,7 @@ bool SetAllyEdwardSurveyMinesPatch(
         if (result == false) {
           uint32 mask = Player[playerNum].GetImpl()->alliedBy_;
           for (uint32 i = 0; TethysUtil::GetNextBit(&i, mask); mask &= ~(1u << i)) {
-            if ((i != playerNum) && (Player[i].GetImpl()->GetSatelliteCount(mapEDWARDSatellite) != 0)) {
+            if ((i != playerNum) && (Player[i].GetImpl()->GetSatelliteCount(MapID::EDWARDSatellite) != 0)) {
               result = true;
               break;
             }
@@ -527,8 +528,8 @@ bool SetMultipleRepairPatch(
 
   if (enable) {
     // In UICmd::CommandRepair::IsEnabled()
-    patcher.LowLevelHook(0x454952, [](Eax<MapID> type)
-      { return ((type == mapConVec) || (type == mapRepairVehicle) || (type == mapSpider)) ? 0x454969 : 0x454961; });
+    patcher.LowLevelHook(0x454952, [](Eax<MapID> t)
+      { return ((t == MapID::ConVec) || (t == MapID::RepairVehicle) || (t == MapID::Spider)) ? 0x454969 : 0x454961; });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 
@@ -558,9 +559,9 @@ bool SetOreRoutePatch(
     });
 
     // In UICmd::CommandSetOreRoute::GetMouseCursor()
-    patcher.LowLevelHook(0x4544B6, [](Edi<MapID> mineType, Esp<void*> pEsp) {
-      bool       result = (mineType == mapCommonOreMine) || (mineType == mapRareOreMine) || (mineType == mapMagmaWell);
+    patcher.LowLevelHook(0x4544B6, [](Edi<MapID> mine, Esp<void*> pEsp) {
       TruckCargo cargo  = TruckCargo::Empty;
+      bool       result = (mine == MapID::CommonOreMine) || (mine == MapID::RareOreMine) || (mine == MapID::MagmaWell);
 
       if (result) {
         auto*const pSelection = UnitGroup::GetSelectedUnitGroup();
@@ -577,9 +578,9 @@ bool SetOreRoutePatch(
         }
       }
 
-      result &=  (cargo == TruckCargo::Empty)                                         ||
-                ((cargo == TruckCargo::CommonOre) &&  (mineType == mapCommonOreMine)) ||
-                ((cargo == TruckCargo::RareOre)   && ((mineType == mapRareOreMine) || (mineType == mapMagmaWell)));
+      result &= (cargo == TruckCargo::Empty)                                         ||
+               ((cargo == TruckCargo::CommonOre) &&  (mine == MapID::CommonOreMine)) ||
+               ((cargo == TruckCargo::RareOre)   && ((mine == MapID::RareOreMine)    || (mine == MapID::MagmaWell)));
 
       return result ? 0x45453A : 0x4544C5;
     });
@@ -592,7 +593,7 @@ bool SetOreRoutePatch(
         const auto count    = pThis->GetPacketUnitCount(&pPacket->data);
         for (int i = 0; i < count; ++i) {
           Unit truck(pUnitIDs[i]);
-          if ((truck.GetType() == mapCargoTruck) && (truck.GetTruckCargoType() != TruckCargo::Empty)) {
+          if ((truck.GetType() == MapID::CargoTruck) && (truck.GetTruckCargoType() != TruckCargo::Empty)) {
             truck.SetCargo(TruckCargo::Empty, 0);
             TethysGame::AddMapSound(SoundID::Dump, truck.GetLocation());
           }
@@ -626,7 +627,7 @@ bool SetTurretAnimationPatch(
           // Select the weapon type animation index.
           auto*const pWeaponType = MapEntityType::GetInstance(pThis->weapon_);
           (pThis->flags_ & MoFlagDoubleFireRate) ? pWeaponType->SelectTigerGraphic(pThis, rotation)   :
-          (pThis->GetTypeID() != mapLynx)        ? pWeaponType->SelectPantherGraphic(pThis, rotation)
+          (pThis->GetTypeID() != MapID::Lynx)    ? pWeaponType->SelectPantherGraphic(pThis, rotation)
                                                  : pWeaponType->SelectLynxGraphic(pThis, rotation);
 
           const int rotationIndex           = (pThis->rotation_ + 8) / 16; // Round to nearest multiple of 16 (22.5 deg)

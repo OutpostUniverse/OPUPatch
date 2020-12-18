@@ -27,6 +27,8 @@ enum class UnitDirection : int {
   NorthEast,
 };
 
+namespace API {
+
 enum class MineType : int {
   RandomOre = int(OreType::Random),
   CommonOre = int(OreType::Common),
@@ -118,8 +120,8 @@ public:
     Location location, MineType type = MineType::RandomOre,
     OreYield yield = OreYield::Random, OreVariant variant = OreVariant::Random)
   {
-    const MapID mapID =
-      (type == MineType::MagmaVent) ? mapMagmaVent : (type == MineType::Fumarole) ? mapFumarole : mapMiningBeacon;
+    const MapID mapID = (type == MineType::MagmaVent) ? MapID::MagmaVent :
+                        (type == MineType::Fumarole)  ? MapID::Fumarole  : MapID::MiningBeacon;
     return OP2Thunk<0x478940, ibool FASTCALL(MapID, int, int, MineType, OreYield, OreVariant)>(
       mapID, location.x, location.y, max(type, MineType::RandomOre), yield, variant) ? Player[6].GetBeacons() : Unit();
   }
@@ -272,4 +274,5 @@ public:
   uint8 field_00;
 };
 
+} // API
 } // Tethys

@@ -6,7 +6,7 @@
 #include "Tethys/API/ScStub.h"
 #include "Tethys/API/Unit.h"
 
-namespace Tethys {
+namespace Tethys::API {
 
 class UnitBlock;
 
@@ -56,23 +56,23 @@ public:
 
   void SetRect(const MapRect& defaultLocation) { return Thunk<0x47A2E0, &$::SetRect>(defaultLocation); }
 
-  void RecordBuilding(Location where, MapID unitType, MapID cargoOrWeapon = mapNone)
+  void RecordBuilding(Location where, MapID unitType, MapID cargoOrWeapon = MapID::None)
     { return Thunk<0x47A3E0, void(Location&, MapID, MapID)>(where, unitType, cargoOrWeapon); }
   void RecordBuilding(Location where, MapID unitType, MapID cargoOrWeapon, ScGroup produceGroup) {
     return Thunk<0x47A410, void(Location&, MapID, MapID, ScGroup&)>(where, unitType, cargoOrWeapon, produceGroup);
   }
 
-  void RecordTube(Location          where)              { return Thunk<0x47A390, void(Location&)>(where);              }
-  void RecordTubesTouching(Location toWhere)            { return Thunk<0x47A370, void(Location&)>(toWhere);            }
-  void RecordWall(Location where, MapID type = mapWall) { return Thunk<0x47A3B0, void(Location&, MapID)>(where, type); }
+  void RecordTube(Location         where)                   { return Thunk<0x47A390, &$::RecordTube>(where);           }
+  void RecordConnectTubes(Location toWhere)                 { return Thunk<0x47A370, &$::RecordConnectTubes>(toWhere); }
+  void RecordWall(Location where, MapID type = MapID::Wall) { return Thunk<0x47A3B0, &$::RecordWall>(where, type);     }
 
   void RecordUnitBlock(const UnitBlock& units) { return Thunk<0x47A330, void(const UnitBlock&)>(units); }
   void RecordUnitBlock(const UnitBlock& units, ScGroup produceGroup)
     { return Thunk<0x47A350, void(const UnitBlock&, ScGroup&)>(units, produceGroup); }
 
   void RecordVehReinforceGroup(ScGroup targetGroup, int priority)  ///< 0 = lowest priority, 0xFFFF = highest
-    { return Thunk<0x47A440, void(ScGroup&, int)>(targetGroup, priority); }
-  void UnRecordVehGroup(ScGroup        targetGroup) { return Thunk<0x47A460, void(ScGroup&)>(targetGroup);  }
+    { return Thunk<0x47A440, &$::RecordVehReinforceGroup>(targetGroup, priority); }
+  void UnRecordVehGroup(ScGroup        targetGroup) { return Thunk<0x47A460, &$::UnRecordVehGroup>(targetGroup); }
 };
 
 
@@ -127,10 +127,10 @@ public:
 
 
 struct MrRec {
-  MrRec(MapID unit, MapID weapon = mapNone, int u1 = 0, int u2 = 0)
+  MrRec(MapID unit, MapID weapon = MapID::None, int u1 = 0, int u2 = 0)
     : unitType(unit), weaponType(weapon), unknown1(u1), unknown2(u2) {}
   MrRec()
-    : unitType(mapNone), weaponType(mapNone), unknown1(-1), unknown2(-1) {}
+    : unitType(MapID::None), weaponType(MapID::None), unknown1(-1), unknown2(-1) {}
 
   MapID unitType;
   MapID weaponType;
@@ -180,4 +180,4 @@ public:
   void SetPoints(const PWDef* pPwDefList)    { return Thunk<0x47A8B0, &$::SetPoints>(pPwDefList);             }
 };
 
-} // Tethys
+} // Tethys::API

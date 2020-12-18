@@ -34,6 +34,7 @@
 #include <set>
 
 using namespace Tethys;
+using namespace Tethys::API;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
 
@@ -616,7 +617,7 @@ bool SetVehicleCargoDisplayPatch(
       static_assert(TethysUtil::ArrayLen(pTruckCargoStrings) == size_t(TruckCargo::Count));
 
       switch (pVec->GetTypeID()) {
-      case mapCargoTruck: {
+      case MapID::CargoTruck: {
         const auto        cargoType  = TruckCargo(max(pVec->truckCargoType_, 0));
         const char*const  pCargoName =
           (cargoType == TruckCargo::Spacecraft) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0] :
@@ -626,14 +627,14 @@ bool SetVehicleCargoDisplayPatch(
 
         return (pCargoName != nullptr) ? (quantity + ((quantity[0] != '\0') ? " " : "") + pCargoName) : "empty";
       }
-      case mapConVec: {
+      case MapID::ConVec: {
         auto*const pCargoName  = &MapObjectType::GetInstance(pVec->cargo_)->unitName_[0];
         auto*const pWeaponName =
-          (pVec->weaponOfCargo_ != mapNone) ? &MapObjectType::GetInstance(pVec->weaponOfCargo_)->unitName_[0] : "";
+          (pVec->weaponOfCargo_ != MapID::None) ? &MapObjectType::GetInstance(pVec->weaponOfCargo_)->unitName_[0] : "";
 
         return std::string(pWeaponName) + ((pWeaponName[0] != '\0') ? " " : "") + pCargoName;
       }
-      case mapEvacuationTransport: return (pVec->cargo_ !=0) ? GetLocalizedString(LocalizedString::Colonists) : "empty";
+      case MapID::EvacuationTransport: return pVec->cargo_ ? GetLocalizedString(LocalizedString::Colonists) : "empty";
       default:                     return "";
       }
     };
@@ -657,7 +658,7 @@ bool SetVehicleCargoDisplayPatch(
     // In CommandPaneView::BuildingStorageBays::Draw()
     patcher.LowLevelHook(0x464050, [](Ecx<MapObject*> pUnit, Eax<char*> pBuffer) {
       const MapID id = pUnit->GetTypeID();
-      if ((id == mapConVec) || (id == mapCargoTruck) || (id == mapEvacuationTransport)) {
+      if ((id == MapID::ConVec) || (id == MapID::CargoTruck) || (id == MapID::EvacuationTransport)) {
         strncpy_s(pBuffer, UnitStrSize, &pUnit->GetType()->unitName_[0], _TRUNCATE);
         return 0x464058;
       }
@@ -670,7 +671,7 @@ bool SetVehicleCargoDisplayPatch(
     // In Unit::ProcessForGameCycle()
     patcher.LowLevelHook(0x43DC24, [](Esi<Vehicle*> pThis, Eax<char*> pBuffer) {
       const MapID id = pThis->GetTypeID();
-      if (((id == mapConVec) || (id == mapCargoTruck) || (id == mapEvacuationTransport)) && (pThis->cargo_ != 0)) {
+      if (((id == MapID::ConVec) || (id == MapID::CargoTruck) || (id == MapID::EvacuationTransport)) && pThis->cargo_) {
         char unitName[UnitStrSize] = "";
         pThis->GetSelectionStr(&unitName[0], UnitStrSize);
         _snprintf_s(pBuffer, UnitStrSize, _TRUNCATE, "%s (%s)", &unitName[0], GetCargoStr(pThis).data());

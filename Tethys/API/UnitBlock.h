@@ -3,7 +3,7 @@
 
 #include "Tethys/API/Unit.h"
 
-namespace Tethys {
+namespace Tethys::API {
 
 struct UnitRecord {
   constexpr UnitRecord(
@@ -46,4 +46,4 @@ public:
   UnitRecord* pUnitRecordTable_;
 };
 
-} // Tethys
+} // Tethys::API

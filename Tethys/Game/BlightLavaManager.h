@@ -59,7 +59,7 @@ public:
   void  Spread(Location       where) override { return Thunk<0x4329B0, &$::Spread>(where);         }
   void  ToggleOnTile(Location where) override { return Thunk<0x432680, &$::ToggleOnTile>(where);   }
   void  DrawOnMiniMap()              override { return Thunk<0x432670, &$::DrawOnMiniMap>();       }
-  /// Creates a mapEruption.  Only used for a debug UI command.
+  /// Creates an Eruption.  Only used for a debug UI command.
   void  SetSpreadSpeed(int speed)    override { return Thunk<0x432EC0, &$::SetSpreadSpeed>(speed); }
 
   /// "Real" set lava speed function.

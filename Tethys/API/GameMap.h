@@ -6,7 +6,7 @@
 #include "Tethys/API/Location.h"
 #include "Tethys/API/Unit.h"
 
-namespace Tethys {
+namespace Tethys::API {
 
 /// Public game map interface (wraps MapImpl).  Used to access map tile data, set daylight level, and create Blight.
 class GameMap : public OP2Class<GameMap> {
@@ -71,4 +71,4 @@ public:
   uint8 field_00;
 };
 
-} // Tethys
+} // Tethys::API

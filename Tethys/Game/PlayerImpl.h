@@ -162,7 +162,7 @@ public:
   int numActiveUniversities_;
   int numActiveObservatories_;
   int numActiveMeteorDefenses_;
-  int field_276;
+  int numActiveTradeCenters_;
 
   BuildingStats powerPlants_;
   BuildingStats agridomes_;

@@ -12,11 +12,11 @@ class ScBase;
 
 /// Structure describing a mission script.  Returned by GetModuleDesc().
 struct AIModDesc {
-  ModDesc descBlock;
-  char*   pMapName;
-  char*   pLevelDesc;
-  char*   pTechtreeName;
-  int     checksum;
+  API::ModDesc descBlock;
+  char*        pMapName;
+  char*        pLevelDesc;
+  char*        pTechtreeName;
+  int          checksum;
 };
 
 /// Internal MissionManager class.
@@ -75,11 +75,11 @@ public:
   static void FASTCALL FreeModuleDesc(AIModDesc* pModDesc) { return OP2Thunk<0x402890, &$::FreeModuleDesc>(pModDesc); }
 
   /// Internal global function to get DescBlockEx.  Call FreeModuleDescEx() to destroy the returned memory.
-  static ModDescEx* GetModuleDescEx(const char* pFilename)
+  static API::ModDescEx* GetModuleDescEx(const char* pFilename)
     { return OP2Thunk<0x402780, &$::GetModuleDescEx>(pFilename); }
 
   /// Frees the ModDescEx allocated by GetModuleDescEx.
-  static void FreeModuleDescEx(ModDescEx* pDescBlockEx) { operator delete(pDescBlockEx, OP2Heap); }
+  static void FreeModuleDescEx(API::ModDescEx* pDescBlockEx) { operator delete(pDescBlockEx, OP2Heap); }
 
   /// Gets the global MissionManager instance.
   static MissionManager* GetInstance() { return OP2Mem<0x4EFD18, MissionManager*>(); }
@@ -95,7 +95,7 @@ public:
   int  (CDECL*       pfnInitProc_)();
   void (CDECL*       pfnAIProc_)();
   int  (CDECL*       pfnStatusProc_)();
-  SaveRegion         saveRegion_;
+  API::SaveRegion    saveRegion_;
   char*              pScriptName_;
   DefaultScGroupInfo defaultScGroupInfo_[6];
   AIModDesc*         pDescBlock_;

@@ -30,7 +30,7 @@ public:
   constexpr bool operator==(const Location& other) const { return (x == other.x) && (y == other.y); }
   constexpr operator bool()                        const { return (x != INT_MIN) && (y != INT_MIN); }
 
-  Location& Add(const Location& vector) { Thunk<0x475A30, void(const Location&)>(vector); return *this; }
+  Location& Add(const Location& vector) { Thunk<0x475A30, void(const Location&)>(vector);  return *this; }
   static Location FASTCALL Difference(const Location& a, const Location& b)
     { return OP2Thunk<0x4759D0, &$::Difference>(a, b); }
 
@@ -105,5 +105,11 @@ struct PatrolRoute {
   int             field_00;
   const Location* pWaypoints;  ///< Max waypoints = 8, set Location.x = -1 for last waypoint in list if list is short
 };
+
+
+namespace API {
+  using Location = Tethys::Location;
+  using MapRect  = Tethys::MapRect;
+} // API
 
 } // Tethys

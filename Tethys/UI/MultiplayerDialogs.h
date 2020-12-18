@@ -39,7 +39,7 @@ public:
   // ** TODO 0x45F420
 
   static int FASTCALL PopulateMissionDropdown(
-    HWND hCBWnd, int maxPlayers, MissionType maxMissionType, MissionType minMissionType)
+    HWND hCBWnd, int maxPlayers, API::MissionType maxMissionType, API::MissionType minMissionType)
       { return OP2Thunk<0x497780, &$::PopulateMissionDropdown>(hCBWnd, maxPlayers, maxMissionType, minMissionType); }
 
 public:

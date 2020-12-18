@@ -10,7 +10,8 @@ namespace Tethys {
 // SingleUnitSimpleCommand, SimpleCommand, and MoveCommand will be changed to be empty types, so instantiating packet
 // structs manually will be broken.
 
-enum MapID : int;
+namespace MapIDImpl { enum MapID : int; }
+using MapID = MapIDImpl::MapID;
 
 constexpr int AllPlayers = -1;
 

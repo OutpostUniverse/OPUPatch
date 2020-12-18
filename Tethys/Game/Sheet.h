@@ -5,7 +5,8 @@
 
 namespace Tethys {
 
-enum  MapID : int;
+namespace MapIDImpl { enum MapID : int; }
+using MapID = MapIDImpl::MapID;
 class MapObject;
 class MapObjectType;
 class StreamIO;

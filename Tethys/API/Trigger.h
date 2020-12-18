@@ -5,7 +5,7 @@
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Unit.h"
 
-namespace Tethys {
+namespace Tethys::API {
 
 // ** TODO The Trigger API will be changed substantially.  The current interface should be considered a placeholder.
 
@@ -221,4 +221,4 @@ Trigger CreateRectTrigger(
     enabled, oneShot, playerNum, area.x1, area.x2, area.Width(), area.Height(), pTriggerFunction);
 }
 
-} // Tethys
+} // Tethys::API

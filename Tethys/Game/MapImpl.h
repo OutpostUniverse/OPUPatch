@@ -260,7 +260,7 @@ public:
   /// Gets the local daylight level at the specified map tile coordinates.
   uint8 GetLightLevel(Location where, bool forSprite = false) {
     const int pos = GetRelDaylightPos(where.x);
-    return (forSprite ? GetLightLevelAdjustTable() : GetSpriteLightLevelAdjustTable())[pos];
+    return (forSprite ? GetSpriteLightLevelAdjustTable() : GetLightLevelAdjustTable())[pos];
   }
 
   /// Gets the max capacity of the map object array.

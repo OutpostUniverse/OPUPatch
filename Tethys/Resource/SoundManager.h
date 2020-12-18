@@ -127,10 +127,10 @@ public:
   int              field_A8;
   CRITICAL_SECTION criticalSection_;       ///< Controls access to field_A8
 
-  int      numPlaylistEntries_;
-  int      repeatStartIndex_;
-  SongIds* pPlaylist_;
-  int      currentPlayingSongIndex_;
+  int     numPlaylistEntries_;
+  int     repeatStartIndex_;
+  SongID* pPlaylist_;
+  int     currentPlayingSongIndex_;
 
   ibool hasBegunPlayback_;      ///< Has Playback begun at the first song yet
   int   currentSongFileIndex_;  ///< Clm file index

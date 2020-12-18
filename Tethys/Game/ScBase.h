@@ -159,25 +159,25 @@ public:
 
     int issueCommandTick;  ///< Set to 0xFFF00000 when adding unit (related to gameTick and deleteWhenEmpty)
 
-    UnitClassification classification;
+    API::UnitClassification classification;
   };
 
   int          field_14;
   int          field_18;
-  int          lastFreeUnitNodeIndex_;                           ///< (+= 1)
-  int          field_20;                                         ///< (+= 1)
-  UnitNode     unitNode_[32];                                    ///< Linked list storage for pointers to up to 32 units
-  UnitNode*    pUnitByType_[size_t(UnitClassification::NotSet)]; ///< Indexed by UnitClassification
-  TargetCount* pTargetCount_;                                    ///< Object to keep track of target counts
-  UnitNode*    pUnitListHead_;                                   ///< Ordered by UnitClassification
-  UnitNode*    pUnitListTail_;                                   ///< Ordered by UnitClassification
-  int          numUnits_;                                        ///< Returned by TotalUnitCount()
-  int          ownerPlayerNum_;                                  ///< All units in group should belong to this player
-  int          deleteWhenEmptyTick_;                             ///< Inited to -1
-                                                                 ///  Set to tick + 10000 by SetDeleteWhenEmpty(true)
-  ibool        setLights_;                                       ///< Inited to  1 (on)
-  int          field_300;                                        ///< (Part of this class, or derived classes?)
-  int          field_304;                                        ///< (Part of this class, or derived classes?)
+  int          lastFreeUnitNodeIndex_;                                ///< (+= 1)
+  int          field_20;                                              ///< (+= 1)
+  UnitNode     unitNode_[32];                                         ///< Linked list storage for pointers for 32 units
+  UnitNode*    pUnitByType_[size_t(API::UnitClassification::NotSet)]; ///< Indexed by UnitClassification
+  TargetCount* pTargetCount_;                                         ///< Object to keep track of target counts
+  UnitNode*    pUnitListHead_;                                        ///< Ordered by UnitClassification
+  UnitNode*    pUnitListTail_;                                        ///< Ordered by UnitClassification
+  int          numUnits_;                                             ///< Returned by TotalUnitCount()
+  int          ownerPlayerNum_;                                       ///< All units in group belong to this player
+  int          deleteWhenEmptyTick_;                                  ///< Inited to -1
+                                                                      ///  Set to tick+10000 by SetDeleteWhenEmpty(true)
+  ibool        setLights_;                                            ///< Inited to  1 (on)
+  int          field_300;                                             ///< (Part of this class, or derived classes?)
+  int          field_304;                                             ///< (Part of this class, or derived classes?)
 };
 
 
@@ -266,7 +266,7 @@ public:
   int      followMode_;
   RECT     pixelRect_;             ///< SetRect converted to pixels (rect.p1.y initialized to -1)
   int      targetGroupIndex_;      ///< Initialized to -1
-  MapID    attackType_;            ///< Initialized to mapNone
+  MapID    attackType_;            ///< Initialized to MapID::None
   int      targetUnitIndex_;       ///< Initialized to -1
   int      numGuardedRects_;
   RECT     guardedRect_[8];

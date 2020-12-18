@@ -9,7 +9,7 @@
 #include "Tethys/Game/GameImpl.h"
 #include "Tethys/Game/PlayerImpl.h"
 
-namespace Tethys {
+namespace Tethys::API {
 
 /// Exported interface for accessing player data (wraps PlayerImpl).
 class _Player : public OP2Class<_Player> {
@@ -107,7 +107,7 @@ public:
   /// Checks for <Tech.labType>Lab, or hasVehicle(mapConvec, map<Tech.labType>Lab), or canBuildBuilding
   ibool CanDoResearch(int techID) { return Thunk<0x477BF0, &$::CanDoResearch>(techID);  }
   /// [cargoOrWeaponType: -1 = mapAny]  Checks for free units, or units in Garages
-  ibool HasVehicle(MapID vehicleType, MapID cargoOrWeaponType = mapAny)
+  ibool HasVehicle(MapID vehicleType, MapID cargoOrWeaponType = MapID::Any)
     { return Thunk<0x4775E0, &$::HasVehicle>(vehicleType, cargoOrWeaponType); }
   /// Returns (numActiveCommandCenters > 0)
   ibool HasActiveCommand()        { return Thunk<0x477E10, &$::HasActiveCommand>();     }
@@ -171,4 +171,4 @@ inline BuildingGroup FASTCALL CreateBuildingGroup(_Player   p) { return OP2Thunk
 inline FightGroup    FASTCALL CreateFightGroup(_Player      p) { return OP2Thunk<0x47A0A0, &CreateFightGroup>(p);    }
 inline Pinwheel      FASTCALL CreatePinwheel(const _Player& p) { return OP2Thunk<0x47A880, &CreatePinwheel>(p);      }
 
-} // Tethys
+} // Tethys::API

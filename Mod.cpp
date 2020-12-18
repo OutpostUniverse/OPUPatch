@@ -8,8 +8,6 @@
 
 #include <list>
 
-using namespace Tethys;
-
 // =====================================================================================================================
 BOOL APIENTRY DllMain(
   HINSTANCE  hInstDll,

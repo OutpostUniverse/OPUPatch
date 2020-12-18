@@ -13,7 +13,8 @@ public:
   void SetSeed(uint32 seed) { return Thunk<0x46EFB0, void(uint32)>(seed); }
   void SetSeed(uint64 seed) { return Thunk<0x46EFF0, void(uint64)>(seed); }
 
-  void GetSeed(uint32* pDw1, uint32* pDw2) { return Thunk<0x46EF90, &$::GetSeed>(pDw1, pDw2); }
+  void GetSeed(uint64* pOut)
+    { auto*const pDw = (uint32*)(pOut);  return Thunk<0x46EF90, void(uint32*, uint32*)>(&pDw[0], &pDw[1]); }
 
   static Random* GetInstance()      { return OP2Mem<0x56BE20, Random*>(); }  ///< Main RNG used in gameplay logic.
   static Random* GetLocalInstance() { return OP2Mem<0x574428, Random*>(); }  ///< RNG not synced over the network.
@@ -29,5 +30,8 @@ public:
   uint64 seed_;
 };
 static_assert(8 == sizeof(Random), "Incorrect Random size.");
+
+inline auto& g_gameRNG  = *Random::GetInstance();
+inline auto& g_localRNG = *Random::GetLocalInstance();
 
 } // Tethys

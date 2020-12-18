@@ -265,7 +265,7 @@ enum class SoundID : int {
   Count        = 252,
 };
 
-enum class SongIds : int {
+enum class SongID : int {
   Eden11 = 0,  // 0x0
   Eden21,      // 0x1
   Eden22,      // 0x2
@@ -294,6 +294,10 @@ enum class SongIds : int {
   Static05,    // 0x19
   Count
 };
-using SongID = SongIds;
+
+namespace API {
+  using SoundID = Tethys::SoundID;
+  using SongID  = Tethys::SongID;
+} // API
 
 } // Tethys

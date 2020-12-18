@@ -11,144 +11,149 @@ class MapObject;
 class StreamIO;
 enum class SoundID : int;
 
+namespace MapIDImpl {
 /// Map object type IDs, including structures, vehicles, disasters, beacons, weapons fire, etc.
 /// @note Can be either int, uint8, or uint16 depending on context.
 enum MapID : int {
-  mapAny                       = (~0),  ///< Use to specify 'all' or 'any'
-  mapNone                      = 0x00,  ///< Use to specify 'none'.  @note Create maps to MaxObjectType.
+  Any                       = (~0),  ///< Use to specify 'all' or 'any'
+  None                      = 0x00,  ///< Use to specify 'none'.  @note Create maps to MaxObjectType.
 
-  mapCargoTruck                = 0x01,  ///< 'BIG_TRUCK' in sheets.
-  mapConVec                    = 0x02,  ///< 'CON_TRUCK'
-  mapSpider                    = 0x03,  ///< 'SPIDER'
-  mapScorpion                  = 0x04,  ///< 'SCORPION'
-  mapLynx                      = 0x05,  ///< 'LIGHT_TANK'
-  mapPanther                   = 0x06,  ///< 'MED_TANK'
-  mapTiger                     = 0x07,  ///< 'BIG_TANK'
-  mapRoboSurveyor              = 0x08,  ///< 'SURVEYOR'
-  mapRoboMiner                 = 0x09,  ///< 'MINER'
-  mapGeoCon                    = 0x0A,  ///< 'GEO_METRO'
-  mapScout                     = 0x0B,  ///< 'SCOUT'
-  mapRoboDozer                 = 0x0C,  ///< 'BULL_DOZER'
-  mapEvacuationTransport       = 0x0D,  ///< 'MOBILE_HOME'
-  mapRepairVehicle             = 0x0E,  ///< 'REPAIR_TRUCK'
-  mapEarthworker               = 0x0F,  ///< 'WALL_TRUCK'
-  mapSmallCapacityAirTransport = 0x10,  ///< 'SCAT';  Mostly unimplemented and tends to crash.
+  CargoTruck                = 0x01,  ///< 'BIG_TRUCK' in sheets.
+  ConVec                    = 0x02,  ///< 'CON_TRUCK'
+  Spider                    = 0x03,  ///< 'SPIDER'
+  Scorpion                  = 0x04,  ///< 'SCORPION'
+  Lynx                      = 0x05,  ///< 'LIGHT_TANK'
+  Panther                   = 0x06,  ///< 'MED_TANK'
+  Tiger                     = 0x07,  ///< 'BIG_TANK'
+  RoboSurveyor              = 0x08,  ///< 'SURVEYOR'
+  RoboMiner                 = 0x09,  ///< 'MINER'
+  GeoCon                    = 0x0A,  ///< 'GEO_METRO'
+  Scout                     = 0x0B,  ///< 'SCOUT'
+  RoboDozer                 = 0x0C,  ///< 'BULL_DOZER'
+  EvacuationTransport       = 0x0D,  ///< 'MOBILE_HOME'
+  RepairVehicle             = 0x0E,  ///< 'REPAIR_TRUCK'
+  Earthworker               = 0x0F,  ///< 'WALL_TRUCK'
+  SmallCapacityAirTransport = 0x10,  ///< 'SCAT';  Mostly unimplemented and tends to crash.
 
-  mapTube                      = 0x11,  ///< 'TUBE';  It's not a 'BIG_TRUCK'.
-  mapWall                      = 0x12,  ///< 'WALL'
-  mapLavaWall                  = 0x13,  ///< 'WALL_LAVA'
-  mapMicrobeWall               = 0x14,  ///< 'WALL_MICROBE'
+  Tube                      = 0x11,  ///< 'TUBE';  It's not a 'BIG_TRUCK'.
+  Wall                      = 0x12,  ///< 'WALL'
+  LavaWall                  = 0x13,  ///< 'WALL_LAVA'
+  MicrobeWall               = 0x14,  ///< 'WALL_MICROBE'
 
-  mapCommonOreMine             = 0x15,  ///< 'MINE'
-  mapRareOreMine               = 0x16,  ///< 'MINE_ADV'
-  mapGuardPost                 = 0x17,  ///< 'TOWER_GUARD'
-  mapLightTower                = 0x18,  ///< 'TOWER_LIGHT'
-  mapCommonStorage             = 0x19,  ///< 'STORAGE_ORE'
-  mapRareStorage               = 0x1A,  ///< 'STORAGE_RARE'
-  mapForum                     = 0x1B,  ///< 'FORUM'
-  mapCommandCenter             = 0x1C,  ///< 'COMMAND'
-  mapMHDGenerator              = 0x1D,  ///< 'ASE'
-  mapResidence                 = 0x1E,  ///< 'RESIDENCE'
-  mapRobotCommand              = 0x1F,  ///< 'ROBOT_COMMAND'
-  mapTradeCenter               = 0x20,  ///< 'TRADE'
-  mapBasicLab                  = 0x21,  ///< 'LAB'
-  mapMedicalCenter             = 0x22,  ///< 'MED_CENTER'
-  mapNursery                   = 0x23,  ///< 'NURSERY'
-  mapSolarPowerArray           = 0x24,  ///< 'SOLAR'
-  mapRecreationFacility        = 0x25,  ///< 'RECREATION'
-  mapUniversity                = 0x26,  ///< 'UNIVERSITY'
-  mapAgridome                  = 0x27,  ///< 'AGRIDOME'
-  mapDIRT                      = 0x28,  ///< 'DIRT'
-  mapGarage                    = 0x29,  ///< 'GARAGE'
-  mapMagmaWell                 = 0x2A,  ///< 'MAGMA_WELL'
-  mapMeteorDefense             = 0x2B,  ///< 'METEOR_DEF'
-  mapGeothermalPlant           = 0x2C,  ///< 'GEOTHERMAL'
-  mapArachnidFactory           = 0x2D,  ///< 'FACT_ANDROID'
-  mapConsumerFactory           = 0x2E,  ///< 'FACT_LUXURY'
-  mapStructureFactory          = 0x2F,  ///< 'FACT_STRUCTURE'
-  mapVehicleFactory            = 0x30,  ///< 'FACT_VEHICLE'
-  mapStandardLab               = 0x31,  ///< 'LAB_STANDARD'
-  mapAdvancedLab               = 0x32,  ///< 'LAB_ADV'
-  mapObservatory               = 0x33,  ///< 'OBSERVATORY'
-  mapReinforcedResidence       = 0x34,  ///< 'RESIDENCE_P'
-  mapAdvancedResidence         = 0x35,  ///< 'RESIDENCE_E'
-  mapCommonOreSmelter          = 0x36,  ///< 'SMELTER'
-  mapSpaceport                 = 0x37,  ///< 'SPACEPORT'
-  mapRareOreSmelter            = 0x38,  ///< 'SMELTER_ADV'
-  mapGORF                      = 0x39,  ///< 'GORF'
-  mapTokamak                   = 0x3A,  ///< 'TOKAMAK'
+  CommonOreMine             = 0x15,  ///< 'MINE'
+  RareOreMine               = 0x16,  ///< 'MINE_ADV'
+  GuardPost                 = 0x17,  ///< 'TOWER_GUARD'
+  LightTower                = 0x18,  ///< 'TOWER_LIGHT'
+  CommonStorage             = 0x19,  ///< 'STORAGE_ORE'
+  RareStorage               = 0x1A,  ///< 'STORAGE_RARE'
+  Forum                     = 0x1B,  ///< 'FORUM'
+  CommandCenter             = 0x1C,  ///< 'COMMAND'
+  MHDGenerator              = 0x1D,  ///< 'ASE'
+  Residence                 = 0x1E,  ///< 'RESIDENCE'
+  RobotCommand              = 0x1F,  ///< 'ROBOT_COMMAND'
+  TradeCenter               = 0x20,  ///< 'TRADE'
+  BasicLab                  = 0x21,  ///< 'LAB'
+  MedicalCenter             = 0x22,  ///< 'MED_CENTER'
+  Nursery                   = 0x23,  ///< 'NURSERY'
+  SolarPowerArray           = 0x24,  ///< 'SOLAR'
+  RecreationFacility        = 0x25,  ///< 'RECREATION'
+  University                = 0x26,  ///< 'UNIVERSITY'
+  Agridome                  = 0x27,  ///< 'AGRIDOME'
+  DIRT                      = 0x28,  ///< 'DIRT'
+  Garage                    = 0x29,  ///< 'GARAGE'
+  MagmaWell                 = 0x2A,  ///< 'MAGMA_WELL'
+  MeteorDefense             = 0x2B,  ///< 'METEOR_DEF'
+  GeothermalPlant           = 0x2C,  ///< 'GEOTHERMAL'
+  ArachnidFactory           = 0x2D,  ///< 'FACT_ANDROID'
+  ConsumerFactory           = 0x2E,  ///< 'FACT_LUXURY'
+  StructureFactory          = 0x2F,  ///< 'FACT_STRUCTURE'
+  VehicleFactory            = 0x30,  ///< 'FACT_VEHICLE'
+  StandardLab               = 0x31,  ///< 'LAB_STANDARD'
+  AdvancedLab               = 0x32,  ///< 'LAB_ADV'
+  Observatory               = 0x33,  ///< 'OBSERVATORY'
+  ReinforcedResidence       = 0x34,  ///< 'RESIDENCE_P'
+  AdvancedResidence         = 0x35,  ///< 'RESIDENCE_E'
+  CommonOreSmelter          = 0x36,  ///< 'SMELTER'
+  Spaceport                 = 0x37,  ///< 'SPACEPORT'
+  RareOreSmelter            = 0x38,  ///< 'SMELTER_ADV'
+  GORF                      = 0x39,  ///< 'GORF'
+  Tokamak                   = 0x3A,  ///< 'TOKAMAK'
 
-  mapAcidCloud                 = 0x3B,  ///< 'ACID'
-  mapEMP                       = 0x3C,  ///< 'EMP'
-  mapLaser                     = 0x3D,  ///< 'LASER'
-  mapMicrowave                 = 0x3E,  ///< 'MICROWAVE'
-  mapRailGun                   = 0x3F,  ///< 'RAIL_GUN'
-  mapRPG                       = 0x40,  ///< 'CANNON'
-  mapStarflare                 = 0x41,  ///< 'SELF_DESTRUCT';        For vehicles.
-  mapSupernova                 = 0x42,  ///< 'SELF_DESTRUCT_ADV';    For vehicles.  @note Create maps to SupernovaGP?
-  mapStarflareGP               = 0x43,  ///< 'TURRET_DESTRUCT';      For guard posts.
-  mapSupernovaGP               = 0x44,  ///< 'TURRET_DESTRUCT_ADV';  For guard posts.
-  mapSelfDestruct              = 0x45,  ///< 'SCUTTLE_DESTRUCT';     Vehicle self-destruct command explosion.
-  mapESG                       = 0x46,  ///< 'SPAM'
-  mapStickyfoam                = 0x47,  ///< 'FOAM'
-  mapThorsHammer               = 0x48,  ///< 'THORS_HAMMER'
-  mapEnergyCannon              = 0x49,  ///< 'SCORPION_WEAPON'
-  mapEMPBlast                  = 0x4A,  ///< 'EMP_BIG';  EMP missile/power plant explosion.
-  mapBFG                       = 0x4B,  ///< 'BFG';      Unimplemented projectile weapon.
+  AcidCloud                 = 0x3B,  ///< 'ACID'
+  EMP                       = 0x3C,  ///< 'EMP'
+  Laser                     = 0x3D,  ///< 'LASER'
+  Microwave                 = 0x3E,  ///< 'MICROWAVE'
+  RailGun                   = 0x3F,  ///< 'RAIL_GUN'
+  RPG                       = 0x40,  ///< 'CANNON'
+  Starflare                 = 0x41,  ///< 'SELF_DESTRUCT';        For vehicles.
+  Supernova                 = 0x42,  ///< 'SELF_DESTRUCT_ADV';    For vehicles.  @note Create maps to SupernovaGP?
+  StarflareGP               = 0x43,  ///< 'TURRET_DESTRUCT';      For guard posts.
+  SupernovaGP               = 0x44,  ///< 'TURRET_DESTRUCT_ADV';  For guard posts.
+  SelfDestruct              = 0x45,  ///< 'SCUTTLE_DESTRUCT';     Vehicle self-destruct command explosion.
+  ESG                       = 0x46,  ///< 'SPAM'
+  Stickyfoam                = 0x47,  ///< 'FOAM'
+  ThorsHammer               = 0x48,  ///< 'THORS_HAMMER'
+  EnergyCannon              = 0x49,  ///< 'SCORPION_WEAPON'
+  EMPBlast                  = 0x4A,  ///< 'EMP_BIG';  EMP missile/power plant explosion.
+  BFG                       = 0x4B,  ///< 'BFG';      Unimplemented projectile weapon.
 
-  mapLightning                 = 0x4C,  ///< 'LIGHTNING'
-  mapVortex                    = 0x4D,  ///< 'TORNADO'
-  mapEarthquake                = 0x4E,  ///< 'EARTHQUAKE'
-  mapEruption                  = 0x4F,  ///< 'ERUPTION'
-  mapMeteor                    = 0x50,  ///< 'METEOR'
+  Lightning                 = 0x4C,  ///< 'LIGHTNING'
+  Vortex                    = 0x4D,  ///< 'TORNADO'
+  Earthquake                = 0x4E,  ///< 'EARTHQUAKE'
+  Eruption                  = 0x4F,  ///< 'ERUPTION'
+  Meteor                    = 0x50,  ///< 'METEOR'
 
-  mapMiningBeacon              = 0x51,  ///< 'BEACON'
-  mapMagmaVent                 = 0x52,  ///< 'MAGMA_VENT'
-  mapFumarole                  = 0x53,  ///< 'FUMAROLE'
-  mapWreckage                  = 0x54,  ///< 'WRECK_FLAG'
+  MiningBeacon              = 0x51,  ///< 'BEACON'
+  MagmaVent                 = 0x52,  ///< 'MAGMA_VENT'
+  Fumarole                  = 0x53,  ///< 'FUMAROLE'
+  Wreckage                  = 0x54,  ///< 'WRECK_FLAG'
 
-  mapSmallBuildingExplosion    = 0x55,  ///< 'BLD_EXPL_SML'
-  mapMediumBuildingExplosion   = 0x56,  ///< 'BLD_EXPL_MED'
-  mapLargeBuildingExplosion    = 0x57,  ///< 'BLD_EXPL_BIG'
+  SmallBuildingExplosion    = 0x55,  ///< 'BLD_EXPL_SML'
+  MediumBuildingExplosion   = 0x56,  ///< 'BLD_EXPL_MED'
+  LargeBuildingExplosion    = 0x57,  ///< 'BLD_EXPL_BIG'
 
   // Satellites do not have MapObject instances.
-  mapEDWARDSatellite           = 0x58,  ///< 'EDWARD'
-  mapSolarSatellite            = 0x59,  ///< 'SOLAR_SAT'
-  mapIonDriveModule            = 0x5A,  ///< 'SPACE_1'
-  mapFusionDriveModule         = 0x5B,  ///< 'SPACE_2'
-  mapCommandModule             = 0x5C,  ///< 'SPACE_3'
-  mapFuelingSystems            = 0x5D,  ///< 'SPACE_4'
-  mapHabitatRing               = 0x5E,  ///< 'SPACE_5'
-  mapSensorPackage             = 0x5F,  ///< 'SPACE_6'
-  mapSkydock                   = 0x60,  ///< 'SPACE_7'
-  mapStasisSystems             = 0x61,  ///< 'SPACE_8'
-  mapOrbitalPackage            = 0x62,  ///< 'SPACE_9'
-  mapPhoenixModule             = 0x63,  ///< 'SPACE_10'
-  mapRareMetalsCargo           = 0x64,  ///< 'SPACE_11'
-  mapCommonMetalsCargo         = 0x65,  ///< 'SPACE_12'
-  mapFoodCargo                 = 0x66,  ///< 'SPACE_13'
-  mapEvacuationModule          = 0x67,  ///< 'SPACE_14'
-  mapChildrenModule            = 0x68,  ///< 'SPACE_15'
+  EDWARDSatellite           = 0x58,  ///< 'EDWARD'
+  SolarSatellite            = 0x59,  ///< 'SOLAR_SAT'
+  IonDriveModule            = 0x5A,  ///< 'SPACE_1'
+  FusionDriveModule         = 0x5B,  ///< 'SPACE_2'
+  CommandModule             = 0x5C,  ///< 'SPACE_3'
+  FuelingSystems            = 0x5D,  ///< 'SPACE_4'
+  HabitatRing               = 0x5E,  ///< 'SPACE_5'
+  SensorPackage             = 0x5F,  ///< 'SPACE_6'
+  Skydock                   = 0x60,  ///< 'SPACE_7'
+  StasisSystems             = 0x61,  ///< 'SPACE_8'
+  OrbitalPackage            = 0x62,  ///< 'SPACE_9'
+  PhoenixModule             = 0x63,  ///< 'SPACE_10'
+  RareMetalsCargo           = 0x64,  ///< 'SPACE_11'
+  CommonMetalsCargo         = 0x65,  ///< 'SPACE_12'
+  FoodCargo                 = 0x66,  ///< 'SPACE_13'
+  EvacuationModule          = 0x67,  ///< 'SPACE_14'
+  ChildrenModule            = 0x68,  ///< 'SPACE_15'
 
-  mapSULV                      = 0x69,  ///< 'SULV'
-  mapRLV                       = 0x6A,  ///< 'RLV'
-  mapEMPMissile                = 0x6B,  ///< 'EMP_MISSILE'
+  SULV                      = 0x69,  ///< 'SULV'
+  RLV                       = 0x6A,  ///< 'RLV'
+  EMPMissile                = 0x6B,  ///< 'EMP_MISSILE'
 
   // Consumer goods do not have MapObject instances.
-  mapImpulseItems              = 0x6C,  ///< 'LUX_1'
-  mapWares                     = 0x6D,  ///< 'LUX_2'
-  mapLuxuryWares               = 0x6E,  ///< 'LUX_3'
+  ImpulseItems              = 0x6C,  ///< 'LUX_1'
+  Wares                     = 0x6D,  ///< 'LUX_2'
+  LuxuryWares               = 0x6E,  ///< 'LUX_3'
 
-  mapInterColonyShuttle        = 0x6F,  ///< 'SHUTTLE';  Unimplemented "projectile", probably meant to go with SCAT?
+  InterColonyShuttle        = 0x6F,  ///< 'SHUTTLE';  Unimplemented "projectile", probably meant to go with SCAT?
 
   // Arachnid 3-packs do not have MapObject instances.
-  mapSpider3Pack               = 0x70,  ///< 'SPIDER_PACK'
-  mapScorpion3Pack             = 0x71,  ///< 'SCORPION_PACK'
+  Spider3Pack               = 0x70,  ///< 'SPIDER_PACK'
+  Scorpion3Pack             = 0x71,  ///< 'SCORPION_PACK'
 
-  mapAmbientAnimation          = 0x72,  ///< 'AMBIENT_ANIM';  Also known as "Pretty art!"
+  AmbientAnimation          = 0x72,  ///< 'AMBIENT_ANIM';  Also known as "Pretty art!"
 
-  mapMaxObject                 = 0x73,  ///< 'MAX_OBJECT_TYPE';  Also happens to be the base type for lab buildings.
+  MaxObject                 = 0x73,  ///< 'MAX_OBJECT_TYPE';  Also happens to be the base type for lab buildings.
 };
+} // MapIDImpl
+
+                using MapID = Tethys::MapIDImpl::MapID;
+namespace API { using MapID = Tethys::MapIDImpl::MapID; }
 
 /// Vehicle track types.
 enum class TrackType : uint32 {
@@ -198,6 +203,11 @@ enum BuildingFlags : uint32 {
   BldFlagExplodeMedium     = (1u << 8),  ///< Creates a MediumBuildingExplosion on death.
   BldFlagExplodeLarge      = (3u << 7),  ///< Creates a LargeBuildingExplosion on death.
 };
+
+namespace TethysImpl { template <MapID>  struct MapObjTypeForImpl { using Type = MapObjectType; }; }
+
+/// Template alias to get the MapObjectType subclass associated with the given MapID.
+template <MapID ID>  using MapObjTypeFor = typename TethysImpl::MapObjTypeForImpl<ID>::Type;
 
 BEGIN_PACKED
 
@@ -276,8 +286,9 @@ union GlobalUnitStats {
   } weapon;
 };
 
-#define OP2_MO_TYPE_CLASS_MAP_ID(id) static constexpr MapID ClassMapId = id;  \
-                                     static $* GetInstance() { return static_cast<$*>(MapObjectType::GetInstance(id)); }
+#define OP2_MO_TYPE_CLASS_MAP_ID(id)              \
+  static constexpr MapID ClassMapId = MapID::id;  \
+  static $* GetInstance() { return static_cast<$*>(MapObjectType::GetInstance(MapID::id)); }
 
 
 //  ====================================================================================================================
@@ -372,7 +383,7 @@ namespace MapObjType {
 class AdvancedLab : public MapObjectType {
   using $ = AdvancedLab;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapAdvancedLab);
+  OP2_MO_TYPE_CLASS_MAP_ID(AdvancedLab);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443720, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -386,7 +397,7 @@ public:
 class AdvancedResidence : public MapObjectType {
   using $ = AdvancedResidence;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapAdvancedResidence);
+  OP2_MO_TYPE_CLASS_MAP_ID(AdvancedResidence);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4438E0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -400,7 +411,7 @@ public:
 class Agridome : public MapObjectType {
   using $ = Agridome;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapAgridome);
+  OP2_MO_TYPE_CLASS_MAP_ID(Agridome);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443040, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -414,7 +425,7 @@ public:
 class ArachnidFactory : public MapObjectType {
   using $ = ArachnidFactory;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapArachnidFactory);
+  OP2_MO_TYPE_CLASS_MAP_ID(ArachnidFactory);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4433C0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -428,7 +439,7 @@ public:
 class BasicLab : public MapObjectType {
   using $ = BasicLab;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapBasicLab);
+  OP2_MO_TYPE_CLASS_MAP_ID(BasicLab);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442C80, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -442,7 +453,7 @@ public:
 class CargoTruck : public MapObjectType {
   using $ = CargoTruck;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapCargoTruck);
+  OP2_MO_TYPE_CLASS_MAP_ID(CargoTruck);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441B40, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -456,7 +467,7 @@ public:
 class ChildrenModule : public MapObjectType {
   using $ = ChildrenModule;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapChildrenModule);
+  OP2_MO_TYPE_CLASS_MAP_ID(ChildrenModule);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444BF0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -469,7 +480,7 @@ public:
 class CommandCenter : public MapObjectType {
   using $ = CommandCenter;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapCommandCenter);
+  OP2_MO_TYPE_CLASS_MAP_ID(CommandCenter);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442960, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -483,7 +494,7 @@ public:
 class CommandModule : public MapObjectType {
   using $ = CommandModule;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapCommandModule);
+  OP2_MO_TYPE_CLASS_MAP_ID(CommandModule);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4448F0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -496,7 +507,7 @@ public:
 class CommonMetalsCargo : public MapObjectType {
   using $ = CommonMetalsCargo;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapCommonMetalsCargo);
+  OP2_MO_TYPE_CLASS_MAP_ID(CommonMetalsCargo);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444B30, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -509,7 +520,7 @@ public:
 class CommonOreMine : public MapObjectType {
   using $ = CommonOreMine;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapCommonOreMine);
+  OP2_MO_TYPE_CLASS_MAP_ID(CommonOreMine);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442440, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -523,7 +534,7 @@ public:
 class CommonOreSmelter : public MapObjectType {
   using $ = CommonOreSmelter;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapCommonOreSmelter);
+  OP2_MO_TYPE_CLASS_MAP_ID(CommonOreSmelter);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443980, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -537,7 +548,7 @@ public:
 class CommonStorage : public MapObjectType {
   using $ = CommonStorage;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapCommonStorage);
+  OP2_MO_TYPE_CLASS_MAP_ID(CommonStorage);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4427C0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -551,7 +562,7 @@ public:
 class ConsumerFactory : public MapObjectType {
   using $ = ConsumerFactory;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapConsumerFactory);
+  OP2_MO_TYPE_CLASS_MAP_ID(ConsumerFactory);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443470, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -565,7 +576,7 @@ public:
 class ConVec : public MapObjectType {
   using $ = ConVec;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapConVec);
+  OP2_MO_TYPE_CLASS_MAP_ID(ConVec);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441BA0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -579,7 +590,7 @@ public:
 class DIRT : public MapObjectType {
   using $ = DIRT;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapDIRT);
+  OP2_MO_TYPE_CLASS_MAP_ID(DIRT);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4430C0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -593,7 +604,7 @@ public:
 class Earthworker : public MapObjectType {
   using $ = Earthworker;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEarthworker);
+  OP2_MO_TYPE_CLASS_MAP_ID(Earthworker);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4421F0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -607,7 +618,7 @@ public:
 class EDWARDSatellite : public MapObjectType {
   using $ = EDWARDSatellite;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEDWARDSatellite);
+  OP2_MO_TYPE_CLASS_MAP_ID(EDWARDSatellite);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4447F0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -620,7 +631,7 @@ public:
 class EMPMissile : public MapObjectType {
   using $ = EMPMissile;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEMPMissile);
+  OP2_MO_TYPE_CLASS_MAP_ID(EMPMissile);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444D30, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -633,7 +644,7 @@ public:
 class EvacuationModule : public MapObjectType {
   using $ = EvacuationModule;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEvacuationModule);
+  OP2_MO_TYPE_CLASS_MAP_ID(EvacuationModule);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444BB0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -646,7 +657,7 @@ public:
 class EvacuationTransport : public MapObjectType {
   using $ = EvacuationTransport;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEvacuationTransport);
+  OP2_MO_TYPE_CLASS_MAP_ID(EvacuationTransport);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4420F0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -660,7 +671,7 @@ public:
 class FoodCargo : public MapObjectType {
   using $ = FoodCargo;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapFoodCargo);
+  OP2_MO_TYPE_CLASS_MAP_ID(FoodCargo);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444B70, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -673,7 +684,7 @@ public:
 class Forum : public MapObjectType {
   using $ = Forum;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapForum);
+  OP2_MO_TYPE_CLASS_MAP_ID(Forum);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4428C0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -687,7 +698,7 @@ public:
 class FuelingSystems : public MapObjectType {
   using $ = FuelingSystems;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapFuelingSystems);
+  OP2_MO_TYPE_CLASS_MAP_ID(FuelingSystems);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444930, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -700,7 +711,7 @@ public:
 class FusionDriveModule : public MapObjectType {
   using $ = FusionDriveModule;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapFusionDriveModule);
+  OP2_MO_TYPE_CLASS_MAP_ID(FusionDriveModule);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4448B0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -713,7 +724,7 @@ public:
 class Garage : public MapObjectType {
   using $ = Garage;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapGarage);
+  OP2_MO_TYPE_CLASS_MAP_ID(Garage);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443160, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -727,7 +738,7 @@ public:
 class GeoCon : public MapObjectType {
   using $ = GeoCon;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapGeoCon);
+  OP2_MO_TYPE_CLASS_MAP_ID(GeoCon);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441FA0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -741,7 +752,7 @@ public:
 class GeothermalPlant : public MapObjectType {
   using $ = GeothermalPlant;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapGeothermalPlant);
+  OP2_MO_TYPE_CLASS_MAP_ID(GeothermalPlant);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443320, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -755,7 +766,7 @@ public:
 class GORF : public MapObjectType {
   using $ = GORF;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapGORF);
+  OP2_MO_TYPE_CLASS_MAP_ID(GORF);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443B70, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -769,7 +780,7 @@ public:
 class GuardPost : public MapObjectType {
   using $ = GuardPost;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapGuardPost);
+  OP2_MO_TYPE_CLASS_MAP_ID(GuardPost);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4426A0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -783,7 +794,7 @@ public:
 class HabitatRing : public MapObjectType {
   using $ = HabitatRing;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapHabitatRing);
+  OP2_MO_TYPE_CLASS_MAP_ID(HabitatRing);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444970, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -796,7 +807,7 @@ public:
 class ImpulseItems : public MapObjectType {
   using $ = ImpulseItems;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapImpulseItems);
+  OP2_MO_TYPE_CLASS_MAP_ID(ImpulseItems);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444DB0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -809,7 +820,7 @@ public:
 class IonDriveModule : public MapObjectType {
   using $ = IonDriveModule;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapIonDriveModule);
+  OP2_MO_TYPE_CLASS_MAP_ID(IonDriveModule);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444870, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -822,7 +833,7 @@ public:
 class LavaWall : public MapObjectType {
   using $ = LavaWall;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapLavaWall);
+  OP2_MO_TYPE_CLASS_MAP_ID(LavaWall);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4424C0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -836,7 +847,7 @@ public:
 class LightTower : public MapObjectType {
   using $ = LightTower;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapLightTower);
+  OP2_MO_TYPE_CLASS_MAP_ID(LightTower);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442720, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -850,7 +861,7 @@ public:
 class LuxuryWares : public MapObjectType {
   using $ = LuxuryWares;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapLuxuryWares);
+  OP2_MO_TYPE_CLASS_MAP_ID(LuxuryWares);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444E30, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -863,7 +874,7 @@ public:
 class Lynx : public MapObjectType {
   using $ = Lynx;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapLynx);
+  OP2_MO_TYPE_CLASS_MAP_ID(Lynx);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441DA0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -877,7 +888,7 @@ public:
 class MagmaWell : public MapObjectType {
   using $ = MagmaWell;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMagmaWell);
+  OP2_MO_TYPE_CLASS_MAP_ID(MagmaWell);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4431E0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -891,7 +902,7 @@ public:
 class MaxObjectType : public MapObjectType {
   using $ = MaxObjectType;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapNone);
+  OP2_MO_TYPE_CLASS_MAP_ID(None);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441AE0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -904,7 +915,7 @@ public:
 class MedicalCenter : public MapObjectType {
   using $ = MedicalCenter;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMedicalCenter);
+  OP2_MO_TYPE_CLASS_MAP_ID(MedicalCenter);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442D20, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -918,7 +929,7 @@ public:
 class MeteorDefense : public MapObjectType {
   using $ = MeteorDefense;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMeteorDefense);
+  OP2_MO_TYPE_CLASS_MAP_ID(MeteorDefense);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443280, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -932,7 +943,7 @@ public:
 class MHDGenerator : public MapObjectType {
   using $ = MHDGenerator;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMHDGenerator);
+  OP2_MO_TYPE_CLASS_MAP_ID(MHDGenerator);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442A00, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -946,7 +957,7 @@ public:
 class MicrobeWall : public MapObjectType {
   using $ = MicrobeWall;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMicrobeWall);
+  OP2_MO_TYPE_CLASS_MAP_ID(MicrobeWall);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442560, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -960,7 +971,7 @@ public:
 class Nursery : public MapObjectType {
   using $ = Nursery;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapNursery);
+  OP2_MO_TYPE_CLASS_MAP_ID(Nursery);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442DC0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -974,7 +985,7 @@ public:
 class Observatory : public MapObjectType {
   using $ = Observatory;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapObservatory);
+  OP2_MO_TYPE_CLASS_MAP_ID(Observatory);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4437A0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -988,7 +999,7 @@ public:
 class OrbitalPackage : public MapObjectType {
   using $ = OrbitalPackage;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapOrbitalPackage);
+  OP2_MO_TYPE_CLASS_MAP_ID(OrbitalPackage);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444A70, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1001,7 +1012,7 @@ public:
 class Panther : public MapObjectType {
   using $ = Panther;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapPanther);
+  OP2_MO_TYPE_CLASS_MAP_ID(Panther);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441E30, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1015,7 +1026,7 @@ public:
 class PhoenixModule : public MapObjectType {
   using $ = PhoenixModule;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapPhoenixModule);
+  OP2_MO_TYPE_CLASS_MAP_ID(PhoenixModule);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444AB0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1028,7 +1039,7 @@ public:
 class RareMetalsCargo : public MapObjectType {
   using $ = RareMetalsCargo;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRareMetalsCargo);
+  OP2_MO_TYPE_CLASS_MAP_ID(RareMetalsCargo);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444AF0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1041,7 +1052,7 @@ public:
 class RareOreMine : public MapObjectType {
   using $ = RareOreMine;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRareOreMine);
+  OP2_MO_TYPE_CLASS_MAP_ID(RareOreMine);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442600, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1055,7 +1066,7 @@ public:
 class RareOreSmelter : public MapObjectType {
   using $ = RareOreSmelter;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRareOreSmelter);
+  OP2_MO_TYPE_CLASS_MAP_ID(RareOreSmelter);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443AD0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1069,7 +1080,7 @@ public:
 class RareStorage : public MapObjectType {
   using $ = RareStorage;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRareStorage);
+  OP2_MO_TYPE_CLASS_MAP_ID(RareStorage);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442840, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1083,7 +1094,7 @@ public:
 class RecreationFacility : public MapObjectType {
   using $ = RecreationFacility;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRecreationFacility);
+  OP2_MO_TYPE_CLASS_MAP_ID(RecreationFacility);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442F00, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1097,7 +1108,7 @@ public:
 class ReinforcedResidence : public MapObjectType {
   using $ = ReinforcedResidence;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapReinforcedResidence);
+  OP2_MO_TYPE_CLASS_MAP_ID(ReinforcedResidence);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443840, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1111,7 +1122,7 @@ public:
 class RepairVehicle : public MapObjectType {
   using $ = RepairVehicle;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRepairVehicle);
+  OP2_MO_TYPE_CLASS_MAP_ID(RepairVehicle);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442170, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1125,7 +1136,7 @@ public:
 class Residence : public MapObjectType {
   using $ = Residence;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapResidence);
+  OP2_MO_TYPE_CLASS_MAP_ID(Residence);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442AA0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1139,7 +1150,7 @@ public:
 class RLV : public MapObjectType {
   using $ = RLV;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRLV);
+  OP2_MO_TYPE_CLASS_MAP_ID(RLV);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444CB0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1152,7 +1163,7 @@ public:
 class RoboDozer : public MapObjectType {
   using $ = RoboDozer;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRoboDozer);
+  OP2_MO_TYPE_CLASS_MAP_ID(RoboDozer);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442090, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1166,7 +1177,7 @@ public:
 class RoboMiner : public MapObjectType {
   using $ = RoboMiner;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRoboMiner);
+  OP2_MO_TYPE_CLASS_MAP_ID(RoboMiner);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441F20, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1180,7 +1191,7 @@ public:
 class RoboSurveyor : public MapObjectType {
   using $ = RoboSurveyor;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRoboSurveyor);
+  OP2_MO_TYPE_CLASS_MAP_ID(RoboSurveyor);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441EC0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1194,7 +1205,7 @@ public:
 class RobotCommand : public MapObjectType {
   using $ = RobotCommand;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRobotCommand);
+  OP2_MO_TYPE_CLASS_MAP_ID(RobotCommand);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442B40, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1208,7 +1219,7 @@ public:
 class Scorpion : public MapObjectType {
   using $ = Scorpion;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapScorpion);
+  OP2_MO_TYPE_CLASS_MAP_ID(Scorpion);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441D10, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1222,7 +1233,7 @@ public:
 class Scorpion3Pack : public MapObjectType {
   using $ = Scorpion3Pack;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapScorpion3Pack);
+  OP2_MO_TYPE_CLASS_MAP_ID(Scorpion3Pack);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444EB0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1236,7 +1247,7 @@ public:
 class Scout : public MapObjectType {
   using $ = Scout;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapScout);
+  OP2_MO_TYPE_CLASS_MAP_ID(Scout);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442020, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1250,7 +1261,7 @@ public:
 class SensorPackage : public MapObjectType {
   using $ = SensorPackage;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSensorPackage);
+  OP2_MO_TYPE_CLASS_MAP_ID(SensorPackage);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4449B0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1263,7 +1274,7 @@ public:
 class Skydock : public MapObjectType {
   using $ = Skydock;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSkydock);
+  OP2_MO_TYPE_CLASS_MAP_ID(Skydock);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4449F0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1276,7 +1287,7 @@ public:
 class SmallCapacityAirTransport : public MapObjectType {
   using $ = SmallCapacityAirTransport;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSmallCapacityAirTransport);
+  OP2_MO_TYPE_CLASS_MAP_ID(SmallCapacityAirTransport);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442270, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1290,7 +1301,7 @@ public:
 class SolarPowerArray : public MapObjectType {
   using $ = SolarPowerArray;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSolarPowerArray);
+  OP2_MO_TYPE_CLASS_MAP_ID(SolarPowerArray);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442E60, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1304,7 +1315,7 @@ public:
 class SolarSatellite : public MapObjectType {
   using $ = SolarSatellite;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSolarSatellite);
+  OP2_MO_TYPE_CLASS_MAP_ID(SolarSatellite);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444830, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1317,7 +1328,7 @@ public:
 class Spaceport : public MapObjectType {
   using $ = Spaceport;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSpaceport);
+  OP2_MO_TYPE_CLASS_MAP_ID(Spaceport);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443A20, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1331,7 +1342,7 @@ public:
 class Spider : public MapObjectType {
   using $ = Spider;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSpider);
+  OP2_MO_TYPE_CLASS_MAP_ID(Spider);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441C90, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1345,7 +1356,7 @@ public:
 class Spider3Pack : public MapObjectType {
   using $ = Spider3Pack;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSpider3Pack);
+  OP2_MO_TYPE_CLASS_MAP_ID(Spider3Pack);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444E70, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1359,7 +1370,7 @@ public:
 class StandardLab : public MapObjectType {
   using $ = StandardLab;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapStandardLab);
+  OP2_MO_TYPE_CLASS_MAP_ID(StandardLab);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443680, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1373,7 +1384,7 @@ public:
 class StasisSystems : public MapObjectType {
   using $ = StasisSystems;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapStasisSystems);
+  OP2_MO_TYPE_CLASS_MAP_ID(StasisSystems);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444A30, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1386,7 +1397,7 @@ public:
 class StructureFactory : public MapObjectType {
   using $ = StructureFactory;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapStructureFactory);
+  OP2_MO_TYPE_CLASS_MAP_ID(StructureFactory);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443520, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1400,7 +1411,7 @@ public:
 class SULV : public MapObjectType {
   using $ = SULV;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSULV);
+  OP2_MO_TYPE_CLASS_MAP_ID(SULV);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444C30, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1413,7 +1424,7 @@ public:
 class Tiger : public MapObjectType {
   using $ = Tiger;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapTiger);
+  OP2_MO_TYPE_CLASS_MAP_ID(Tiger);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x441C00, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1427,7 +1438,7 @@ public:
 class Tokamak : public MapObjectType {
   using $ = Tokamak;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapTokamak);
+  OP2_MO_TYPE_CLASS_MAP_ID(Tokamak);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443C10, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1441,7 +1452,7 @@ public:
 class TradeCenter : public MapObjectType {
   using $ = TradeCenter;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapTradeCenter);
+  OP2_MO_TYPE_CLASS_MAP_ID(TradeCenter);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442BE0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1455,7 +1466,7 @@ public:
 class Tube : public MapObjectType {
   using $ = Tube;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapTube);
+  OP2_MO_TYPE_CLASS_MAP_ID(Tube);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442300, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1469,7 +1480,7 @@ public:
 class University : public MapObjectType {
   using $ = University;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapUniversity);
+  OP2_MO_TYPE_CLASS_MAP_ID(University);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x442FA0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1483,7 +1494,7 @@ public:
 class VehicleFactory : public MapObjectType {
   using $ = VehicleFactory;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapVehicleFactory);
+  OP2_MO_TYPE_CLASS_MAP_ID(VehicleFactory);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4435D0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1497,7 +1508,7 @@ public:
 class Wall : public MapObjectType {
   using $ = Wall;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapWall);
+  OP2_MO_TYPE_CLASS_MAP_ID(Wall);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4423A0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1511,7 +1522,7 @@ public:
 class Wares : public MapObjectType {
   using $ = Wares;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapWares);
+  OP2_MO_TYPE_CLASS_MAP_ID(Wares);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444DF0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1524,7 +1535,7 @@ public:
 class AcidCloud : public MapEntityType {
   using $ = AcidCloud;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapAcidCloud);
+  OP2_MO_TYPE_CLASS_MAP_ID(AcidCloud);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443C90, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1555,7 +1566,7 @@ public:
 class AmbientAnimation : public MapEntityType {
   using $ = AmbientAnimation;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapAmbientAnimation);
+  OP2_MO_TYPE_CLASS_MAP_ID(AmbientAnimation);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
   { return Thunk<0x444F70, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1569,7 +1580,7 @@ public:
 class BFG : public MapEntityType {
   using $ = BFG;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapBFG);
+  OP2_MO_TYPE_CLASS_MAP_ID(BFG);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4442B0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1598,7 +1609,7 @@ public:
 class EMPBlast : public MapEntityType {
   using $ = EMPBlast;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEMPBlast);
+  OP2_MO_TYPE_CLASS_MAP_ID(EMPBlast);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444230, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1612,7 +1623,7 @@ public:
 class Earthquake : public MapEntityType {
   using $ = Earthquake;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEarthquake);
+  OP2_MO_TYPE_CLASS_MAP_ID(Earthquake);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4443D0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1626,7 +1637,7 @@ public:
 class EMP : public MapEntityType {
   using $ = EMP;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEMP);
+  OP2_MO_TYPE_CLASS_MAP_ID(EMP);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443CF0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1657,7 +1668,7 @@ public:
 class EnergyCannon : public MapEntityType {
   using $ = EnergyCannon;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEnergyCannon);
+  OP2_MO_TYPE_CLASS_MAP_ID(EnergyCannon);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4441D0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1675,7 +1686,7 @@ public:
 class Eruption : public MapEntityType {
   using $ = Eruption;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapEruption);
+  OP2_MO_TYPE_CLASS_MAP_ID(Eruption);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444490, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1689,7 +1700,7 @@ public:
 class ESG : public MapEntityType {
   using $ = ESG;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapESG);
+  OP2_MO_TYPE_CLASS_MAP_ID(ESG);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4440B0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1718,7 +1729,7 @@ public:
 class Fumarole : public MapEntityType {
   using $ = Fumarole;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapFumarole);
+  OP2_MO_TYPE_CLASS_MAP_ID(Fumarole);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4445B0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1732,7 +1743,7 @@ public:
 class InterColonyShuttle : public MapEntityType {
   using $ = InterColonyShuttle;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapInterColonyShuttle);
+  OP2_MO_TYPE_CLASS_MAP_ID(InterColonyShuttle);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444EF0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1746,7 +1757,7 @@ public:
 class LargeBuildingExplosion : public MapEntityType {
   using $ = LargeBuildingExplosion;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapLargeBuildingExplosion);
+  OP2_MO_TYPE_CLASS_MAP_ID(LargeBuildingExplosion);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444770, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1760,7 +1771,7 @@ public:
 class Laser : public MapEntityType {
   using $ = Laser;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapLaser);
+  OP2_MO_TYPE_CLASS_MAP_ID(Laser);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443D50, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1790,7 +1801,7 @@ public:
 class Lightning : public MapEntityType {
   using $ = Lightning;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapLightning);
+  OP2_MO_TYPE_CLASS_MAP_ID(Lightning);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444310, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1804,7 +1815,7 @@ public:
 class MagmaVent : public MapEntityType {
   using $ = MagmaVent;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMagmaVent);
+  OP2_MO_TYPE_CLASS_MAP_ID(MagmaVent);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444550, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1818,7 +1829,7 @@ public:
 class MediumBuildingExplosion : public MapEntityType {
   using $ = MediumBuildingExplosion;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMediumBuildingExplosion);
+  OP2_MO_TYPE_CLASS_MAP_ID(MediumBuildingExplosion);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4446F0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1832,7 +1843,7 @@ public:
 class Meteor : public MapEntityType {
   using $ = Meteor;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMeteor);
+  OP2_MO_TYPE_CLASS_MAP_ID(Meteor);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444430, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1846,7 +1857,7 @@ public:
 class Microwave : public MapEntityType {
   using $ = Microwave;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMicrowave);
+  OP2_MO_TYPE_CLASS_MAP_ID(Microwave);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443DB0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1877,7 +1888,7 @@ public:
 class MiningBeacon : public MapEntityType {
   using $ = MiningBeacon;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapMiningBeacon);
+  OP2_MO_TYPE_CLASS_MAP_ID(MiningBeacon);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x4444F0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1891,7 +1902,7 @@ public:
 class SelfDestruct : public MapEntityType {
   using $ = SelfDestruct;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSelfDestruct);
+  OP2_MO_TYPE_CLASS_MAP_ID(SelfDestruct);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444050, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1905,7 +1916,7 @@ public:
 class RailGun : public MapEntityType {
   using $ = RailGun;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRailGun);
+  OP2_MO_TYPE_CLASS_MAP_ID(RailGun);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443E10, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1936,7 +1947,7 @@ public:
 class RPG : public MapEntityType {
   using $ = RPG;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapRPG);
+  OP2_MO_TYPE_CLASS_MAP_ID(RPG);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443E70, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1967,7 +1978,7 @@ public:
 class SmallBuildingExplosion : public MapEntityType {
   using $ = SmallBuildingExplosion;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSmallBuildingExplosion);
+  OP2_MO_TYPE_CLASS_MAP_ID(SmallBuildingExplosion);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444670, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -1981,7 +1992,7 @@ public:
 class Starflare : public MapEntityType {
   using $ = Starflare;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapStarflare);
+  OP2_MO_TYPE_CLASS_MAP_ID(Starflare);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443ED0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2005,7 +2016,7 @@ public:
 class StarflareGP : public MapEntityType {
   using $ = StarflareGP;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapStarflareGP);
+  OP2_MO_TYPE_CLASS_MAP_ID(StarflareGP);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443F90, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2022,7 +2033,7 @@ public:
 class Stickyfoam : public MapEntityType {
   using $ = Stickyfoam;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapStickyfoam);
+  OP2_MO_TYPE_CLASS_MAP_ID(Stickyfoam);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444110, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2053,7 +2064,7 @@ public:
 class Supernova : public MapEntityType {
   using $ = Supernova;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSupernova);
+  OP2_MO_TYPE_CLASS_MAP_ID(Supernova);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443F30, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2077,7 +2088,7 @@ public:
 class SupernovaGP : public MapEntityType {
   using $ = SupernovaGP;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapSupernovaGP);
+  OP2_MO_TYPE_CLASS_MAP_ID(SupernovaGP);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x443FF0, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2094,7 +2105,7 @@ public:
 class ThorsHammer : public MapEntityType {
   using $ = ThorsHammer;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapThorsHammer);
+  OP2_MO_TYPE_CLASS_MAP_ID(ThorsHammer);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444170, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2123,7 +2134,7 @@ public:
 class Vortex : public MapEntityType {
   using $ = Vortex;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapVortex);
+  OP2_MO_TYPE_CLASS_MAP_ID(Vortex);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444370, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2137,7 +2148,7 @@ public:
 class Wreckage : public MapEntityType {
   using $ = Wreckage;
 public:
-  OP2_MO_TYPE_CLASS_MAP_ID(mapWreckage);
+  OP2_MO_TYPE_CLASS_MAP_ID(Wreckage);
 
   MapObject*  Create(int pixelX, int pixelY, int unitIndex) override
     { return Thunk<0x444610, &$::Create>(pixelX, pixelY, unitIndex); }
@@ -2151,127 +2162,29 @@ END_PACKED
 
 } // MapObjType
 
-namespace TethysImpl {
-template <MapID>                                   struct MapObjTypeForImpl     { using Type = MapObjectType;    };
-#define OP2_MO_TYPE_FOR_DEF(id, name)  template <> struct MapObjTypeForImpl<id> { using Type = MapObjType::name; };
-OP2_MO_TYPE_FOR_DEF(mapAdvancedLab,                AdvancedLab);
-OP2_MO_TYPE_FOR_DEF(mapAdvancedResidence,          AdvancedResidence);
-OP2_MO_TYPE_FOR_DEF(mapAgridome,                   Agridome);
-OP2_MO_TYPE_FOR_DEF(mapArachnidFactory,            ArachnidFactory);
-OP2_MO_TYPE_FOR_DEF(mapBasicLab,                   BasicLab);
-OP2_MO_TYPE_FOR_DEF(mapCargoTruck,                 CargoTruck);
-OP2_MO_TYPE_FOR_DEF(mapChildrenModule,             ChildrenModule);
-OP2_MO_TYPE_FOR_DEF(mapCommandCenter,              CommandCenter);
-OP2_MO_TYPE_FOR_DEF(mapCommandModule,              CommandModule);
-OP2_MO_TYPE_FOR_DEF(mapCommonMetalsCargo,          CommonMetalsCargo);
-OP2_MO_TYPE_FOR_DEF(mapCommonOreMine,              CommonOreMine);
-OP2_MO_TYPE_FOR_DEF(mapCommonOreSmelter,           CommonOreSmelter);
-OP2_MO_TYPE_FOR_DEF(mapCommonStorage,              CommonStorage);
-OP2_MO_TYPE_FOR_DEF(mapConsumerFactory,            ConsumerFactory);
-OP2_MO_TYPE_FOR_DEF(mapConVec,                     ConVec);
-OP2_MO_TYPE_FOR_DEF(mapDIRT,                       DIRT);
-OP2_MO_TYPE_FOR_DEF(mapEarthworker,                Earthworker);
-OP2_MO_TYPE_FOR_DEF(mapEDWARDSatellite,            EDWARDSatellite);
-OP2_MO_TYPE_FOR_DEF(mapEMPMissile,                 EMPMissile);
-OP2_MO_TYPE_FOR_DEF(mapEvacuationModule,           EvacuationModule);
-OP2_MO_TYPE_FOR_DEF(mapEvacuationTransport,        EvacuationTransport);
-OP2_MO_TYPE_FOR_DEF(mapFoodCargo,                  FoodCargo);
-OP2_MO_TYPE_FOR_DEF(mapForum,                      Forum);
-OP2_MO_TYPE_FOR_DEF(mapFuelingSystems,             FuelingSystems);
-OP2_MO_TYPE_FOR_DEF(mapFusionDriveModule,          FusionDriveModule);
-OP2_MO_TYPE_FOR_DEF(mapGarage,                     Garage);
-OP2_MO_TYPE_FOR_DEF(mapGeoCon,                     GeoCon);
-OP2_MO_TYPE_FOR_DEF(mapGeothermalPlant,            GeothermalPlant);
-OP2_MO_TYPE_FOR_DEF(mapGORF,                       GORF);
-OP2_MO_TYPE_FOR_DEF(mapGuardPost,                  GuardPost);
-OP2_MO_TYPE_FOR_DEF(mapHabitatRing,                HabitatRing);
-OP2_MO_TYPE_FOR_DEF(mapImpulseItems,               ImpulseItems);
-OP2_MO_TYPE_FOR_DEF(mapIonDriveModule,             IonDriveModule);
-OP2_MO_TYPE_FOR_DEF(mapLavaWall,                   LavaWall);
-OP2_MO_TYPE_FOR_DEF(mapLightTower,                 LightTower);
-OP2_MO_TYPE_FOR_DEF(mapLuxuryWares,                LuxuryWares);
-OP2_MO_TYPE_FOR_DEF(mapLynx,                       Lynx);
-OP2_MO_TYPE_FOR_DEF(mapMagmaWell,                  MagmaWell);
-OP2_MO_TYPE_FOR_DEF(mapMaxObject,                  MaxObjectType);
-OP2_MO_TYPE_FOR_DEF(mapMedicalCenter,              MedicalCenter);
-OP2_MO_TYPE_FOR_DEF(mapMeteorDefense,              MeteorDefense);
-OP2_MO_TYPE_FOR_DEF(mapMHDGenerator,               MHDGenerator);
-OP2_MO_TYPE_FOR_DEF(mapMicrobeWall,                MicrobeWall);
-OP2_MO_TYPE_FOR_DEF(mapNursery,                    Nursery);
-OP2_MO_TYPE_FOR_DEF(mapObservatory,                Observatory);
-OP2_MO_TYPE_FOR_DEF(mapOrbitalPackage,             OrbitalPackage);
-OP2_MO_TYPE_FOR_DEF(mapPanther,                    Panther);
-OP2_MO_TYPE_FOR_DEF(mapPhoenixModule,              PhoenixModule);
-OP2_MO_TYPE_FOR_DEF(mapRareMetalsCargo,            RareMetalsCargo);
-OP2_MO_TYPE_FOR_DEF(mapRareOreMine,                RareOreMine);
-OP2_MO_TYPE_FOR_DEF(mapRareOreSmelter,             RareOreSmelter);
-OP2_MO_TYPE_FOR_DEF(mapRareStorage,                RareStorage);
-OP2_MO_TYPE_FOR_DEF(mapRecreationFacility,         RecreationFacility);
-OP2_MO_TYPE_FOR_DEF(mapReinforcedResidence,        ReinforcedResidence);
-OP2_MO_TYPE_FOR_DEF(mapRepairVehicle,              RepairVehicle);
-OP2_MO_TYPE_FOR_DEF(mapResidence,                  Residence);
-OP2_MO_TYPE_FOR_DEF(mapRLV,                        RLV);
-OP2_MO_TYPE_FOR_DEF(mapRoboDozer,                  RoboDozer);
-OP2_MO_TYPE_FOR_DEF(mapRoboMiner,                  RoboMiner);
-OP2_MO_TYPE_FOR_DEF(mapRoboSurveyor,               RoboSurveyor);
-OP2_MO_TYPE_FOR_DEF(mapRobotCommand,               RobotCommand);
-OP2_MO_TYPE_FOR_DEF(mapScorpion,                   Scorpion);
-OP2_MO_TYPE_FOR_DEF(mapScorpion3Pack,              Scorpion3Pack);
-OP2_MO_TYPE_FOR_DEF(mapScout,                      Scout);
-OP2_MO_TYPE_FOR_DEF(mapSensorPackage,              SensorPackage);
-OP2_MO_TYPE_FOR_DEF(mapSkydock,                    Skydock);
-OP2_MO_TYPE_FOR_DEF(mapSmallCapacityAirTransport,  SmallCapacityAirTransport);
-OP2_MO_TYPE_FOR_DEF(mapSolarPowerArray,            SolarPowerArray);
-OP2_MO_TYPE_FOR_DEF(mapSolarSatellite,             SolarSatellite);
-OP2_MO_TYPE_FOR_DEF(mapSpaceport,                  Spaceport);
-OP2_MO_TYPE_FOR_DEF(mapSpider,                     Spider);
-OP2_MO_TYPE_FOR_DEF(mapSpider3Pack,                Spider3Pack);
-OP2_MO_TYPE_FOR_DEF(mapStandardLab,                StandardLab);
-OP2_MO_TYPE_FOR_DEF(mapStasisSystems,              StasisSystems);
-OP2_MO_TYPE_FOR_DEF(mapStructureFactory,           StructureFactory);
-OP2_MO_TYPE_FOR_DEF(mapSULV,                       SULV);
-OP2_MO_TYPE_FOR_DEF(mapTiger,                      Tiger);
-OP2_MO_TYPE_FOR_DEF(mapTokamak,                    Tokamak);
-OP2_MO_TYPE_FOR_DEF(mapTradeCenter,                TradeCenter);
-OP2_MO_TYPE_FOR_DEF(mapTube,                       Tube);
-OP2_MO_TYPE_FOR_DEF(mapUniversity,                 University);
-OP2_MO_TYPE_FOR_DEF(mapVehicleFactory,             VehicleFactory);
-OP2_MO_TYPE_FOR_DEF(mapWall,                       Wall);
-OP2_MO_TYPE_FOR_DEF(mapWares,                      Wares);
-OP2_MO_TYPE_FOR_DEF(mapAcidCloud,                  AcidCloud);
-OP2_MO_TYPE_FOR_DEF(mapAmbientAnimation,           AmbientAnimation);
-OP2_MO_TYPE_FOR_DEF(mapBFG,                        BFG);
-OP2_MO_TYPE_FOR_DEF(mapEMPBlast,                   EMPBlast);
-OP2_MO_TYPE_FOR_DEF(mapEarthquake,                 Earthquake);
-OP2_MO_TYPE_FOR_DEF(mapEMP,                        EMP);
-OP2_MO_TYPE_FOR_DEF(mapEnergyCannon,               EnergyCannon);
-OP2_MO_TYPE_FOR_DEF(mapEruption,                   Eruption);
-OP2_MO_TYPE_FOR_DEF(mapESG,                        ESG);
-OP2_MO_TYPE_FOR_DEF(mapFumarole,                   Fumarole);
-OP2_MO_TYPE_FOR_DEF(mapInterColonyShuttle,         InterColonyShuttle);
-OP2_MO_TYPE_FOR_DEF(mapLargeBuildingExplosion,     LargeBuildingExplosion);
-OP2_MO_TYPE_FOR_DEF(mapLaser,                      Laser);
-OP2_MO_TYPE_FOR_DEF(mapLightning,                  Lightning);
-OP2_MO_TYPE_FOR_DEF(mapMagmaVent,                  MagmaVent);
-OP2_MO_TYPE_FOR_DEF(mapMediumBuildingExplosion,    MediumBuildingExplosion);
-OP2_MO_TYPE_FOR_DEF(mapMeteor,                     Meteor);
-OP2_MO_TYPE_FOR_DEF(mapMicrowave,                  Microwave);
-OP2_MO_TYPE_FOR_DEF(mapMiningBeacon,               MiningBeacon);
-OP2_MO_TYPE_FOR_DEF(mapSelfDestruct,               SelfDestruct);
-OP2_MO_TYPE_FOR_DEF(mapRailGun,                    RailGun);
-OP2_MO_TYPE_FOR_DEF(mapRPG,                        RPG);
-OP2_MO_TYPE_FOR_DEF(mapSmallBuildingExplosion,     SmallBuildingExplosion);
-OP2_MO_TYPE_FOR_DEF(mapStarflare,                  Starflare);
-OP2_MO_TYPE_FOR_DEF(mapStarflareGP,                StarflareGP);
-OP2_MO_TYPE_FOR_DEF(mapStickyfoam,                 Stickyfoam);
-OP2_MO_TYPE_FOR_DEF(mapSupernova,                  Supernova);
-OP2_MO_TYPE_FOR_DEF(mapSupernovaGP,                SupernovaGP);
-OP2_MO_TYPE_FOR_DEF(mapThorsHammer,                ThorsHammer);
-OP2_MO_TYPE_FOR_DEF(mapVortex,                     Vortex);
-OP2_MO_TYPE_FOR_DEF(mapWreckage,                   Wreckage);
-} // Impl
+#define OP2_EMIT_MO_MAPPINGS($)                                                                                        \
+  $(CargoTruck)  $(ConVec)  $(Spider)  $(Scorpion)  $(Lynx)  $(Panther)  $(Tiger)  $(RoboSurveyor)  $(RoboMiner)       \
+  $(GeoCon)  $(Scout)  $(RoboDozer)  $(EvacuationTransport)  $(RepairVehicle)  $(Earthworker)                          \
+  $(SmallCapacityAirTransport)  $(Tube)  $(Wall)  $(LavaWall)  $(MicrobeWall)  $(CommonOreMine)  $(RareOreMine)        \
+  $(GuardPost)  $(LightTower)  $(CommonStorage)  $(RareStorage)  $(Forum)  $(CommandCenter)  $(MHDGenerator)           \
+  $(Residence)  $(RobotCommand)  $(TradeCenter)  $(BasicLab)  $(MedicalCenter)  $(Nursery)  $(SolarPowerArray)         \
+  $(RecreationFacility)  $(University)  $(Agridome)  $(DIRT)  $(Garage)  $(MagmaWell)  $(MeteorDefense)                \
+  $(GeothermalPlant)  $(ArachnidFactory)  $(ConsumerFactory)  $(StructureFactory)  $(VehicleFactory)  $(StandardLab)   \
+  $(AdvancedLab)  $(Observatory)  $(ReinforcedResidence)  $(AdvancedResidence)  $(CommonOreSmelter)  $(Spaceport)      \
+  $(RareOreSmelter)  $(GORF)  $(Tokamak)  $(AcidCloud)  $(EMP)  $(Laser)  $(Microwave)  $(RailGun)  $(RPG)             \
+  $(Starflare)  $(Supernova)  $(StarflareGP)  $(SupernovaGP)  $(SelfDestruct)  $(ESG)  $(Stickyfoam)  $(ThorsHammer)   \
+  $(EnergyCannon)  $(EMPBlast)  $(BFG)  $(Lightning)  $(Vortex)  $(Earthquake)  $(Eruption)  $(Meteor)  $(MiningBeacon)\
+  $(MagmaVent)  $(Fumarole)  $(Wreckage)  $(SmallBuildingExplosion)  $(MediumBuildingExplosion)                        \
+  $(LargeBuildingExplosion)  $(SULV)  $(RLV)  $(EMPMissile)  $(InterColonyShuttle)  $(AmbientAnimation)
+#define OP2_EMIT_MO_TYPE_MAPPINGS($)                                                                                   \
+  OP2_EMIT_MO_MAPPINGS($);  $(EDWARDSatellite)  $(SolarSatellite)  $(IonDriveModule)  $(FusionDriveModule)             \
+  $(CommandModule)  $(FuelingSystems)  $(HabitatRing)  $(SensorPackage)  $(Skydock)  $(StasisSystems)                  \
+  $(OrbitalPackage)  $(PhoenixModule)  $(RareMetalsCargo)  $(CommonMetalsCargo)  $(FoodCargo)  $(EvacuationModule)     \
+  $(ChildrenModule)  $(ImpulseItems)  $(Wares)  $(LuxuryWares)  $(Spider3Pack)  $(Scorpion3Pack)
 
-/// Template alias to get the MapObjectType subclass associated with the given MapID.
-template <MapID ID>  using MapObjTypeFor = typename TethysImpl::MapObjTypeForImpl<ID>::Type;
+namespace TethysImpl {
+#define OP2_MO_TYPE_FOR_DEF(name) template <>  struct MapObjTypeForImpl<MapID::name> { using Type = MapObjType::name; };
+OP2_EMIT_MO_TYPE_MAPPINGS(OP2_MO_TYPE_FOR_DEF);
+} // TethysImpl
 
 } // Tethys

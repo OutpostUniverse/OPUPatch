@@ -1,23 +1,22 @@
 
 /// Mission DLLs should include this header.
-/// Mission DLLs are required to export the following functions and global data, at minimum:
-///
-/// EXPORT_OP2_MULTIPLAYER_SCRIPT("Mission Name", missionType, numHumans, "map_file.map", "tech_file.txt"(, numAIs))
-///   ** OR **
-/// EXPORT_OP2_MISSION_SCRIPT("Mission Name", missionType, numPlayers, "map_file.map", "tech_file.txt", maxTechLevel,
-///                           isUnitMission(, numMultiplayerAIs))
-///
-/// MISSION_API int  InitProc()   { return 1; }        // Set up bases, triggers, etc. here.  Return 1 = OK, 0 = failure
-/// MISSION_API void AIProc()     {           }        // Gets called every 4 ticks during gameplay
-/// MISSION_API int  StatusProc() { return 0; }        // Must return 0
-/// MISSION_API void GetSaveRegions(SaveRegion* pSave) // Single-player maps must set pSave to point at a buffer to save
-///   { pSave->pData = nullptr;  pSave->size = 0; }
+/// Mission DLLs are required to export mission description data, which can be done with either of the following macros:
+///   EXPORT_OP2_MULTIPLAYER_SCRIPT("Mission Name", missionType, numHumans, "map_file.map", "tech_file.txt"(, numAIs))
+///     ** OR **
+///   EXPORT_OP2_MISSION_SCRIPT("Mission Name", missionType, numPlayers, "map_file.map", "tech_file.txt", maxTechLevel,
+///                             isUnitMission(, numMultiplayerAIs))
+/// 
+/// Mission DLLs may (optionally) define the follow functions to interface with the game:
+///   MISSION_API int  InitProc() { return 1; }          // Set up bases, triggers, etc. here.  Return 1 = OK, 0 = error
+///   MISSION_API void AIProc()   {           }          // Gets called every 4 ticks during gameplay
+///   MISSION_API void GetSaveRegions(SaveRegion* pSave) // Single-player maps set pSave to point at a buffer to save
+///     { pSave->pData = nullptr;  pSave->size = 0; }
 
 #pragma once
 
 #include "Tethys/Common/Types.h"
 
-namespace Tethys {
+namespace Tethys::API {
 
 #ifndef MISSION_API
 # define MISSION_API DLLAPI
@@ -102,4 +101,4 @@ struct SaveRegion {
   size_t size;
 };
 
-} // Tethys
+} // Tethys::API

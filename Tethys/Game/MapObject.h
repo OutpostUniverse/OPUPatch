@@ -141,7 +141,7 @@ template <MapID ID>  using MapObjFor = typename TethysImpl::MapObjForImpl<ID>::T
 #define OP2_MO_GET_INSTANCE_IMPL()  \
   static $* GetInstance(int index) { return static_cast<$*>(MapObject::GetInstance(index)); }
 #define OP2_MO_CLASS_MAP_ID(id)  \
-  static constexpr MapID ClassMapId = id;  using Type = MapObjTypeFor<id>;  OP2_MO_GET_INSTANCE_IMPL();
+  static constexpr MapID ClassMapId = MapID::id;  using Type = MapObjTypeFor<MapID::id>;  OP2_MO_GET_INSTANCE_IMPL();
 
 BEGIN_PACKED
 
@@ -895,7 +895,7 @@ namespace MapObj {
 class AmbientAnimation : public MapEntity {
   using $ = AmbientAnimation;
 public:
-  OP2_MO_CLASS_MAP_ID(mapAmbientAnimation);
+  OP2_MO_CLASS_MAP_ID(AmbientAnimation);
 
   using MapEntity::MapEntity;
 
@@ -913,7 +913,7 @@ public:
 class Earthquake : public Disaster {
   using $ = Earthquake;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEarthquake);
+  OP2_MO_CLASS_MAP_ID(Earthquake);
 
   Earthquake() : Disaster(UseInternalCtorChain) { InternalCtor<0x413610>(); }
 
@@ -932,7 +932,7 @@ public:
 class Eruption : public Disaster {
   using $ = Eruption;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEruption);
+  OP2_MO_CLASS_MAP_ID(Eruption);
 
   Eruption() : Disaster(UseInternalCtorChain) { InternalCtor<0x4A81F0>(); }
 
@@ -950,7 +950,7 @@ public:
 class Lightning : public Disaster {
   using $ = Lightning;
 public:
-  OP2_MO_CLASS_MAP_ID(mapLightning);
+  OP2_MO_CLASS_MAP_ID(Lightning);
 
   Lightning() : Disaster(UseInternalCtorChain) { InternalCtor<0x432F10>(); }
 
@@ -981,7 +981,7 @@ public:
 class Meteor : public Disaster {
   using $ = Meteor;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMeteor);
+  OP2_MO_CLASS_MAP_ID(Meteor);
 
   Meteor() : Disaster(UseInternalCtorChain) { InternalCtor<0x44A300>(); }
 
@@ -1003,7 +1003,7 @@ public:
 class Vortex : public Disaster {
   using $ = Vortex;
 public:
-  OP2_MO_CLASS_MAP_ID(mapVortex);
+  OP2_MO_CLASS_MAP_ID(Vortex);
 
   Vortex() : Disaster(UseInternalCtorChain) { InternalCtor<0x48F4A0>(); }
 
@@ -1047,7 +1047,7 @@ public:
 class EMPBlast : public MapChildEntity {
   using $ = EMPBlast;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEMPBlast);
+  OP2_MO_CLASS_MAP_ID(EMPBlast);
 
   using MapChildEntity::MapChildEntity;
 
@@ -1067,7 +1067,7 @@ public:
 class EnergyCannon : public MapChildEntity {
   using $ = EnergyCannon;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEnergyCannon);
+  OP2_MO_CLASS_MAP_ID(EnergyCannon);
 
   EnergyCannon() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x4A54A0>(); }
 
@@ -1084,7 +1084,7 @@ public:
 class Fumarole : public MapChildEntity {
   using $ = Fumarole;
 public:
-  OP2_MO_CLASS_MAP_ID(mapFumarole);
+  OP2_MO_CLASS_MAP_ID(Fumarole);
 
   Fumarole() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x405900>(); }
 
@@ -1101,7 +1101,7 @@ public:
 class Laser : public MapChildEntity {
   using $ = Laser;
 public:
-  OP2_MO_CLASS_MAP_ID(mapLaser);
+  OP2_MO_CLASS_MAP_ID(Laser);
 
   Laser() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x4A49B0>(); }
 
@@ -1118,7 +1118,7 @@ public:
 class MagmaVent : public MapChildEntity {
   using $ = MagmaVent;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMagmaVent);
+  OP2_MO_CLASS_MAP_ID(MagmaVent);
 
   MagmaVent() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x405780>(); }
 
@@ -1136,7 +1136,7 @@ public:
 class Microwave : public MapChildEntity {
   using $ = Microwave;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMicrowave);
+  OP2_MO_CLASS_MAP_ID(Microwave);
 
   Microwave() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x4A4A60>(); }
 
@@ -1153,7 +1153,7 @@ public:
 class MiningBeacon : public MapChildEntity {
   using $ = MiningBeacon;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMiningBeacon);
+  OP2_MO_CLASS_MAP_ID(MiningBeacon);
 
   MiningBeacon() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x405350>(); }
 
@@ -1193,7 +1193,7 @@ public:
 class ThorsHammer : public MapChildEntity {
   using $ = ThorsHammer;
 public:
-  OP2_MO_CLASS_MAP_ID(mapThorsHammer);
+  OP2_MO_CLASS_MAP_ID(ThorsHammer);
 
   ThorsHammer() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x48A770>(); }
 
@@ -1215,7 +1215,7 @@ public:
 class Wreckage : public MapChildEntity {
   using $ = Wreckage;
 public:
-  OP2_MO_CLASS_MAP_ID(mapWreckage);
+  OP2_MO_CLASS_MAP_ID(Wreckage);
 
   Wreckage() : MapChildEntity(UseInternalCtorChain) { InternalCtor<0x405AF0>(); }
 
@@ -1242,7 +1242,7 @@ public:
 class LargeBuildingExplosion : public Explosive {
   using $ = LargeBuildingExplosion;
 public:
-  OP2_MO_CLASS_MAP_ID(mapLargeBuildingExplosion);
+  OP2_MO_CLASS_MAP_ID(LargeBuildingExplosion);
 
   using Explosive::Explosive;
 
@@ -1260,7 +1260,7 @@ public:
 class MediumBuildingExplosion : public Explosive {
   using $ = MediumBuildingExplosion;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMediumBuildingExplosion);
+  OP2_MO_CLASS_MAP_ID(MediumBuildingExplosion);
 
   using Explosive::Explosive;
 
@@ -1278,7 +1278,7 @@ public:
 class SmallBuildingExplosion : public Explosive {
   using $ = SmallBuildingExplosion;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSmallBuildingExplosion);
+  OP2_MO_CLASS_MAP_ID(SmallBuildingExplosion);
 
   using Explosive::Explosive;
 
@@ -1296,7 +1296,7 @@ public:
 class SelfDestruct : public Explosive {
   using $ = SelfDestruct;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSelfDestruct);
+  OP2_MO_CLASS_MAP_ID(SelfDestruct);
 
   SelfDestruct() : Explosive(UseInternalCtorChain) { InternalCtor<0x4A4DD0>(); }
 
@@ -1314,7 +1314,7 @@ public:
 class Starflare : public Explosive {
   using $ = Starflare;
 public:
-  OP2_MO_CLASS_MAP_ID(mapStarflare);
+  OP2_MO_CLASS_MAP_ID(Starflare);
 
   Starflare() : Explosive(UseInternalCtorChain) { InternalCtor<0x4A4C70>(); }
 
@@ -1331,7 +1331,7 @@ public:
 class StarflareGP : public Explosive {
   using $ = StarflareGP;
 public:
-  OP2_MO_CLASS_MAP_ID(mapStarflareGP);
+  OP2_MO_CLASS_MAP_ID(StarflareGP);
 
   StarflareGP() : Explosive(UseInternalCtorChain) { InternalCtor<0x4A4E80>(); }
 
@@ -1345,13 +1345,13 @@ public:
 };
 
 //  ====================================================================================================================
-/// @note This is an orphaned type - creating mapSupernova maps to Supernova.
-class SupernovaBase : public Explosive {
-  using $ = SupernovaBase;
+/// @note This is an orphaned type - creating Supernova maps to SupernovaGP.
+class Supernova : public Explosive {
+  using $ = Supernova;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSupernova);
+  OP2_MO_CLASS_MAP_ID(Supernova);
 
-  SupernovaBase() : Explosive(UseInternalCtorChain) { InternalCtor<0x4A4D20>(); }
+  Supernova() : Explosive(UseInternalCtorChain) { InternalCtor<0x4A4D20>(); }
 
   Type* GetType()              const override { return Thunk<0x4A6970, &$::GetType>();                    }
   int   GetSecondaryAnimationIndex() override { return Thunk<0x4A6980, &$::GetSecondaryAnimationIndex>(); }
@@ -1362,25 +1362,27 @@ public:
 };
 
 // =====================================================================================================================
-class Supernova : public Explosive {
-  using $ = Supernova;
+class SupernovaGP : public Explosive {
+  using $ = SupernovaGP;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSupernovaGP);
+  OP2_MO_CLASS_MAP_ID(SupernovaGP);
 
-  Supernova() : Explosive(UseInternalCtorChain) { InternalCtor<0x4A4F30>(); }
+  SupernovaGP() : Explosive(UseInternalCtorChain) { InternalCtor<0x4A4F30>(); }
 
   Type* GetType()              const override { return Thunk<0x4A6990, &$::GetType>();                    }
   void* Destroy(ibool freeMem = 0)   override { return Thunk<0x4A4F60, &$::Destroy>(freeMem);             }
   int   GetSecondaryAnimationIndex() override { return Thunk<0x4A69A0, &$::GetSecondaryAnimationIndex>(); }
 
   DEFINE_VTBL_GETTER(0x4D7148);
+
+  // Object size = 0x58
 };
 
 // =====================================================================================================================
 class AcidCloud : public Projectile {
   using $ = AcidCloud;
 public:
-  OP2_MO_CLASS_MAP_ID(mapAcidCloud);
+  OP2_MO_CLASS_MAP_ID(AcidCloud);
 
   AcidCloud() : Projectile(UseInternalCtorChain) { InternalCtor<0x401000>(); }
 
@@ -1402,7 +1404,7 @@ public:
 class BFG : public Projectile {
   using $ = BFG;
 public:
-  OP2_MO_CLASS_MAP_ID(mapBFG);
+  OP2_MO_CLASS_MAP_ID(BFG);
 
   BFG() : Projectile(UseInternalCtorChain) { InternalCtor<0x4A53F0>(); }
 
@@ -1418,7 +1420,7 @@ public:
 class EMP : public Projectile {
   using $ = EMP;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEMP);
+  OP2_MO_CLASS_MAP_ID(EMP);
 
   EMP() : Projectile(UseInternalCtorChain) { InternalCtor<0x4A4900>(); }
 
@@ -1437,7 +1439,7 @@ public:
 class ESG : public Projectile {
   using $ = ESG;
 public:
-  OP2_MO_CLASS_MAP_ID(mapESG);
+  OP2_MO_CLASS_MAP_ID(ESG);
 
   ESG() : Projectile(UseInternalCtorChain) { InternalCtor<0x4809D0>(); }
 
@@ -1459,7 +1461,7 @@ public:
 class InterColonyShuttle : public Projectile {
   using $ = InterColonyShuttle;
 public:
-  OP2_MO_CLASS_MAP_ID(mapInterColonyShuttle);
+  OP2_MO_CLASS_MAP_ID(InterColonyShuttle);
 
   using Projectile::Projectile;
 
@@ -1478,7 +1480,7 @@ public:
 class RailGun : public Projectile {
   using $ = RailGun;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRailGun);
+  OP2_MO_CLASS_MAP_ID(RailGun);
 
   RailGun() : Projectile(UseInternalCtorChain) { InternalCtor<0x4A4B10>(); }
 
@@ -1496,7 +1498,7 @@ public:
 class RPG : public Projectile {
   using $ = RPG;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRPG);
+  OP2_MO_CLASS_MAP_ID(RPG);
 
   RPG() : Projectile(UseInternalCtorChain) { InternalCtor<0x4A4BC0>(); }
 
@@ -1512,7 +1514,7 @@ public:
 class Stickyfoam : public Projectile {
   using $ = Stickyfoam;
 public:
-  OP2_MO_CLASS_MAP_ID(mapStickyfoam);
+  OP2_MO_CLASS_MAP_ID(Stickyfoam);
 
   Stickyfoam() : Projectile(UseInternalCtorChain) { InternalCtor<0x4A5340>(); }
 
@@ -1530,7 +1532,7 @@ public:
 class EMPMissile : public Rocket {
   using $ = EMPMissile;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEMPMissile);
+  OP2_MO_CLASS_MAP_ID(EMPMissile);
 
   using Rocket::Rocket;
 
@@ -1550,7 +1552,7 @@ public:
 class RLV : public Rocket {
   using $ = RLV;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRLV);
+  OP2_MO_CLASS_MAP_ID(RLV);
 
   using Rocket::Rocket;
 
@@ -1568,7 +1570,7 @@ public:
 class SULV : public Rocket {
   using $ = SULV;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSULV);
+  OP2_MO_CLASS_MAP_ID(SULV);
 
   using Rocket::Rocket;
 
@@ -1584,7 +1586,7 @@ public:
 class SmallCapacityAirTransport : public AirUnit {
   using $ = SmallCapacityAirTransport;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSmallCapacityAirTransport);
+  OP2_MO_CLASS_MAP_ID(SmallCapacityAirTransport);
 
   SmallCapacityAirTransport() : AirUnit() { flags_ |= MoFlagOffensive; }
 
@@ -1602,7 +1604,7 @@ public:
 class AdvancedResidence : public Building {
   using $ = AdvancedResidence;
 public:
-  OP2_MO_CLASS_MAP_ID(mapAdvancedResidence);
+  OP2_MO_CLASS_MAP_ID(AdvancedResidence);
 
   using Building::Building;
 
@@ -1620,7 +1622,7 @@ public:
 class Agridome : public Building {
   using $ = Agridome;
 public:
-  OP2_MO_CLASS_MAP_ID(mapAgridome);
+  OP2_MO_CLASS_MAP_ID(Agridome);
 
   Agridome() : Building(UseInternalCtorChain) { InternalCtor<0x401920>(); }
 
@@ -1641,7 +1643,7 @@ public:
 class CommandCenter : public Building {
   using $ = CommandCenter;
 public:
-  OP2_MO_CLASS_MAP_ID(mapCommandCenter);
+  OP2_MO_CLASS_MAP_ID(CommandCenter);
 
   using Building::Building;
 
@@ -1661,7 +1663,7 @@ public:
 class CommonOreSmelter : public Building {
   using $ = CommonOreSmelter;
 public:
-  OP2_MO_CLASS_MAP_ID(mapCommonOreSmelter);
+  OP2_MO_CLASS_MAP_ID(CommonOreSmelter);
 
   using Building::Building;
 
@@ -1678,7 +1680,7 @@ public:
 class CommonStorage : public Building {
   using $ = CommonStorage;
 public:
-  OP2_MO_CLASS_MAP_ID(mapCommonStorage);
+  OP2_MO_CLASS_MAP_ID(CommonStorage);
 
   CommonStorage() : Building(UseInternalCtorChain) { InternalCtor<0x409530>(); }
 
@@ -1698,7 +1700,7 @@ public:
 class DIRT : public Building {
   using $ = DIRT;
 public:
-  OP2_MO_CLASS_MAP_ID(mapDIRT);
+  OP2_MO_CLASS_MAP_ID(DIRT);
 
   using Building::Building;
 
@@ -1715,7 +1717,7 @@ public:
 class Forum : public Building {
   using $ = Forum;
 public:
-  OP2_MO_CLASS_MAP_ID(mapForum);
+  OP2_MO_CLASS_MAP_ID(Forum);
 
   using Building::Building;
 
@@ -1732,7 +1734,7 @@ public:
 class Garage : public Building {
   using $ = Garage;
 public:
-  OP2_MO_CLASS_MAP_ID(mapGarage);
+  OP2_MO_CLASS_MAP_ID(Garage);
 
   Garage() : Building(UseInternalCtorChain) { InternalCtor<0x41C650>(); }
 
@@ -1764,7 +1766,7 @@ public:
 class GORF : public Building {
   using $ = GORF;
 public:
-  OP2_MO_CLASS_MAP_ID(mapGORF);
+  OP2_MO_CLASS_MAP_ID(GORF);
 
   using Building::Building;
 
@@ -1781,7 +1783,7 @@ public:
 class GuardPost : public Building {
   using $ = GuardPost;
 public:
-  OP2_MO_CLASS_MAP_ID(mapGuardPost);
+  OP2_MO_CLASS_MAP_ID(GuardPost);
 
   GuardPost() : Building(UseInternalCtorChain) { InternalCtor<0x42CEE0>(); }
 
@@ -1808,7 +1810,7 @@ public:
 class LavaWall : public Building {
   using $ = LavaWall;
 public:
-  OP2_MO_CLASS_MAP_ID(mapLavaWall);
+  OP2_MO_CLASS_MAP_ID(LavaWall);
 
   using Building::Building;
 
@@ -1824,7 +1826,7 @@ public:
 class LightTower : public Building {
   using $ = LightTower;
 public:
-  OP2_MO_CLASS_MAP_ID(mapLightTower);
+  OP2_MO_CLASS_MAP_ID(LightTower);
 
   using Building::Building;
 
@@ -1840,7 +1842,7 @@ public:
 class MedicalCenter : public Building {
   using $ = MedicalCenter;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMedicalCenter);
+  OP2_MO_CLASS_MAP_ID(MedicalCenter);
 
   using Building::Building;
 
@@ -1857,7 +1859,7 @@ public:
 class MeteorDefense : public Building {
   using $ = MeteorDefense;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMeteorDefense);
+  OP2_MO_CLASS_MAP_ID(MeteorDefense);
 
   using Building::Building;
 
@@ -1874,7 +1876,7 @@ public:
 class MicrobeWall : public Building {
   using $ = MicrobeWall;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMicrobeWall);
+  OP2_MO_CLASS_MAP_ID(MicrobeWall);
 
   using Building::Building;
 
@@ -1890,7 +1892,7 @@ public:
 class Nursery : public Building {
   using $ = Nursery;
 public:
-  OP2_MO_CLASS_MAP_ID(mapNursery);
+  OP2_MO_CLASS_MAP_ID(Nursery);
 
   using Building::Building;
 
@@ -1907,7 +1909,7 @@ public:
 class Observatory : public Building {
   using $ = Observatory;
 public:
-  OP2_MO_CLASS_MAP_ID(mapObservatory);
+  OP2_MO_CLASS_MAP_ID(Observatory);
 
   using Building::Building;
 
@@ -1924,7 +1926,7 @@ public:
 class RareOreSmelter : public Building {
   using $ = RareOreSmelter;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRareOreSmelter);
+  OP2_MO_CLASS_MAP_ID(RareOreSmelter);
 
   using Building::Building;
 
@@ -1941,7 +1943,7 @@ public:
 class RareStorage : public Building {
   using $ = RareStorage;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRareStorage);
+  OP2_MO_CLASS_MAP_ID(RareStorage);
 
   RareStorage() : Building(UseInternalCtorChain) { InternalCtor<0x409560>(); }
 
@@ -1961,7 +1963,7 @@ public:
 class RecreationFacility : public Building {
   using $ = RecreationFacility;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRecreationFacility);
+  OP2_MO_CLASS_MAP_ID(RecreationFacility);
 
   using Building::Building;
 
@@ -1978,7 +1980,7 @@ public:
 class ReinforcedResidence : public Building {
   using $ = ReinforcedResidence;
 public:
-  OP2_MO_CLASS_MAP_ID(mapReinforcedResidence);
+  OP2_MO_CLASS_MAP_ID(ReinforcedResidence);
 
   using Building::Building;
 
@@ -1996,7 +1998,7 @@ public:
 class Residence : public Building {
   using $ = Residence;
 public:
-  OP2_MO_CLASS_MAP_ID(mapResidence);
+  OP2_MO_CLASS_MAP_ID(Residence);
 
   using Building::Building;
 
@@ -2013,7 +2015,7 @@ public:
 class RobotCommand : public Building {
   using $ = RobotCommand;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRobotCommand);
+  OP2_MO_CLASS_MAP_ID(RobotCommand);
 
   using Building::Building;
 
@@ -2030,7 +2032,7 @@ public:
 class TradeCenter : public Building {
   using $ = TradeCenter;
 public:
-  OP2_MO_CLASS_MAP_ID(mapTradeCenter);
+  OP2_MO_CLASS_MAP_ID(TradeCenter);
 
   using Building::Building;
 
@@ -2047,7 +2049,7 @@ public:
 class Tube : public Building {
   using $ = Tube;
 public:
-  OP2_MO_CLASS_MAP_ID(mapTube);
+  OP2_MO_CLASS_MAP_ID(Tube);
 
   using Building::Building;
 
@@ -2063,7 +2065,7 @@ public:
 class University : public Building {
   using $ = University;
 public:
-  OP2_MO_CLASS_MAP_ID(mapUniversity);
+  OP2_MO_CLASS_MAP_ID(University);
 
   using Building::Building;
 
@@ -2085,7 +2087,7 @@ public:
 class Wall : public Building {
   using $ = Wall;
 public:
-  OP2_MO_CLASS_MAP_ID(mapWall);
+  OP2_MO_CLASS_MAP_ID(Wall);
 
   using Building::Building;
 
@@ -2101,7 +2103,7 @@ public:
 class ArachnidFactory : public FactoryBuilding {
   using $ = ArachnidFactory;
 public:
-  OP2_MO_CLASS_MAP_ID(mapArachnidFactory);
+  OP2_MO_CLASS_MAP_ID(ArachnidFactory);
 
   using FactoryBuilding::FactoryBuilding;
 
@@ -2118,7 +2120,7 @@ public:
 class ConsumerFactory : public FactoryBuilding {
   using $ = ConsumerFactory;
 public:
-  OP2_MO_CLASS_MAP_ID(mapConsumerFactory);
+  OP2_MO_CLASS_MAP_ID(ConsumerFactory);
 
   using FactoryBuilding::FactoryBuilding;
 
@@ -2135,7 +2137,7 @@ public:
 class Spaceport : public FactoryBuilding {
   using $ = Spaceport;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSpaceport);
+  OP2_MO_CLASS_MAP_ID(Spaceport);
 
   using FactoryBuilding::FactoryBuilding;
 
@@ -2162,7 +2164,7 @@ public:
 class StructureFactory : public FactoryBuilding {
   using $ = StructureFactory;
 public:
-  OP2_MO_CLASS_MAP_ID(mapStructureFactory);
+  OP2_MO_CLASS_MAP_ID(StructureFactory);
 
   using FactoryBuilding::FactoryBuilding;
 
@@ -2179,7 +2181,7 @@ public:
 class VehicleFactory : public FactoryBuilding {
   using $ = VehicleFactory;
 public:
-  OP2_MO_CLASS_MAP_ID(mapVehicleFactory);
+  OP2_MO_CLASS_MAP_ID(VehicleFactory);
 
   using FactoryBuilding::FactoryBuilding;
 
@@ -2196,7 +2198,7 @@ public:
 class AdvancedLab : public LabBuilding {
   using $ = AdvancedLab;
 public:
-  OP2_MO_CLASS_MAP_ID(mapAdvancedLab);
+  OP2_MO_CLASS_MAP_ID(AdvancedLab);
 
   AdvancedLab() : LabBuilding(UseInternalCtorChain) { InternalCtor<0x4320E0>(); }
 
@@ -2212,7 +2214,7 @@ public:
 class BasicLab : public LabBuilding {
   using $ = BasicLab;
 public:
-  OP2_MO_CLASS_MAP_ID(mapBasicLab);
+  OP2_MO_CLASS_MAP_ID(BasicLab);
 
   using LabBuilding::LabBuilding;
 
@@ -2228,7 +2230,7 @@ public:
 class StandardLab : public LabBuilding {
   using $ = StandardLab;
 public:
-  OP2_MO_CLASS_MAP_ID(mapStandardLab);
+  OP2_MO_CLASS_MAP_ID(StandardLab);
 
   using LabBuilding::LabBuilding;
 
@@ -2244,7 +2246,7 @@ public:
 class CommonOreMine : public MineBuilding {
   using $ = CommonOreMine;
 public:
-  OP2_MO_CLASS_MAP_ID(mapCommonOreMine);
+  OP2_MO_CLASS_MAP_ID(CommonOreMine);
 
   CommonOreMine() : MineBuilding(UseInternalCtorChain) { InternalCtor<0x44ADF0>(); }
 
@@ -2261,7 +2263,7 @@ public:
 class MagmaWell : public MineBuilding {
   using $ = MagmaWell;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMagmaWell);
+  OP2_MO_CLASS_MAP_ID(MagmaWell);
 
   using MineBuilding::MineBuilding;
 
@@ -2280,7 +2282,7 @@ public:
 class RareOreMine : public MineBuilding {
   using $ = RareOreMine;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRareOreMine);
+  OP2_MO_CLASS_MAP_ID(RareOreMine);
 
   using MineBuilding::MineBuilding;
 
@@ -2297,7 +2299,7 @@ public:
 class GeothermalPlant : public PowerBuilding {
   using $ = GeothermalPlant;
 public:
-  OP2_MO_CLASS_MAP_ID(mapGeothermalPlant);
+  OP2_MO_CLASS_MAP_ID(GeothermalPlant);
 
   using PowerBuilding::PowerBuilding;
 
@@ -2313,7 +2315,7 @@ public:
 class MHDGenerator : public PowerBuilding {
   using $ = MHDGenerator;
 public:
-  OP2_MO_CLASS_MAP_ID(mapMHDGenerator);
+  OP2_MO_CLASS_MAP_ID(MHDGenerator);
 
   using PowerBuilding::PowerBuilding;
 
@@ -2329,7 +2331,7 @@ public:
 class SolarPowerArray : public PowerBuilding {
   using $ = SolarPowerArray;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSolarPowerArray);
+  OP2_MO_CLASS_MAP_ID(SolarPowerArray);
 
   using PowerBuilding::PowerBuilding;
 
@@ -2347,7 +2349,7 @@ public:
 class Tokamak : public PowerBuilding {
   using $ = Tokamak;
 public:
-  OP2_MO_CLASS_MAP_ID(mapTokamak);
+  OP2_MO_CLASS_MAP_ID(Tokamak);
 
   using PowerBuilding::PowerBuilding;
 
@@ -2364,7 +2366,7 @@ public:
 class CargoTruck : public Vehicle {
   using $ = CargoTruck;
 public:
-  OP2_MO_CLASS_MAP_ID(mapCargoTruck);
+  OP2_MO_CLASS_MAP_ID(CargoTruck);
 
   CargoTruck() : Vehicle(UseInternalCtorChain) { InternalCtor<0x405FD0>(); }
 
@@ -2390,7 +2392,7 @@ public:
 class ConVec : public Vehicle {
   using $ = ConVec;
 public:
-  OP2_MO_CLASS_MAP_ID(mapConVec);
+  OP2_MO_CLASS_MAP_ID(ConVec);
 
   ConVec() : Vehicle(UseInternalCtorChain) { InternalCtor<0x410EB0>(); }
 
@@ -2411,7 +2413,7 @@ public:
 class Earthworker : public Vehicle {
   using $ = Earthworker;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEarthworker);
+  OP2_MO_CLASS_MAP_ID(Earthworker);
 
   using Vehicle::Vehicle;
 
@@ -2437,7 +2439,7 @@ public:
 class EvacuationTransport : public Vehicle {
   using $ = EvacuationTransport;
 public:
-  OP2_MO_CLASS_MAP_ID(mapEvacuationTransport);
+  OP2_MO_CLASS_MAP_ID(EvacuationTransport);
 
   using Vehicle::Vehicle;
 
@@ -2453,7 +2455,7 @@ public:
 class GeoCon : public Vehicle {
   using $ = GeoCon;
 public:
-  OP2_MO_CLASS_MAP_ID(mapGeoCon);
+  OP2_MO_CLASS_MAP_ID(GeoCon);
 
   using Vehicle::Vehicle;
 
@@ -2471,7 +2473,7 @@ public:
 class RepairVehicle : public Vehicle {
   using $ = RepairVehicle;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRepairVehicle);
+  OP2_MO_CLASS_MAP_ID(RepairVehicle);
 
   using Vehicle::Vehicle;
 
@@ -2487,7 +2489,7 @@ public:
 class RoboDozer : public Vehicle {
   using $ = RoboDozer;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRoboDozer);
+  OP2_MO_CLASS_MAP_ID(RoboDozer);
 
   RoboDozer() : Vehicle(UseInternalCtorChain) { InternalCtor<0x409DF0>(); }
 
@@ -2504,7 +2506,7 @@ public:
 class RoboMiner : public Vehicle {
   using $ = RoboMiner;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRoboMiner);
+  OP2_MO_CLASS_MAP_ID(RoboMiner);
 
   using Vehicle::Vehicle;
 
@@ -2522,7 +2524,7 @@ public:
 class RoboSurveyor : public Vehicle {
   using $ = RoboSurveyor;
 public:
-  OP2_MO_CLASS_MAP_ID(mapRoboSurveyor);
+  OP2_MO_CLASS_MAP_ID(RoboSurveyor);
 
   RoboSurveyor() : Vehicle(UseInternalCtorChain) { InternalCtor<0x4843D0>(); }
 
@@ -2538,7 +2540,7 @@ public:
 class Scout : public Vehicle {
   using $ = Scout;
 public:
-  OP2_MO_CLASS_MAP_ID(mapScout);
+  OP2_MO_CLASS_MAP_ID(Scout);
 
   using Vehicle::Vehicle;
 
@@ -2556,7 +2558,7 @@ public:
 class Spider : public Vehicle {
   using $ = Spider;
 public:
-  OP2_MO_CLASS_MAP_ID(mapSpider);
+  OP2_MO_CLASS_MAP_ID(Spider);
 
   Spider() : Vehicle() { flags_ |= MoFlagVecArachnid; }
 
@@ -2574,7 +2576,7 @@ public:
 class Scorpion : public TankVehicle {
   using $ = Scorpion;
 public:
-  OP2_MO_CLASS_MAP_ID(mapScorpion);
+  OP2_MO_CLASS_MAP_ID(Scorpion);
 
   Scorpion() : TankVehicle() { flags_ |= MoFlagVecArachnid; }
 
@@ -2594,7 +2596,7 @@ public:
 class Lynx : public TankVehicle {
   using $ = Lynx;
 public:
-  OP2_MO_CLASS_MAP_ID(mapLynx);
+  OP2_MO_CLASS_MAP_ID(Lynx);
 
   using TankVehicle::TankVehicle;
 
@@ -2612,7 +2614,7 @@ public:
 class Panther : public TankVehicle {
   using $ = Panther;
 public:
-  OP2_MO_CLASS_MAP_ID(mapPanther);
+  OP2_MO_CLASS_MAP_ID(Panther);
 
   using TankVehicle::TankVehicle;
 
@@ -2630,7 +2632,7 @@ public:
 class Tiger : public TankVehicle {
   using $ = Tiger;
 public:
-  OP2_MO_CLASS_MAP_ID(mapTiger);
+  OP2_MO_CLASS_MAP_ID(Tiger);
 
   Tiger() : TankVehicle() { flags_ |= MoFlagDoubleFireRate; }
 
@@ -2648,102 +2650,8 @@ END_PACKED
 
 } // MapObj
 
-#define OP2_EMIT_MO_MAPPINGS($)                                \
-  $(mapAmbientAnimation,           AmbientAnimation)           \
-  $(mapEarthquake,                 Earthquake)                 \
-  $(mapEruption,                   Eruption)                   \
-  $(mapLightning,                  Lightning)                  \
-  $(mapMeteor,                     Meteor)                     \
-  $(mapVortex,                     Vortex)                     \
-  $(mapEMPBlast,                   EMPBlast)                   \
-  $(mapEnergyCannon,               EnergyCannon)               \
-  $(mapFumarole,                   Fumarole)                   \
-  $(mapLaser,                      Laser)                      \
-  $(mapMagmaVent,                  MagmaVent)                  \
-  $(mapMicrowave,                  Microwave)                  \
-  $(mapMiningBeacon,               MiningBeacon)               \
-  $(mapThorsHammer,                ThorsHammer)                \
-  $(mapWreckage,                   Wreckage)                   \
-  $(mapLargeBuildingExplosion,     LargeBuildingExplosion)     \
-  $(mapMediumBuildingExplosion,    MediumBuildingExplosion)    \
-  $(mapSmallBuildingExplosion,     SmallBuildingExplosion)     \
-  $(mapSelfDestruct,               SelfDestruct)               \
-  $(mapStarflare,                  Starflare)                  \
-  $(mapStarflareGP,                StarflareGP)                \
-  $(mapSupernova,                  Supernova)                  \
-  $(mapSupernovaGP,                Supernova)                  \
-  $(mapAcidCloud,                  AcidCloud)                  \
-  $(mapBFG,                        BFG)                        \
-  $(mapEMP,                        EMP)                        \
-  $(mapESG,                        ESG)                        \
-  $(mapInterColonyShuttle,         InterColonyShuttle)         \
-  $(mapRailGun,                    RailGun)                    \
-  $(mapRPG,                        RPG)                        \
-  $(mapStickyfoam,                 Stickyfoam)                 \
-  $(mapEMPMissile,                 EMPMissile)                 \
-  $(mapRLV,                        RLV)                        \
-  $(mapSULV,                       SULV)                       \
-  $(mapSmallCapacityAirTransport,  SmallCapacityAirTransport)  \
-  $(mapAdvancedResidence,          AdvancedResidence)          \
-  $(mapAgridome,                   Agridome)                   \
-  $(mapCommandCenter,              CommandCenter)              \
-  $(mapCommonOreSmelter,           CommonOreSmelter)           \
-  $(mapCommonStorage,              CommonStorage)              \
-  $(mapDIRT,                       DIRT)                       \
-  $(mapForum,                      Forum)                      \
-  $(mapGarage,                     Garage)                     \
-  $(mapGORF,                       GORF)                       \
-  $(mapGuardPost,                  GuardPost)                  \
-  $(mapLavaWall,                   LavaWall)                   \
-  $(mapLightTower,                 LightTower)                 \
-  $(mapMedicalCenter,              MedicalCenter)              \
-  $(mapMeteorDefense,              MeteorDefense)              \
-  $(mapMicrobeWall,                MicrobeWall)                \
-  $(mapNursery,                    Nursery)                    \
-  $(mapObservatory,                Observatory)                \
-  $(mapRareOreSmelter,             RareOreSmelter)             \
-  $(mapRareStorage,                RareStorage)                \
-  $(mapRecreationFacility,         RecreationFacility)         \
-  $(mapReinforcedResidence,        ReinforcedResidence)        \
-  $(mapResidence,                  Residence)                  \
-  $(mapRobotCommand,               RobotCommand)               \
-  $(mapTradeCenter,                TradeCenter)                \
-  $(mapTube,                       Tube)                       \
-  $(mapUniversity,                 University)                 \
-  $(mapWall,                       Wall)                       \
-  $(mapArachnidFactory,            ArachnidFactory)            \
-  $(mapConsumerFactory,            ConsumerFactory)            \
-  $(mapSpaceport,                  Spaceport)                  \
-  $(mapStructureFactory,           StructureFactory)           \
-  $(mapVehicleFactory,             VehicleFactory)             \
-  $(mapAdvancedLab,                AdvancedLab)                \
-  $(mapBasicLab,                   BasicLab)                   \
-  $(mapStandardLab,                StandardLab)                \
-  $(mapCommonOreMine,              CommonOreMine)              \
-  $(mapMagmaWell,                  MagmaWell)                  \
-  $(mapRareOreMine,                RareOreMine)                \
-  $(mapGeothermalPlant,            GeothermalPlant)            \
-  $(mapMHDGenerator,               MHDGenerator)               \
-  $(mapSolarPowerArray,            SolarPowerArray)            \
-  $(mapTokamak,                    Tokamak)                    \
-  $(mapCargoTruck,                 CargoTruck)                 \
-  $(mapConVec,                     ConVec)                     \
-  $(mapEarthworker,                Earthworker)                \
-  $(mapEvacuationTransport,        EvacuationTransport)        \
-  $(mapGeoCon,                     GeoCon)                     \
-  $(mapRepairVehicle,              RepairVehicle)              \
-  $(mapRoboDozer,                  RoboDozer)                  \
-  $(mapRoboMiner,                  RoboMiner)                  \
-  $(mapRoboSurveyor,               RoboSurveyor)               \
-  $(mapScout,                      Scout)                      \
-  $(mapSpider,                     Spider)                     \
-  $(mapScorpion,                   Scorpion)                   \
-  $(mapLynx,                       Lynx)                       \
-  $(mapPanther,                    Panther)                    \
-  $(mapTiger,                      Tiger)
-
 namespace TethysImpl {
-#define OP2_MO_FOR_DEF(id, name)  template <> struct MapObjForImpl<id> { using Type = MapObj::name; };
+#define OP2_MO_FOR_DEF(name)  template <> struct MapObjForImpl<MapID::name> { using Type = MapObj::name; };
 OP2_EMIT_MO_MAPPINGS(OP2_MO_FOR_DEF);
 } // Impl
 
@@ -2791,7 +2699,7 @@ union AnyMapObj {
   Vehicle         vehicle_;
   TankVehicle     tankVehicle_;
 
-#define OP2_MO_ANY_MAP_OBJ_DEF(id, name)  MapObj::name  id##_;
+#define OP2_MO_ANY_MAP_OBJ_DEF(name)  MapObj::name  map##name##_;
   OP2_EMIT_MO_MAPPINGS(OP2_MO_ANY_MAP_OBJ_DEF);
 
   uint8           raw_[MapObjectSize];  // Forces size to MapObjectSize
