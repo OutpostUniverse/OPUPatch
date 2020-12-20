@@ -137,7 +137,7 @@ public:
     { return IsValid() && GetMapObject<MapObj::Wreckage>()->IsDiscovered(GameImpl::GetInstance()->localPlayer_); }
   void SetDiscovered(int playerNum = AllPlayers) {
     if (IsValid()) {
-      GetMapObject<MapObj::Wreckage>()->playerDiscoveredMask_ &= (playerNum == AllPlayers) ? ~0 : (1u << playerNum);
+      GetMapObject<MapObj::Wreckage>()->playerDiscoveredMask_ |= (playerNum == AllPlayers) ? ~0 : (1u << playerNum);
     }
   }
   ///@}
@@ -145,7 +145,7 @@ public:
   /// [Mining Beacon]
   void SetSurveyed(int playerNum = AllPlayers) {
     if (IsValid()) {
-      GetMapObject<MapObj::MiningBeacon>()->playerSurveyedMask_ &= (playerNum == AllPlayers) ? ~0 : (1u << playerNum);
+      GetMapObject<MapObj::MiningBeacon>()->playerSurveyedMask_ |= (playerNum == AllPlayers) ? ~0 : (1u << playerNum);
     }
   }
 
@@ -165,7 +165,6 @@ public:
 
   /// Gets the next Unit on the map (sorted ascending by pixel Y).  Can be iterated while IsValid().
   Unit GetNext() { auto*const p = GetMapObject();  return Unit((p && (p->pNext_ != p)) ? p->pNext_ : nullptr); }
-
   /// Gets the next Unit in the owner player's building/vehicle/beacon/entity list (sorted by newest to oldest).
   /// Can be iterated while IsValid().
   Unit GetPlayerNext()

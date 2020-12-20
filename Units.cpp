@@ -756,7 +756,7 @@ bool SetTruckLoadPartialCargoPatch(
       patcher.LowLevelHook(loc, [](Ebp<TriggerImpl*> pThis, Ebx<int>& counter) {
         const auto type      = *static_cast<MapID*>(PtrInc(pThis, 0x30));       // ** TODO Define CountTrigger
         const auto cargoType = *static_cast<TruckCargo*>(PtrInc(pThis, 0x34));
-        if ((type == MapID::CargoTruck) && (cargoType > TruckCargo::Empty)) {
+        if ((type == MapID::CargoTruck) && (cargoType > TruckCargo::Empty) && (cargoType < TruckCargo::Spacecraft)) {
           counter /= defaultTruckCapacity;
         }
       });
