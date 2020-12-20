@@ -36,6 +36,7 @@ bool SetMissionListNamePatch(bool enable);
 bool SetSavantNotificationPatch(bool enable);
 bool SetControlGroupHotkeyPatch(bool enable);
 bool SetDefaultIniSettingsPatch(bool enable);
+bool SetDebugRestartGamePatch(bool enable);
 
 // Graphics
 bool SetWindowFix(bool enable);
@@ -64,3 +65,4 @@ bool SetAllyEdwardSurveyMinesPatch(bool enable);
 bool SetMultipleRepairPatch(bool enable);
 bool SetOreRoutePatch(bool enable);  // ** WIP
 bool SetTurretAnimationPatch(bool enable);
+bool SetTruckLoadPartialCargoPatch(bool enable);

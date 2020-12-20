@@ -40,13 +40,13 @@ public:
   int  GetKids()                  const { return IsValid() ?  GetImpl()->numKids_       : 0;               }
   int  GetWorkers()               const { return IsValid() ?  GetImpl()->numWorkers_    : 0;               }
   int  GetScientists()            const { return IsValid() ?  GetImpl()->numScientists_ : 0;               }
-  int  GetOre()                   const { return IsValid() ?  GetImpl()->commonOre_     : 0;               }
+  int  GetCommonOre()             const { return IsValid() ?  GetImpl()->commonOre_     : 0;               }
   int  GetRareOre()               const { return IsValid() ?  GetImpl()->rareOre_       : 0;               }
   int  GetFoodStored()            const { return IsValid() ?  GetImpl()->foodStored_    : 0;               }
   void SetKids(int       numKids)       {    if (IsValid()) { GetImpl()->numKids_       = numKids;       } }
   void SetWorkers(int    numWorkers)    {    if (IsValid()) { GetImpl()->numWorkers_    = numWorkers;    } }
   void SetScientists(int numScientists) {    if (IsValid()) { GetImpl()->numScientists_ = numScientists; } }
-  void SetOre(int        newCommonOre)  {    if (IsValid()) { GetImpl()->commonOre_     = newCommonOre;  } }
+  void SetCommonOre(int  newCommonOre)  {    if (IsValid()) { GetImpl()->commonOre_     = newCommonOre;  } }
   void SetRareOre(int    newRareOre)    {    if (IsValid()) { GetImpl()->rareOre_       = newRareOre;    } }
   void SetFoodStored(int newFoodStored) {    if (IsValid()) { GetImpl()->foodStored_    = newFoodStored; } }
 

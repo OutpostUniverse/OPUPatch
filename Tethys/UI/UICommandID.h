@@ -103,65 +103,51 @@ namespace Tethys {
  */
 
 
-enum AcceleratorTableId : int {
-  VIEW_ACCEL  = 130,
-  UNIT_ACCEL  = 206,
-  PAUSE_ACCEL = 212,
+enum class AcceleratorTableID : int {
+  View  = 130,
+  Unit  = 206,
+  Pause = 212,
 };
 
-enum WmCommandId : int {
-  // <Ctrl+P>, <Pause> (Un)pause the game
-  TOGGLE_PAUSE = 40001,
+enum class WMCommandID : int {
+  TogglePause = 40001,  ///< (Un)pause the game <Ctrl+P or Pause>
 
-  // Various "hidden" functionality that is not necessarily exposed in the UI
-  // Appears to be sent in response to the local player quitting
-  LOCAL_PLAYER_QUIT = 40057,
-  // Appears to be sent to toggle sound effects / music
-  TOGGLE_MUSIC         = 40077,
-  TOGGLE_SOUND_EFFECTS = 40078,
-  // Reposition minimap buttons (i.e. right click on minimap)
-  MOVE_MINIMAP_BUTTONS = 40082,
-  // TODO: something unknown to do with lava, and sets tickOfLastctGameOpt to
-  // the current tick
-  LAVA_UNKNOWN = 40090,
-  // Set frameskip to 1/2/4
-  SET_FRAMESKIP_1 = 40109,
-  SET_FRAMESKIP_2 = 40110,
-  SET_FRAMESKIP_4 = 40111,
-  // Ally with player 1..6 
-  ALLY_PLAYER_1 = 40113,
-  ALLY_PLAYER_2 = 40114,
-  ALLY_PLAYER_3 = 40115,
-  ALLY_PLAYER_4 = 40116,
-  ALLY_PLAYER_5 = 40117,
-  ALLY_PLAYER_6 = 40118,
-  // Toggle unit paths
-  TOGGLE_SHOW_UNIT_PATHS = 40122,
-  // TODO
-  TOGGLE_UNKNOWN1 = 40124,
-  TOGGLE_UNKNOWN2 = 40125,
-  // Toggle showing all units on minimap
-  TOGGLE_SHOW_ALL_UNITS_ON_MINIMAP = 40126,
+  GotoBookmarkedLocation0 = 40091,  ///< Center the detail pane on bookmarked location 0 <F5>
+  GotoBookmarkedLocation1 = 40092,  ///< Center the detail pane on bookmarked location 1 <F6>
+  GotoBookmarkedLocation2 = 40093,  ///< Center the detail pane on bookmarked location 2 <F7>
+  GotoBookmarkedLocation3 = 40094,  ///< Center the detail pane on bookmarked location 3 <F8>
+  GotoBookmarkedLocation4 = 40095,  ///< Center the detail pane on bookmarked location 4 <F9>
+  GotoBookmarkedLocation5 = 40096,  ///< Center the detail pane on bookmarked location 5 <F10>
+  GotoBookmarkedLocation6 = 40097,  ///< Center the detail pane on bookmarked location 6 <F11>
+  GotoBookmarkedLocation7 = 40098,  ///< Center the detail pane on bookmarked location 7 <F12>
+  BookmarkLocation0       = 40102,  ///< Bookmark location 0 <Ctrl+F5>
+  BookmarkLocation1       = 40103,  ///< Bookmark location 1 <Ctrl+F6>
+  BookmarkLocation2       = 40104,  ///< Bookmark location 2 <Ctrl+F7>
+  BookmarkLocation3       = 40105,  ///< Bookmark location 3 <Ctrl+F8>
+  BookmarkLocation4       = 40106,  ///< Bookmark location 4 <Ctrl+F9>
+  BookmarkLocation5       = 40099,  ///< Bookmark location 5 <Ctrl+F10>
+  BookmarkLocation6       = 40100,  ///< Bookmark location 6 <Ctrl+F11>
+  BookmarkLocation7       = 40101,  ///< Bookmark location 7 <Ctrl+F12>
 
-
-  // <F5>..<F12> Center the detail pane on bookmarked location N
-  GOTO_BOOKMARKED_LOCATION_0 = 40091,
-  GOTO_BOOKMARKED_LOCATION_1 = 40092,
-  GOTO_BOOKMARKED_LOCATION_2 = 40093,
-  GOTO_BOOKMARKED_LOCATION_3 = 40094,
-  GOTO_BOOKMARKED_LOCATION_4 = 40095,
-  GOTO_BOOKMARKED_LOCATION_5 = 40096,
-  GOTO_BOOKMARKED_LOCATION_6 = 40097,
-  GOTO_BOOKMARKED_LOCATION_7 = 40098,
-  // <Ctrl+F5>..<Ctrl+F12> Bookmark location N
-  BOOKMARK_LOCATION_5 = 40099,
-  BOOKMARK_LOCATION_6 = 40100,
-  BOOKMARK_LOCATION_7 = 40101,
-  BOOKMARK_LOCATION_0 = 40102,
-  BOOKMARK_LOCATION_1 = 40103,
-  BOOKMARK_LOCATION_2 = 40104,
-  BOOKMARK_LOCATION_3 = 40105,
-  BOOKMARK_LOCATION_4 = 40106,
+  // -------------------- Various "hidden" functionality that is not necessarily exposed in the UI ---------------------
+  MoveMinimapButtons          = 40082,  ///< Reposition minimap buttons (i.e. right click on minimap)
+  SetFrameskip1               = 40109,  ///< Set frameskip ratio to 1 (no frameskip)
+  SetFrameskip2               = 40110,  ///< Set frameskip ratio to 2 (skip rendering every other frame)
+  SetFrameskip4               = 40111,  ///< Set frameskip ratio to 4 (skip rendering 3/4 frames)
+  AllyPlayer1                 = 40113,  ///< Ally with player 1
+  AllyPlayer2                 = 40114,  ///< Ally with player 2
+  AllyPlayer3                 = 40115,  ///< Ally with player 3
+  AllyPlayer4                 = 40116,  ///< Ally with player 4
+  AllyPlayer5                 = 40117,  ///< Ally with player 5
+  AllyPlayer6                 = 40118,  ///< Ally with player 6
+  LocalPlayerQuit             = 40057,  ///< Sent in response to the local player quitting
+  ToggleMusic                 = 40077,  ///< Sent to toggle music
+  ToggleSoundEffects          = 40078,  ///< Sent to toggle sound effects
+  DebugSetEruption            = 40090,  ///< ctGameOpt SetEruption debug command
+  ToggleShowUnitPaths         = 40122,  ///< Toggle unit paths
+  ToggleUnknown1              = 40124,
+  ToggleUnknown2              = 40125,
+  ToggleShowAllUnitsOnMinimap = 40126,  ///< Toggle showing all units on minimap
 };
 
 } // Tethys

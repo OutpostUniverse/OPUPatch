@@ -27,48 +27,65 @@ enum class TechCategory : int {
   SpaceshipModule     = 12,  ///< Spaceship module
 };
 
-struct TechUpgradeType {
-  int   type;          ///< Type of upgrade  [0 = Unit_Prop, 1 = Player_Prop, 2 = Function_Result]
-  char* pUpgradeType;  ///< Pointer to a string that follows the "UNIT_PROP" tag in the sheets
-  int   offsetToProp;  ///< Offset of property in the upgraded structure (byte offset added to base of where data
-                       ///  starts for current player), or function address for type = 2 (Function_Result)
+enum class TechLabType : int {
+  BasicLab    = 1,
+  StandardLab = 2,
+  AdvancedLab = 3,
+};
+
+enum class TechUpgradeType : int {
+  UnitProp       = 0,  ///< 'UNIT_PROP'
+  PlayerProp     = 1,  ///< 'PLAYER_PROP';  @warning Desyncs in multiplayer!
+  FunctionResult = 2,  ///< 'FUNCTION_RESULT'
+};
+
+struct TechProperty {
+  TechUpgradeType type;          ///< Type of upgrade.
+  char*           pUpgradeType;  ///< String that follows the "UNIT_PROP"/etc. tag in the sheets.
+  union {
+    size_t        offsetToProp;  ///< [UnitProp, PlayerProp]  Offset of property in the upgraded structure.
+                                 ///                          MapObjectType::playerStats_[playerNum] for UnitProp;
+                                 ///                          GameImpl::player_[playerNum] for PlayerProp.
+    void(*pfnFunctionResult)();  ///< [FunctionResult]  Pointer to function to be called.
+  };
 };
 
 struct TechUpgradeInfo {
-  TechUpgradeType* pType;     ///< Pointer to struct describing the type of upgrade
-  MapID            unitType;  ///< Type of unit this upgrade applies to
-  int              newValue;  ///< New value of property being upgraded
+  TechProperty* pType;     ///< Pointer to struct describing the type of upgrade.
+  MapID         unitType;  ///< Type of unit this upgrade applies to.
+  int           newValue;  ///< New value of property being upgraded.
 };
 
 struct TechInfo : public OP2Class<TechInfo> {
   ibool ParseTech(TextStream* pTechParser) { return Thunk<0x473A80, &$::ParseTech>(pTechParser); }
 
-  int          techID;     ///< TechID found in the sheets files
-  TechCategory category;   ///< In sheets "CATEGORY" tells what kind this tech is
-  int          techLevel;  ///< Tech level of this tech (the thousands digit)
+  int          techID;     ///< TechID found in the sheets files.
+  TechCategory category;   ///< In sheets "CATEGORY" tells what kind this tech is.
+  int          techLevel;  ///< Tech level of this tech (the thousands digit).
 
-  int plymouthCost;   ///< Amount of research required by Plymouth
-  int edenCost;       ///< Amount of research required by Eden
-  int maxScientists;  ///< Max number of scientists allowed to assign to research
-  int lab;            ///< Lab type research is done at  [1 = Basic, 2 = Standard, 3 = Advanced]
+  int         plymouthCost;   ///< Amount of research required by Plymouth.
+  int         edenCost;       ///< Amount of research required by Eden.
+  int         maxScientists;  ///< Max number of scientists allowed to assign to research.
+  TechLabType lab;            ///< Lab type research is done at.
 
-  PlayerBitmask playerHasTechMask;  ///< Bitmask of which players have this technology
+  PlayerBitmask playerHasTechMask;  ///< Bitmask of which players have this technology.
+  
+  int numUpgrades;        ///< Number of unit upgrades it performs ("UNIT_PROP"s in tech file).
+  int numRequiredTechs;   ///< Number of other techs required to research this one ("REQUIRES"s in tech file).
 
-  int numUpgrades;        ///< Number of unit upgrades it performs ("UNIT_PROP"s in tech file)
-  int numRequiredTechs;   ///< Number of other techs required to research this one ("REQUIRES"s in tech file)
+  char* pTechName;     ///< Name of the technology (in sheets files).
+  char* pDescription;  ///< Description of tech given after research.
+  char* pTeaser;       ///< Description of tech given before research.
+  char* pImproveDesc;  ///< Description of the upgrades given by this tech.
 
-  char* pTechName;     ///< Name of the technology (in sheets files)
-  char* pDescription;  ///< Description of tech given after research
-  char* pTeaser;       ///< Description of tech given before research
-  char* pImproveDesc;  ///< Description of the upgrades given by this tech
-
-  int*             pRequiredTechNum;    ///< Pointer to array of techNums that this tech requires
-  TechUpgradeInfo* pUpgrades;           ///< Pointer to array of structs containing upgrade info
-  int              numDependentTechs;   ///< Number of technologies dependent on this one
-  int*             pDependentTechNums;  ///< Pointer to array of techNums that depend on this tech
+  int*             pRequiredTechNum;    ///< Pointer to array of techNums that this tech requires.
+  TechUpgradeInfo* pUpgrades;           ///< Pointer to array of structs containing upgrade info.
+  int              numDependentTechs;   ///< Number of technologies dependent on this one.
+  int*             pDependentTechNums;  ///< Pointer to array of techNums that depend on this tech.
 };
 
 
+/// Internal research manager class.
 class Research : public OP2Class<Research> {
 public:
   Research() { InternalCtor<0x472930>(); }
@@ -103,16 +120,22 @@ public:
   // ** TODO 0x4732B0
   // ** TODO 0x473330
 
+  /// Get the global Research object instance.
   static Research* GetInstance() { return OP2Mem<0x56C230, Research*>(); }
 
   // Helper functions
   TechInfo* GetTechInfo(int techID)
     { const int techNum = GetTechNum(techID);  return (techNum != -1) ? ppTechInfos_[techNum] : nullptr; }
 
+  /// Table of techtree format UNIT_PROP/etc. mapping information.
+  static TechProperty* TechPropertiesTable() { return OP2Mem<TechProperty*&>(0x473E88); }  // 0x4D5C48
+  /// Number of array entries in TechPropertiesTable.  ((0x4D5D48 - 0x4D5C48) / sizeof(TechProperty) = 21)
+  static size_t        NumTechProperties()   { return OP2Mem<TechProperty*&>(0x473E2A) - TechPropertiesTable(); }
+
 public:
   int        numTechs_;     ///< Max = 256 (@ref ResearchState can only store 256 entries).
   TechInfo** ppTechInfos_;  ///< Sorted by tech ID (binary searchable).
-  int        maxTechID_;    ///< (maxTechLevel * 1000) + 999.  Typically 12999 in multiplayer.
+  int        maxTechID_;    ///< (maxTechLevel * 1000) + 999.  Typically 12999 in non-campaign games.
 
   int field_10;
   int field_14;

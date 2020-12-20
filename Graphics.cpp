@@ -230,7 +230,7 @@ bool SetAlphaBlendPatch(
             const auto& src = palette[*pSrcPaletteIdx];
             auto dst = *pDst;
             dst = {
-              uint16((dst.b / 2) + (src.b / 2)), uint16((dst.g / 2) + (src.g / 2)), uint16((dst.r / 2) + (src.r / 2))
+              uint16((dst.b / 2) + (src.b / 2)),  uint16((dst.g / 2) + (src.g / 2)),  uint16((dst.r / 2) + (src.r / 2))
             };
             pDst->u16All = dst.u16All;
           }

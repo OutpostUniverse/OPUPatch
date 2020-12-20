@@ -33,7 +33,7 @@ DLLAPI void InitMod(
   success &= SetGlobalMusicFix(true);
 
   // Stream
-  success &= SetFileSearchPathPatch(true);
+  success &= SetFileSearchPathPatch(true);  // NOTE: This must handle loading patched DLLs like OP2Shell, odasl, etc.
   //success &= SetChecksumPatch(true);
   success &= SetCodecFix(true);
 
@@ -56,6 +56,7 @@ DLLAPI void InitMod(
   success &= SetSavantNotificationPatch(true);
   success &= SetControlGroupHotkeyPatch(true);
   success &= SetDefaultIniSettingsPatch(true);
+  success &= SetDebugRestartGamePatch(true);
 
   // Graphics
   success &= SetWindowFix(true);
@@ -83,4 +84,5 @@ DLLAPI void InitMod(
   success &= SetMultipleRepairPatch(true);
   success &= SetOreRoutePatch(true);
   success &= SetTurretAnimationPatch(true);
+  success &= SetTruckLoadPartialCargoPatch(true);
 }

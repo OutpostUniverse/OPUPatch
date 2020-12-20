@@ -41,29 +41,29 @@ namespace Tethys::API {
 /// Enum defining mission types.
 enum class MissionType : int {
   // Single-player mission types
-  Campaign1       =   1,
-  Campaign2       =   2,
-  Campaign3       =   3,
-  Campaign4       =   4,
-  Campaign5       =   5,
-  Campaign6       =   6,
-  Campaign7       =   7,
-  Campaign8       =   8,
-  Campaign9       =   9,
-  Campaign10      =  10,
-  Campaign11      =  11,
-  Campaign12      =  12,
+  Campaign1       =  1,
+  Campaign2       =  2,
+  Campaign3       =  3,
+  Campaign4       =  4,
+  Campaign5       =  5,
+  Campaign6       =  6,
+  Campaign7       =  7,
+  Campaign8       =  8,
+  Campaign9       =  9,
+  Campaign10      = 10,
+  Campaign11      = 11,
+  Campaign12      = 12,
 
-  Colony          =  -1,
-  AutoDemo        =  -2,
-  Tutorial        =  -3,
+  Colony          = -1,
+  AutoDemo        = -2,
+  Tutorial        = -3,
 
   // Multiplayer mission types
-  LandRush        =  -4,
-  SpaceRace       =  -5,
-  ResourceRace    =  -6,
-  Midas           =  -7,
-  LastOneStanding =  -8
+  LandRush        = -4,
+  SpaceRace       = -5,
+  ResourceRace    = -6,
+  Midas           = -7,
+  LastOneStanding = -8
 };
 
 struct ModDesc {

@@ -5,8 +5,9 @@
 
 namespace Tethys {
 
+namespace MapIDImpl { enum MapID : int; }
+using MapID = MapIDImpl::MapID;
 class PlayerImpl;
-enum  MapID : int;
 
 enum class MoraleBonusModifier : size_t {
   PtsTot = 0,     ///< 'M_PTS_TOT' in sheets

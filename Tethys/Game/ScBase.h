@@ -54,18 +54,18 @@ public:
 /// Internal base class for mission objects such as triggers, groups, victory/failure conditions, etc.
 class ScBase : public OP2Class<ScBase> {
 public:
-  virtual ScBase*        Destroy(ibool freeMem)     { return Thunk<0x424A60, &ScBase::Destroy>(freeMem);   }
-  virtual ScStubFactory* GetScStubFactory()         { return Thunk<0x424A10, &ScBase::GetScStubFactory>(); }
-  virtual void           Init()                     { return Thunk<0x424A20, &ScBase::Init>();             }
-  virtual void           Enable()                   { return Thunk<0x424A30, &ScBase::Enable>();           }
-  virtual void           Disable()                  { return Thunk<0x424A40, &ScBase::Disable>();          }
-  virtual void           Save(StreamIO* pSavedGame) { return Thunk<0x47B5B0, &ScBase::Save>(pSavedGame);   }
-  virtual ibool          Load(StreamIO* pSavedGame) { return Thunk<0x47B5E0, &ScBase::Load>(pSavedGame);   }
-  virtual void           Delete()                   { return Thunk<0x424A50, &ScBase::Delete>();           }
-  virtual ibool          IsEnabled()                { return Thunk<0x47B620, &ScBase::IsEnabled>();        }
+  virtual void*          Destroy(ibool freeMem)     { return Thunk<0x424A60, &$::Destroy>(freeMem);   }
+  virtual ScStubFactory* GetScStubFactory()         { return Thunk<0x424A10, &$::GetScStubFactory>(); }
+  virtual void           Init()                     { return Thunk<0x424A20, &$::Init>();             }
+  virtual void           Enable()                   { return Thunk<0x424A30, &$::Enable>();           }
+  virtual void           Disable()                  { return Thunk<0x424A40, &$::Disable>();          }
+  virtual void           Save(StreamIO* pSavedGame) { return Thunk<0x47B5B0, &$::Save>(pSavedGame);   }
+  virtual ibool          Load(StreamIO* pSavedGame) { return Thunk<0x47B5E0, &$::Load>(pSavedGame);   }
+  virtual void           RaiseEvent()               { return Thunk<0x424A50, &$::RaiseEvent>();       }
+  virtual ibool          IsEnabled()                { return Thunk<0x47B620, &$::IsEnabled>();        }
 
 #define OP2_SCBASE_VTBL($)  \
-  $(Destroy)  $(GetScStubFactory)  $(Init)  $(Enable)  $(Disable)  $(Save)  $(Load)  $(Delete)  $(IsEnabled)
+  $(Destroy)  $(GetScStubFactory)  $(Init)  $(Enable)  $(Disable)  $(Save)  $(Load)  $(RaiseEvent)  $(IsEnabled)
   DEFINE_VTBL_TYPE(OP2_SCBASE_VTBL, 0x4CFE98);
 
   static ScBase* GetInstance(int index)
@@ -104,7 +104,21 @@ public:
 
 /// Internal implementation class for triggers.
 class TriggerImpl : public ScBase {
+  using $ = TriggerImpl;
 public:
+  using Callback = void(*)();
+
+  void*          Destroy(ibool freeMem)     override { return Thunk<0x4920B0, &$::Destroy>(freeMem);   }
+  ScStubFactory* GetScStubFactory()         override { return Thunk<0x492090, &$::GetScStubFactory>(); }
+  void           Init()                     override { return Thunk<0x4920A0, &$::Init>();             }
+  void           Save(StreamIO* pSavedGame) override { return Thunk<0x491E90, &$::Save>(pSavedGame);   }
+  ibool          Load(StreamIO* pSavedGame) override { return Thunk<0x491F10, &$::Load>(pSavedGame);   }
+  void           RaiseEvent()               override { return Thunk<0x491FF0, &$::RaiseEvent>();       }
+  ibool          IsEnabled()                override { return Thunk<0x491F90, &$::IsEnabled>();        }
+
+  virtual ibool    HasFired() = 0;
+  virtual Callback GetCallbackFunction() { return Thunk<0x491E70, &$::GetCallbackFunction>(); }
+
   static TriggerImpl* GetInstance(int index) { return static_cast<TriggerImpl*>(ScBase::GetInstance(index)); }
 
 public:

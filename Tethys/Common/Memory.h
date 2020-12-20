@@ -49,7 +49,7 @@ inline void* CDECL OP2Calloc(size_t count,   size_t size) { return OP2Thunk<0x4C
 inline void* CDECL OP2Realloc(void* pMemory, size_t size) { return OP2Thunk<0x4C21F0, &OP2Realloc>(pMemory, size); }
 inline void  CDECL OP2Free(void*    pMemory)              { return OP2Thunk<0x4C1380, &OP2Free>(pMemory);          }
 ///@}
-/// 
+
 /// Gets the OS handle to Outpost2.exe's memory allocation heap.
 inline HANDLE GetOP2HeapHandle() { return OP2Mem<0x582F8C, HANDLE&>(); }
 
@@ -68,6 +68,22 @@ inline void CDECL operator delete(void* p, Tethys::TethysImpl::OP2HeapTag) noexc
 
 namespace Tethys {
 
+namespace TethysImpl {
+///@{ @internal  Helper metafunctions to get this and function pointer types from pointers-to-member-functions.
+template <typename T, typename = void>  struct PmfTraitsImpl{};
+template <auto Pmf>                     using  PmfThisPtr   = typename PmfTraitsImpl<decltype(Pmf)>::This;
+template <auto Pmf>                     using  PmfToPfnType = typename PmfTraitsImpl<decltype(Pmf)>::Pfn;
+template <typename Fn, typename T>      using  ToMemPfnType = typename PmfTraitsImpl<Fn, T>::MemPfn;
+
+template <typename R, typename T, typename X, typename... A>
+struct PmfTraitsImpl<R(T::*)(A...),       X> { using This =       T*;  using Pfn = R(THISCALL*)(This, A...); };
+template <typename R, typename T, typename X, typename... A>
+struct PmfTraitsImpl<R(T::*)(A...) const, X> { using This = const T*;  using Pfn = R(THISCALL*)(This, A...); };
+template <typename R, typename T, typename... A>
+struct PmfTraitsImpl<R(A...), T>             { using MemPfn = R(THISCALL*)(T, A...);                         };
+///@}
+}
+
 /// CRTP class that defines templated member function helpers to thunk to internal OP2 code with specialized helpers
 /// for constructors, and allows exposing virtual function table internals (@see DEFINE_VTBL_TYPE, DEFINE_VTBL_GETTER).
 template <typename Derived>
@@ -77,42 +93,32 @@ private:
   struct VtblType{};
 
 protected:
-  ///@{ @internal  Helper metafunctions to get this and function pointer types from pointers-to-member-functions.
-  template <typename T, typename = void>  struct _PmfTraitsImpl{};
-  template <auto Pmf>                     using  _PmfThisPtr   = typename _PmfTraitsImpl<decltype(Pmf)>::This;
-  template <auto Pmf>                     using  _PmfToPfnType = typename _PmfTraitsImpl<decltype(Pmf)>::Pfn;
-  template <typename Fn, typename T>      using  _ToMemPfnType = typename _PmfTraitsImpl<Fn, T>::MemPfn;
-
-  template <typename R, typename T, typename X, typename... A>
-  struct _PmfTraitsImpl<R(T::*)(A...),       X> { using This =       T*;  using Pfn = R(THISCALL*)(This, A...); };
-  template <typename R, typename T, typename X, typename... A>
-  struct _PmfTraitsImpl<R(T::*)(A...) const, X> { using This = const T*;  using Pfn = R(THISCALL*)(This, A...); };
-  template <typename R, typename T, typename... A>
-  struct _PmfTraitsImpl<R(A...), T>             { using MemPfn = R(THISCALL*)(T, A...);                         };
-  ///@}
-
   /// Typedef required for DEFINE_VTBL_TYPE() to work, and can also be used as a convenience shorthand for @ref Thunk.
   using $ = Derived;
 
   /// Thunks to an internal member function.  Example:  void Func(int a) { return Thunk<&$::Func>(0x4200AF, a); }
   template <auto Pmf, typename... Args>
-  auto Thunk(uintptr address, Args&&... args) const
-    { return OP2Mem<_PmfToPfnType<Pmf>>(address)(_PmfThisPtr<Pmf>(this), std::forward<Args>(args)...); }
+  auto Thunk(uintptr address, Args&&... args) const {
+    return OP2Mem<TethysImpl::PmfToPfnType<Pmf>>(address)(
+      TethysImpl::PmfThisPtr<Pmf>(this), std::forward<Args>(args)...);
+  }
 
   /// Thunks to an internal member function.  Example:  void Func(int a) { return Thunk<void(int)>(0x4200AF, a); }
   template <typename Fn = void(), typename... Args>
   auto Thunk(uintptr address, Args&&... args) const
-    { return OP2Mem<_ToMemPfnType<Fn, decltype(this)>>(address)(this, std::forward<Args>(args)...); }
+    { return OP2Mem<TethysImpl::ToMemPfnType<Fn, decltype(this)>>(address)(this, std::forward<Args>(args)...); }
 
   /// Thunks to an internal member function.  Example:  void Func(int a) { return Thunk<0x4200AF, &$::Func>(a); }
   template <uintptr Address, auto Pmf, typename... Args>
-  auto Thunk(Args&&... args) const
-    { return OP2Thunk<Address, _PmfToPfnType<Pmf>>(_PmfThisPtr<Pmf>(this), std::forward<Args>(args)...); }
+  auto Thunk(Args&&... args) const {
+    return OP2Thunk<Address, TethysImpl::PmfToPfnType<Pmf>>(
+      TethysImpl::PmfThisPtr<Pmf>(this), std::forward<Args>(args)...);
+  }
 
   /// Thunks to an internal member function.  Example:  void Func(int a) { return Thunk<0x4200AF, void(int)>(a); }
   template <uintptr Address, typename Fn = void(), typename... Args>
   auto Thunk(Args&&... args) const
-    { return OP2Thunk<Address, _ToMemPfnType<Fn, decltype(this)>>(this, std::forward<Args>(args)...); }
+    { return OP2Thunk<Address, TethysImpl::ToMemPfnType<Fn, decltype(this)>>(this, std::forward<Args>(args)...); }
 
   /// Thunks to an internal constructor.  This implicitly chains to all internal parent constructors.
   /// Example:  BaseClass()                  { InternalCtor<0x470000>(); }
@@ -185,7 +191,7 @@ public:                                                                         
   VtblType*& Vfptr()       { return *reinterpret_cast<VtblType**>(this);      }  \
   VtblType*  Vfptr() const { return *reinterpret_cast<VtblType*const*>(this); }  \
   DEFINE_VTBL_GETTER(__VA_ARGS__)
-#define VTBL_GENERATE_PFN_DEFS_IMPL(method)  _PmfToPfnType<&$::method> pfn##method;
+#define VTBL_GENERATE_PFN_DEFS_IMPL(method)  TethysImpl::PmfToPfnType<&$::method> pfn##method;
 
 /// Defines a static member function getting the class's vtbl.
 /// This can be used by itself if a base class has used DEFINE_VTBL_TYPE().

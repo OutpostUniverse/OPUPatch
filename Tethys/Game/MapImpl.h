@@ -222,8 +222,8 @@ public:
   ibool AllocateMap(int log2TileWidth, int tileHeight, int numTilesetMappings, int numTilesets)
     { return Thunk<0x4354F0, &$::AllocateMap>(log2TileWidth, tileHeight, numTilesetMappings, numTilesets); }
 
-  void FindFactoryOutputLocation(MapID itemToProduce, Location factoryLocation, Location* pBuildLocation) const
-    { return Thunk<0x4367D0, &$::FindFactoryOutputLocation>(itemToProduce, factoryLocation, pBuildLocation); }
+  void FindUnitPlacementLocation(MapID unitType, Location where, Location* pPlacementLocation) const
+    { return Thunk<0x4367D0, &$::FindUnitPlacementLocation>(unitType, where, pPlacementLocation); }
 
   void        SetTile(Location where, int tileIndex) { return Thunk<0x435430, &$::SetTile>(where, tileIndex); }
   void InitialSetTile(Location where, int tileIndex) { return Thunk<0x4354A0, &$::SetTile>(where, tileIndex); }

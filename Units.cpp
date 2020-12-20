@@ -31,7 +31,6 @@ static constexpr uint32 StructureLimits[] = { 950, 350, 200, 150, 100, 96  };
 
 // =====================================================================================================================
 // Doubles the max unit limit from 1024 to 2048.
-// ** FIXME Saving is broken
 // ** TODO IDs 2048+ could potentially be used for MapEntity, since only MapUnit IDs are limited to 11 bits
 bool SetUnitLimitPatch(
   bool enable)
@@ -49,11 +48,11 @@ bool SetUnitLimitPatch(
       if (pMapObjArray != nullptr) {
         memset(pMapObjArray, 0xEA, AllocSize);
 
-        for (uint32 i = 1; i <= MaxUnits; pThis->pMapObjArray_[i++]->pNext_ = reinterpret_cast<MapObject*>(~0));
+        for (uint32 i = 1; i <= MaxUnits; (&pThis->pMapObjArray_[i++])->pNext_ = reinterpret_cast<MapObject*>(~0));
 
-        pThis->pMapObjListBegin_ = &pMapObjArray[0];
-        pThis->pMapObjListEnd_   = &pThis->pMapObjArray_[MaxUnits];
-        pMapObjArray[0]->pPrev_  = &pMapObjArray[0];
+        pThis->pMapObjListBegin_   = &pMapObjArray[0];
+        pThis->pMapObjListEnd_     = &pThis->pMapObjArray_[MaxUnits];
+        (&pMapObjArray[0])->pPrev_ = &pMapObjArray[0];
       }
 
       return 0x4356BE;
@@ -638,6 +637,129 @@ bool SetTurretAnimationPatch(
           OP2Mem<0x4EA7BC, int&>() += frameInfo.offsetX;
           OP2Mem<0x4EA7C0, int&>() += frameInfo.offsetY;
         }));
+    }
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Allows trucks to be partially loaded with metals/food/etc. instead of requiring it to be exactly == cargoCapacity.
+bool SetTruckLoadPartialCargoPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // Remove (truckCargoCapacity >= stored) checks.
+    // In CommandLoadCargo::IsEnabled()
+    patcher.Hook(0x457096, 0x4570A9);
+
+    // If storage < truck capacity, load whatever is in storage.
+    patcher.Hook(0x424090, ThiscallLambdaPtr([](Building* pThis) {
+      if (Unit truck = Unit(pThis).GetUnitOnDock();  truck.IsValid()) {
+        const int capacity = truck.GetMapObjectType()->playerStats_[truck.GetCreator()].vehicle.cargoCapacity;
+
+        int  amount = 0;
+        auto type   = TruckCargo::Empty;
+
+        switch (pThis->GetTypeID()) {
+        case MapID::CommonStorage:
+        case MapID::CommonOreSmelter:
+          amount = min(capacity, Player[truck.GetOwner()].GetCommonOre());
+          type   = TruckCargo::CommonMetal;
+          break;
+
+        case MapID::RareStorage:
+        case MapID::RareOreSmelter:
+          amount = min(capacity, Player[truck.GetOwner()].GetRareOre());
+          type   = TruckCargo::RareMetal;
+          break;
+
+        case MapID::Agridome:
+          amount = min(capacity, Player[truck.GetOwner()].GetFoodStored());
+          type   = TruckCargo::Food;
+          break;
+
+        default:
+          break;
+        }
+
+        if (amount != 0) {
+          truck.GetMapObject<MapObj::CargoTruck>()->SetCargoToLoad(type, amount, false);
+        }
+      }
+    }));
+
+    // In CargoTruck::TransferCargo()
+    // Common storage, common ore smelter
+    patcher.LowLevelHook(0x406833, [](Esi<MapObj::CargoTruck*> pThis) {
+      if (pThis->truckCargoAmount_ = Player[pThis->ownerNum_].GetCommonOre();  pThis->truckCargoAmount_ == 0) {
+        pThis->truckCargoType_ = 0;
+      }
+      return 0x406839;
+    });
+    patcher.LowLevelHook(0x406A9E, [](Esi<MapObj::CargoTruck*> pThis) {
+      if (pThis->truckCargoAmount_ = Player[pThis->ownerNum_].GetCommonOre();  pThis->truckCargoAmount_ == 0) {
+        pThis->truckCargoType_ = 0;
+      }
+      return 0x406AA4;
+    });
+    // Rare storage, rare ore smelter
+    patcher.LowLevelHook(0x4068ED, [](Esi<MapObj::CargoTruck*> pThis) {
+      if (pThis->truckCargoAmount_ = Player[pThis->ownerNum_].GetRareOre();    pThis->truckCargoAmount_ == 0) {
+        pThis->truckCargoType_ = 0;
+      }
+      return 0x4068F3;
+    });
+    patcher.LowLevelHook(0x406B9A, [](Esi<MapObj::CargoTruck*> pThis) {
+      if (pThis->truckCargoAmount_ = Player[pThis->ownerNum_].GetRareOre();    pThis->truckCargoAmount_ == 0) {
+        pThis->truckCargoType_ = 0;
+      }
+      return 0x406BA0;
+    });
+    // Agridome
+    patcher.LowLevelHook(0x4069DC, [](Esi<MapObj::CargoTruck*> pThis, Eax<int>& amount) {
+      amount = min(pThis->GetType()->playerStats_[pThis->creatorNum_].vehicle.cargoCapacity,
+                   Player[pThis->ownerNum_].GetFoodStored());
+      return (amount != 0) ? 0x4069FA : 0x406A24;
+    });
+
+    // Special case CountTriggers that check for truck cargo - every 1000 units of cargo counts as 1 unit.
+    // In Sheet::LoadSheetFiles()
+    static int defaultTruckCapacity = 1000;
+    patcher.LowLevelHook(0x446042, []
+      { defaultTruckCapacity = MapObjType::CargoTruck::GetInstance()->playerStats_[0].vehicle.cargoCapacity; });
+
+    // In CountTrigger::HasFired()
+    patcher.LowLevelHook(0x493D5C, [](Eax<int> unitID, Esi<TruckCargo> cargo, Ebx<int>& counter) {
+      if (auto* pTruck = MapObject::GetInstance(unitID);  TruckCargo(pTruck->truckCargoType_) == cargo) {
+        counter += ((cargo == TruckCargo::Empty) || (cargo >= TruckCargo::Spacecraft)) ? 1 : pTruck->truckCargoAmount_;
+      }
+      return 0x493D87;
+    });
+    patcher.LowLevelHook(0x493E14, [](Edi<MapObject*> pTruckInGarage, Ecx<TruckCargo> cargo, Ebx<int>& counter) {
+      if (TruckCargo(pTruckInGarage->truckCargoType_) == cargo) {
+        counter +=
+          ((cargo == TruckCargo::Empty) || (cargo >= TruckCargo::Spacecraft)) ? 1 : pTruckInGarage->truckCargoAmount_;
+      }
+      return 0x493E2A;
+    });
+    for (uintptr loc : { 0x493E50, 0x493FE5 }) {
+      patcher.LowLevelHook(loc, [](Ebp<TriggerImpl*> pThis, Ebx<int>& counter) {
+        const auto type      = *static_cast<MapID*>(PtrInc(pThis, 0x30));       // ** TODO Define CountTrigger
+        const auto cargoType = *static_cast<TruckCargo*>(PtrInc(pThis, 0x34));
+        if ((type == MapID::CargoTruck) && (cargoType > TruckCargo::Empty)) {
+          counter /= defaultTruckCapacity;
+        }
+      });
     }
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);

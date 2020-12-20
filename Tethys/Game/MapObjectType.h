@@ -212,50 +212,50 @@ template <MapID ID>  using MapObjTypeFor = typename TethysImpl::MapObjTypeForImp
 BEGIN_PACKED
 
 struct PerPlayerUnitStats {
-  int       hp;
+  int       hp;                ///< 'Hit_Points'
   int       repairAmount;
-  ArmorType armor;
-  int       commonCost;
-  int       rareCost;
-  int       buildTime;
-  int       sightRange;
+  ArmorType armor;             ///< 'Armor'
+  int       commonCost;        ///< 'Common_Required'
+  int       rareCost;          ///< 'Rare_Required'
+  int       buildTime;         ///< 'Build_Time' or 'Build_Points'
+  int       sightRange;        ///< 'Sight_Range'
   uint8     numUnitsOfType;
-  uint8     bImproved;
+  uint8     bImproved;         ///< 'Improved'
   uint16    field_1E;
-  int       playerPropOre;
+  int       field_20;
 
   union {
     struct {
-      int powerRequired;
-      int workersRequired;
-      int scientistsRequired;
-      int storageCapacity;
-      int productionCapacity;
-      int storageBays;
+      int powerRequired;       ///< 'Power_Required'
+      int workersRequired;     ///< 'Workers_Required'
+      int scientistsRequired;  ///< 'Production_Rate' or 'Penetration_Damage' (aliased)
+      int storageCapacity;     ///< 'Storage_Capacity'
+      int productionCapacity;  ///< 'Production_Capacity'
+      int storageBays;         ///< 'Storage_Bays'
     } building;
 
     struct {
-      int   moveSpeed;
-      int   turnRate;
-      int   productionRate;
-      int   reloadTime;
-      uint8 field_38;
-      uint8 field_39;
-      uint8 field_3A;
+      int moveSpeed;           ///< 'Move_Speed'
+      int turnRate;            ///< 'Turn_Rate'
+      int productionRate;      ///< 'Production_Rate'
+      int reloadTime;          ///< 'Rate_Of_Fire'
+      int field_38;            
+      int cargoCapacity;       ///< 'Storage_Bays' (aliased)
     } vehicle;
 
     struct {
-      int moveSpeed;
-      int concussionDamage;
-      int penetrationDamage;
-      int reloadTime;
-      int weaponSightRange;
+      int moveSpeed;           ///< 'Move_Speed'
+      int concussionDamage;    ///< 'Concussion_Damage'
+      int penetrationDamage;   ///< 'Penetration_Damage'
+      int reloadTime;          ///< 'Rate_Of_Fire'
+      int weaponSightRange;    ///< 'Production_Capacity' (aliased)
       int field_3C;
     } weapon;
   };
 
-  int completedUpgradeTechIDs[2];
+  int completedUpgradeTechIDs[2];  // ** TODO int[2] or uint16[4]?
 };
+static_assert(sizeof(PerPlayerUnitStats) == 68, "Incorrect PerPlayerUnitStats size.");
 
 union GlobalUnitStats {
   struct {

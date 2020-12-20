@@ -5,13 +5,10 @@
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Unit.h"
 
-// ** TODO The Enumerator API will be changed substantially.  The current interface should be considered a placeholder.
+// ** TODO The Enumerator API will be changed substantially to work more like std::iterator.
+// The current interface should be considered a placeholder.
 
-namespace Tethys {
-
-class MapObject;
-
-namespace API {
+namespace Tethys::API {
 
 /// Group (enumerate all units in a group)
 class GroupEnumerator : public OP2Class<GroupEnumerator> {
@@ -113,5 +110,4 @@ public:
   int field_00[13];
 };
 
-} // API
 } // Tethys

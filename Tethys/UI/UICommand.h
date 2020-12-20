@@ -48,9 +48,9 @@ enum class CursorType : int {
   //            = 32,  ///< Out2Res.dll: 0x6E
   //            = 33,  ///< Out2Res.dll: 0x70
   //            = 34,  ///< Out2Res.dll: 0x74
+
   Count         = 35
 };
-
 
 /// UI Command abstract class.
 class UICommand : public OP2Class<UICommand> {
@@ -62,6 +62,9 @@ public:
 
 #define OP2_UICOMMAND_VTBL($)  $(IsEnabled)  $(Execute)  $(GetButtonDisplayInfo)
   DEFINE_VTBL_TYPE(OP2_UICOMMAND_VTBL);
+
+  static auto& MouseCursorTable()         { return OP2Mem<0x56EA08, HCURSOR(&)[size_t(CursorType::Count)]>(); }
+  static auto& MouseCursorResourceTable() { return OP2Mem<0x4E9878, const char*(&)[size_t(CursorType::Count)]>(); }
 };
 
 /// Mouse Command abstract class.
@@ -92,7 +95,9 @@ public:
 
 
 namespace UICmd {
-// UI Commands (non-targeted)
+
+// -------------------------------------------- UI Commands (non-targeted) ---------------------------------------------
+// ** TODO finish defining all UICommand subclasses
 
 /// Factory::DoProduce UI command
 class CommandProduce : public UICommand {
@@ -113,7 +118,7 @@ public:
 
 /// Unit::Transfer UI command
 class CommandTransfer : public UICommand {
-  using $ = CommandProduce;
+  using $ = CommandTransfer;
 public:
   ibool IsEnabled(DWORD param) override { return Thunk<0x455A30, &$::IsEnabled>(param); }
   int   Execute(DWORD param)   override { return Thunk<0x455A70, &$::Execute>(param);   }
@@ -122,13 +127,28 @@ public:
 
   DEFINE_VTBL_GETTER(0x4D4EE0);
 
-  static CommandProduce* GetInstance() { return OP2Mem<0x565618, CommandProduce*>(); }
+  static CommandTransfer* GetInstance() { return OP2Mem<0x565618, CommandTransfer*>(); }
 
 public:
   // ** TODO member variables?
 };
 
-// Mouse Commands (targeted)
+/// Unit::LoadCargo UI command
+class CommandLoadCargo : public UICommand {
+  using $ = CommandLoadCargo;
+public:
+  ibool IsEnabled(DWORD param) override { return Thunk<0x456FE0, &$::IsEnabled>(param); }
+  int   Execute(DWORD param)   override { return Thunk<0x4571A0, &$::Execute>(param);   }
+  void  GetButtonDisplayInfo(ButtonDisplayInfo* pButtonDisplayInfo, int a) override
+    { return Thunk<0x455C40, &$::GetButtonDisplayInfo>(pButtonDisplayInfo, a); }
+
+  DEFINE_VTBL_GETTER(0x4D5030);
+
+  static CommandLoadCargo* GetInstance() { return OP2Mem<0x5656A8, CommandLoadCargo*>(); }
+};
+
+// --------------------------------------------- Mouse Commands (targeted) ---------------------------------------------
+// ** TODO finish defining all MouseCommand subclasses
 
 /// Unit::Attack mouse command
 class CommandAttack : public MouseCommand {
@@ -220,9 +240,5 @@ public:
 };
 
 } // UICmd
-
-// ** TODO
-// extern HCURSOR mouseCursorTable[size_t(CursorType::Count)];        // 0x56EA08
-// extern char* mouseCursorResourceTable[size_t(CursorType::Count)];  // 0x4E9878 union{ WORD resID, LPCTSTR pFilename }
 
 } // Tethys

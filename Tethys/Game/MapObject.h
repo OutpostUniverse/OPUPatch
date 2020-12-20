@@ -94,7 +94,8 @@ enum class ActionType : uint8 {
 
 /// Possible values for MapObject::truckCargoType_.
 enum class TruckCargo : int {
-  Empty = 0,
+  Any   = -1,
+  Empty =  0,
   Food,
   CommonOre,
   RareOre,
@@ -227,23 +228,23 @@ public:
   void SetAnimation(int animIdx, int delay, int startDelay, ibool isSpecialAnim, ibool skipDoDeath)
     { return Thunk<0x405110, &$::SetAnimation>(animIdx, delay, startDelay, isSpecialAnim, skipDoDeath); }
 
-  void CmdMove(int pixelX, int pixelY)   { return Thunk<0x42A120, &$::CmdMove>(pixelX, pixelY);    }
-  void CmdAttack(int unitIndex)          { return Thunk<0x42A1E0, &$::CmdAttack>(unitIndex);       }
-  void CmdReprogram(int unitIndex)       { return Thunk<0x42A270, &$::CmdReprogram>(unitIndex);    }
-  void CmdStop()                         { return Thunk<0x42A300, &$::CmdStop>();                  }
-  void CmdDumpCargo()                    { return Thunk<0x42A370, &$::CmdDumpCargo>();             }
-  void CmdPoof()                         { return Thunk<0x42A3E0, &$::CmdPoof>();                  }
-  void CmdSelfDestruct()                 { return Thunk<0x42A430, &$::CmdSelfDestruct>();          }
+  void CmdMove(int pixelX, int pixelY)   { return Thunk<0x42A120, &$::CmdMove>(pixelX, pixelY); }
+  void CmdAttack(int unitIndex)          { return Thunk<0x42A1E0, &$::CmdAttack>(unitIndex);    }
+  void CmdReprogram(int unitIndex)       { return Thunk<0x42A270, &$::CmdReprogram>(unitIndex); }
+  void CmdStop()                         { return Thunk<0x42A300, &$::CmdStop>();               }
+  void CmdDumpCargo()                    { return Thunk<0x42A370, &$::CmdDumpCargo>();          }
+  void CmdPoof()                         { return Thunk<0x42A3E0, &$::CmdPoof>();               }
+  void CmdSelfDestruct()                 { return Thunk<0x42A430, &$::CmdSelfDestruct>();       }
   void CmdProduce(MapID itemType, MapID weaponType, uint16 scGroupIndex = -1)
     { return Thunk<0x42A4A0, &$::CmdProduce>(itemType, weaponType, scGroupIndex); }
-  void CmdDock(int pixelX, int pixelY)   { return Thunk<0x42A5B0, &$::CmdDock>(pixelX, pixelY);    }
-  void CmdRecycle(int bay)               { return Thunk<0x42A670, &$::CmdRecycle>(bay);            }
-  void CmdTransferCargo(int bay)         { return Thunk<0x42A6D0, &$::CmdTransferCargo>(bay);      }
-  void CmdPatrol(int a, int b, int c)    { return Thunk<0x42A740, &$::CmdPatrol>(a, b, c);         }
-  void CmdBuild(int a, int b)            { return Thunk<0x42A810, &$::CmdBuild>(a, b);             }
-  void CmdBuildWall(int a, int b, int c) { return Thunk<0x42A970, &$::CmdBuildWall>(a, b, c);      }
-  void CmdRepair(int unitIndex)          { return Thunk<0x42AAF0, &$::CmdRepair>(unitIndex);       }
-  void CmdGuard(int a, int b)            { return Thunk<0x42AD60, &$::CmdGuard>(a, b);             }
+  void CmdDock(int pixelX, int pixelY)   { return Thunk<0x42A5B0, &$::CmdDock>(pixelX, pixelY); }
+  void CmdRecycle(int bay)               { return Thunk<0x42A670, &$::CmdRecycle>(bay);         }
+  void CmdTransferCargo(int bay)         { return Thunk<0x42A6D0, &$::CmdTransferCargo>(bay);   }
+  void CmdPatrol(int a, int b, int c)    { return Thunk<0x42A740, &$::CmdPatrol>(a, b, c);      }
+  void CmdBuild(int a, int b)            { return Thunk<0x42A810, &$::CmdBuild>(a, b);          }
+  void CmdBuildWall(int a, int b, int c) { return Thunk<0x42A970, &$::CmdBuildWall>(a, b, c);   }
+  void CmdRepair(int unitIndex)          { return Thunk<0x42AAF0, &$::CmdRepair>(unitIndex);    }
+  void CmdGuard(int a, int b)            { return Thunk<0x42AD60, &$::CmdGuard>(a, b);          }
   // ** TODO Cmd??? 0x42AB80
   // ** TODO Cmd??? 0x42AF50
 
@@ -851,9 +852,10 @@ public:
 
   uint16 timerStickyfoam_;  ///< Stickyfoam timer remaining.
   uint16 timerEMP_;         ///< EMP timer remaining.
+  uint16 timerESG_;         ///< ESG timer remaining.
 
-  int    field_58;
-  int    field_5C;
+  uint16 field_5A;
+  int    cargoToLoad_;  ///< [CargoTruck, ...?] Cargo to load when animation has sufficiently progressed.
   uint16 field_60;
 
   // ** TODO these should be moved to child classes
@@ -2378,11 +2380,11 @@ public:
   void  DoDock()                                override { return Thunk<0x406170, &$::DoDock>();                      }
   ibool CanProduceAt(int tileX, int tileY)      override { return Thunk<0x40A4B0, &$::CanProduceAt>(tileX, tileY);    }
 
-  virtual void SetCargo(int truckCargo, int amount, ibool loading)
-    { return Thunk<0x406630, &$::SetCargo>(truckCargo, amount, loading); }
-  virtual void Func_38() { return Thunk<0x406710, &$::Func_38>(); }
+  virtual void SetCargoToLoad(TruckCargo cargoType, int amount, ibool a)
+    { return Thunk<0x406630, &$::SetCargoToLoad>(cargoType, amount, a); }
+  virtual void TransferCargo() { return Thunk<0x406710, &$::TransferCargo>(); }
   
-#define OP2_MO_CARGOTRUCK_VTBL($)  $(SetCargo)  $(Func_38)
+#define OP2_MO_CARGOTRUCK_VTBL($)  $(SetCargoToLoad)  $(TransferCargo)
   DEFINE_VTBL_TYPE(OP2_MO_CARGOTRUCK_VTBL, 0x4CF4A8);
 
   // Object size = 0x6E
@@ -2663,11 +2665,6 @@ union AnyMapObj {
   explicit operator T&() { return static_cast<T&>(object_); }
   operator  MapObject&() { return  object_; }
   MapObject* operator&() { return &object_; }
-  ///@}
-
-  ///@{ Allow dereference-like semantics to shorthand access object_.
-  MapObject& operator*()  { return  object_; }
-  MapObject* operator->() { return &object_; }
   ///@}
 
   static AnyMapObj* GetInstance(int index) { return reinterpret_cast<AnyMapObj*>(MapObject::GetInstance(index)); }

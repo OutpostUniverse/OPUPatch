@@ -24,11 +24,11 @@ struct PackedMapRect {
 /// Exported struct typically representing tile X/Y coordinates on the map.
 struct Location : public OP2Class<Location> {
 public:
-  constexpr Location()                     : x(INT_MIN), y(INT_MIN) { }
-  constexpr Location(int tileX, int tileY) : x(tileX),   y(tileY)   { }
+  constexpr Location()                     : x(-1),    y(-1)    { }
+  constexpr Location(int tileX, int tileY) : x(tileX), y(tileY) { }
 
   constexpr bool operator==(const Location& other) const { return (x == other.x) && (y == other.y); }
-  constexpr operator bool()                        const { return (x != INT_MIN) && (y != INT_MIN); }
+  constexpr operator bool()                        const { return (x != -1)      && (y != -1);      }
 
   Location& Add(const Location& vector) { Thunk<0x475A30, void(const Location&)>(vector);  return *this; }
   static Location FASTCALL Difference(const Location& a, const Location& b)
@@ -42,7 +42,7 @@ public:
 
   Location& Clip() { Thunk<0x475960>();  return *this; }  ///< Wraps X coordinate around the map, clips Y to edge
 
-  int Norm() { return Thunk<0x401E50, &$::Norm>(); }  ///< ftol(sqrt(x*x + y*y) + 0.5)
+  int Norm() { return Thunk<0x401E50, &$::Norm>(); }  ///< Returns euclidean distance: ftol(sqrt(x*x + y*y) + 0.5)
 
   constexpr int   GetPixelX(bool centered = true) const { return (x * 32) + (centered ? 16 : 0); }
   constexpr int   GetPixelY(bool centered = true) const { return (y * 32) + (centered ? 16 : 0); }
@@ -61,7 +61,7 @@ public:
 /// Exported struct typically representing a rectangular tile area on the map.
 struct MapRect : public OP2Class<MapRect> {
 public:
-  constexpr MapRect() : x1(INT_MIN), y1(INT_MIN), x2(INT_MIN), y2(INT_MIN) { }
+  constexpr MapRect() : x1(-1), y1(-1), x2(-1), y2(-1) { }
   constexpr MapRect(int leftTile, int topTile, int rightTile, int bottomTile)
     : x1(leftTile), y1(topTile), x2(rightTile), y2(bottomTile) { }
   constexpr MapRect(const Location& topLeftTile, const Location& bottomRightTile)
@@ -69,7 +69,7 @@ public:
 
   constexpr bool operator==(const MapRect& other) const
     { return (x1 == other.x1) && (y1 == other.y1) && (x2 == other.x2) && (y2 == other.y2); }
-  constexpr operator bool() const { return (x1 != INT_MIN) && (y1 != INT_MIN) && (x2 != INT_MIN) && (y2 != INT_MIN); }
+  constexpr operator bool() const { return (x1 != -1) && (y1 != -1) && (x2 != -1) && (y2 != -1); }
 
   int      Width()  const { return Thunk<0x475AA0, &$::Width>();  }
   int      Height() const { return Thunk<0x475AE0, &$::Height>(); }
@@ -108,8 +108,9 @@ struct PatrolRoute {
 
 
 namespace API {
-  using Location = Tethys::Location;
-  using MapRect  = Tethys::MapRect;
+  using Location    = Tethys::Location;
+  using MapRect     = Tethys::MapRect;
+  using PatrolRoute = Tethys::PatrolRoute;
 } // API
 
 } // Tethys

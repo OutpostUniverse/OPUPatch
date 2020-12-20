@@ -32,6 +32,7 @@
 #include <filesystem>
 #include <map>
 #include <set>
+#include <deque>
 
 using namespace Tethys;
 using namespace Tethys::API;
@@ -373,12 +374,11 @@ bool SetLocalizationPatch(
 {
   static Patcher::PatchContext op2Patcher;
   static Patcher::PatchContext shellPatcher("OP2Shell.dll", true);
+  static std::deque<char*>     pAllocations;
   bool success = true;
 
-  if (enable) {
-    char confPath[MAX_PATH] = "";
-
-    if (g_resManager.GetFilePath("language.ini", &confPath[0])) {
+  if (enable && ((op2Patcher.NumPatches() + shellPatcher.NumPatches()) == 0)) {
+    if (char confPath[MAX_PATH] = "";  g_resManager.GetFilePath("language.ini", &confPath[0])) {
       auto PatchStrings = [confPath](const char* pSectionName, auto& stringTable, Patcher::PatchContext* pPatcher) {
         bool success       = true;
         char setting[1024] = "";
@@ -389,9 +389,11 @@ bool SetLocalizationPatch(
 
           if ((len != 0) && (setting[0] != '\0')) {
             std::string str = UnEscapeString(setting);
-            char*const pBuf = static_cast<char*>(OP2Alloc(str.length() + 1));
-            strncpy_s(pBuf, str.length() + 1, str.data(), _TRUNCATE);
-            success &= (pPatcher->Write(&stringTable[i], &pBuf[0]) == PatcherStatus::Ok);
+            if (char*const pBuf = static_cast<char*>(OP2Alloc(str.length() + 1));  success = (pBuf != nullptr)) {
+              pAllocations.push_back(pBuf);
+              strncpy_s(pBuf, str.length() + 1, str.data(), _TRUNCATE);
+              success &= (pPatcher->Write(&stringTable[i], &pBuf[0]) == PatcherStatus::Ok);
+            }
           }
         }
 
@@ -402,14 +404,23 @@ bool SetLocalizationPatch(
                 PatchStrings("Shell", GetShellLocalizedStringTable(), &shellPatcher);
 
       if (success) {
-        OP2Thunk<0x45C710>();  // Call ReportButtonHelpText::Init() to refresh report button mouseover text
+        static const auto cleanup = atexit([] { SetLocalizationPatch(false); });
       }
     }
   }
 
   if ((enable == false) || (success == false)) {
+    for (char* pAllocation : pAllocations) {
+      OP2Free(pAllocation);
+    }
+    pAllocations.clear();
+
     success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
     success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  if (success) {
+    OP2Thunk<0x45C710>();  // Call ReportButtonHelpText::Init() to refresh report button mouseover text
   }
 
   return success;
@@ -891,7 +902,7 @@ bool SetMissionListNamePatch(
       *ppLevelDesc = (it != missionNames.end()) ? it->second.data() : nullptr;
 
       // us_them is a useless unit reference-type mission where both players are uncontrollable AIs (forced to GoAI())
-      // that is set to MissionType::Colony.  Set its mission type to 0 to hide it from mission list UIs.
+      // that is set to MissionType::Colony.  Force its mission type to 0 to hide it from normal mission list UIs.
       if (moduleName == "us_them.dll") {
         static const ModDesc Desc =
           { MissionType{0}, pModDesc->numPlayers, pModDesc->maxTechLevel, pModDesc->unitMission };
@@ -945,6 +956,27 @@ bool SetDefaultIniSettingsPatch(
   if ((enable == false) || (success == false)) {
     success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
     success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Force-enable the restart game button when running multiplayer missions locally via the debug (run script) dialog.
+bool SetDebugRestartGamePatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In GameOptionsPane::AddControls()
+    patcher.HookCall(0x465B6D, []() -> ibool { return g_gameImpl.gameStartInfo_.startupFlags.isMultiplayer; });
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
   }
 
   return success;

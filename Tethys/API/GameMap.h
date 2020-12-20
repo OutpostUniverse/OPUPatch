@@ -64,6 +64,10 @@ public:
   static MapRect GetClipRect() { return GetImpl()->clipRect_; }
   ///@}
 
+  /// Finds a clear area to place a unit of the given type nearest to the requested location.
+  static Location FindUnitPlacementLocation(Location where, MapID unitType = MapID::CargoTruck)
+    { Location loc;  GetImpl()->FindUnitPlacementLocation(unitType, where, &loc);  return loc; }
+
   /// Loads a new map from the given file.  @warning This may crash if there are units on the map.
   static bool Load(const char* pFilename) { GetImpl()->Deinit();  return GetImpl()->LoadFromFile(pFilename); }
 

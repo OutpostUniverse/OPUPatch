@@ -64,9 +64,9 @@ public:
   const T* GetMapObject() const { return IsValid() ? T::GetInstance(size_t(id_)) : nullptr; }
   ///@}
 
-  ///@{ Get the internal MapObjectType that this unit is managed by.
-        MapEntityType* GetMapObjectType()       { return IsValid() ? MapEntityType::GetInstance(GetType()) : nullptr; }
-  const MapEntityType* GetMapObjectType() const { return IsValid() ? MapEntityType::GetInstance(GetType()) : nullptr; }
+  ///@{ Get the internal MapObjectType that this unit is managed by.  (Returns MaxObjectType if !IsValid())
+        MapEntityType* GetMapObjectType()       { return MapEntityType::GetInstance(GetType()); }
+  const MapEntityType* GetMapObjectType() const { return MapEntityType::GetInstance(GetType()); }
   ///@}
 
   int GetOwner()       const { return IsValid() ? GetMapObject()->ownerNum_            : -1; }
@@ -87,9 +87,9 @@ public:
   }
   POINT    GetPixel() const { auto*const p = GetMapObject(); return p ? POINT{p->pixelX_, p->pixelY_} : POINT{-1, -1}; }
 
-  int  GetMaxHitpoints() const { return IsLive() ? GetMapObjectType()->playerStats_[GetCreator()].hp : 0; }
-  int  GetDamage()       const { return IsLive() ? GetMapObject()->damage_                           : 0; }
-  void AddDamage(int damage)   { SetDamage(GetDamage() + damage);                                         }
+  int  GetMaxHitpoints() const { return IsLive() ? GetPlayerUnitStats().hp : 0; }
+  int  GetDamage()       const { return IsLive() ? GetMapObject()->damage_ : 0; }
+  void AddDamage(int damage)   { SetDamage(GetDamage() + damage);               }
   void SetDamage(int damage)
     { if (IsLive() && ((GetMapObject()->damage_ = damage) >= GetMaxHitpoints())) { DoDeath(); } }
 
@@ -118,7 +118,10 @@ public:
   bool IsEMPed()     const    { return HasFlag(MoFlagEMPed);                          }
   void SetEMPed(int duration) { if (IsLive()) { GetMapObject()->SetEMPed(duration); } }
 
-  // ** TODO GetESGTimer()/SetESGed()?
+  int  GetESGTimer() const { return IsVehicle() ? GetMapObject<Vehicle>()->timerESG_ : 0; }
+  int  IsESGed()     const { return HasFlag(MoFlagESGed); }
+  void SetESGed(int duration)
+    { if (IsVehicle()) { GetMapObject<Vehicle>()->timerESG_ = duration; }  SetFlag(MoFlagESGed, true); }
 
   /// Global helper function to get the UnitClassification for the given unit type and cargo type combination.
   static UnitClassification FASTCALL GetClassificationFor(MapID unitType, MapID cargoWeaponType)
@@ -149,6 +152,11 @@ public:
   void SetAnimation(int animIdx, int delay, int startDelay, bool isSpecialAnim, bool skipDoDeath)
     { if (IsValid()) { GetMapObject()->SetAnimation(animIdx, delay, startDelay, isSpecialAnim, skipDoDeath); } }
 
+        PerPlayerUnitStats& GetPlayerUnitStats()       { return GetMapObjectType()->playerStats_[GetCreator()]; }
+  const PerPlayerUnitStats& GetPlayerUnitStats() const { return GetMapObjectType()->playerStats_[GetCreator()]; }
+        GlobalUnitStats&    GetGlobalUnitStats()       { return GetMapObjectType()->stats_;                     }
+  const GlobalUnitStats&    GetGlobalUnitStats() const { return GetMapObjectType()->stats_;                     }
+
   ///@{ Get/set internal @ref MapObjectFlags.
   bool HasFlag(uint32  flag)  const   { return IsValid() && TethysUtil::BitFlagTest(GetMapObject()->flags_,  flag);  }
   bool HasFlags(uint32 flags) const   { return IsValid() && TethysUtil::BitFlagsTest(GetMapObject()->flags_, flags); }
@@ -157,6 +165,7 @@ public:
 
   /// Gets the next Unit on the map (sorted ascending by pixel Y).  Can be iterated while IsValid().
   Unit GetNext() { auto*const p = GetMapObject();  return Unit((p && (p->pNext_ != p)) ? p->pNext_ : nullptr); }
+
   /// Gets the next Unit in the owner player's building/vehicle/beacon/entity list (sorted by newest to oldest).
   /// Can be iterated while IsValid().
   Unit GetPlayerNext()
@@ -185,9 +194,8 @@ public:
   ///@{ [Cargo Truck]
   TruckCargo GetTruckCargoType()   { return TruckCargo(IsLive() ? GetMapObject()->truckCargoType_   : 0); }
   int        GetTruckCargoAmount() { return            IsLive() ? GetMapObject()->truckCargoAmount_ : 0;  }
-  void SetCargo(TruckCargo cargo, int amount) {
-    if (IsValid()) { auto*const p = GetMapObject(); p->truckCargoType_ = uint16(cargo); p->truckCargoAmount_ = amount; }
-  }
+  void SetCargo(TruckCargo cargo, int amount)
+    { if (IsVehicle()) { auto*p = GetMapObject(); p->truckCargoType_ = uint16(cargo); p->truckCargoAmount_ = amount; } }
   ///@}
 
   int  GetStickyfoamTimer() const    { return IsVehicle() ? GetMapObject<Vehicle>()->timerStickyfoam_ : 0; }
@@ -217,17 +225,20 @@ public:
   // ---------------------------------------------- Specific to buildings ----------------------------------------------
 
   ///@{ [Factory]
-  void GetFactoryCargo(int bay, MapID* pUnitType, MapID* pCargoOrWeaponType) const;
+  void GetFactoryCargo(int bay, MapID* pUnitType, MapID* pCargoOrWeaponType) const {
+    auto*const pMo      = (IsFactory() && (bay >= 0) && (bay < 6)) ? GetMapObject<FactoryBuilding>() : nullptr;
+    *pUnitType          = (pMo != nullptr) ? MapID(pMo->cargoBayContents_[bay])     : MapID::None;
+    *pCargoOrWeaponType = (pMo != nullptr) ? MapID(pMo->cargoBayCargoOrWeapon_[bay]): MapID::None;
+  }
   void SetFactoryCargo(int bay, MapID   unitType, MapID   cargoOrWeaponType = MapID::None) {
-    if (IsFactory() && (bay >= 0) && (bay < 6)) {
-      auto*const pMo = GetMapObject<FactoryBuilding>();
+    if (auto*const pMo = GetMapObject<FactoryBuilding>();  IsFactory() && (bay >= 0) && (bay < 6)) {
       pMo->cargoBayContents_[bay]      = unitType;
       pMo->cargoBayCargoOrWeapon_[bay] = cargoOrWeaponType;
     }
   }
 
   Location FindFactoryOutputLocation(MapID itemToProduce = MapID::CargoTruck) const
-    { Location loc; MapImpl::GetInstance()->FindFactoryOutputLocation(itemToProduce, GetLocation(), &loc); return loc; }
+    { Location loc; MapImpl::GetInstance()->FindUnitPlacementLocation(itemToProduce, GetLocation(), &loc); return loc; }
   ///@}
 
   /// [Garage, StructureFactory, Spaceport]
@@ -243,7 +254,8 @@ public:
   ///@{ [Garage]
   Unit GetUnitInGarage(int bay) const
     { return Unit((IsLive() && (bay >= 0) && (bay < 6)) ? GetMapObject<MapObj::Garage>()->pUnitInBay_[bay] : nullptr); }
-  void PutInGarage(int bay, int tileX, int tileY) { Thunk<0x476160, &$::PutInGarage>(bay, tileX, tileY); }
+  void PutInGarage(Unit garage, int bay)
+    { Location dock = garage.GetDockLocation();  Thunk<0x476160, void(int, int, int)>(bay, dock.x, dock.y); }
   ///@}
 
   ///@{ [Spaceport]
@@ -291,21 +303,6 @@ public:
   int id_;
 };
 
-
-// =====================================================================================================================
-inline void Unit::GetFactoryCargo(
-  int    bay,
-  MapID* pUnitType,
-  MapID* pCargoOrWeaponType
-  ) const
-{
-  *pUnitType = *pCargoOrWeaponType = MapID::None;
-  if (IsFactory() && (bay >= 0) && (bay < 6)) {
-    auto*const pMo      = GetMapObject<FactoryBuilding>();
-    *pUnitType          = MapID(pMo->cargoBayContents_[bay]);
-    *pCargoOrWeaponType = MapID(pMo->cargoBayCargoOrWeapon_[bay]);
-  }
-}
 
 // =====================================================================================================================
 inline void Unit::DoSimpleCommand(
