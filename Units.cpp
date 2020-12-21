@@ -741,14 +741,14 @@ bool SetTruckLoadPartialCargoPatch(
     // In CountTrigger::HasFired()
     patcher.LowLevelHook(0x493D5C, [](Eax<int> unitID, Esi<TruckCargo> cargo, Ebx<int>& counter) {
       if (auto* pTruck = MapObject::GetInstance(unitID);  TruckCargo(pTruck->truckCargoType_) == cargo) {
-        counter += ((cargo == TruckCargo::Empty) || (cargo >= TruckCargo::Spacecraft)) ? 1 : pTruck->truckCargoAmount_;
+        counter += ((cargo > TruckCargo::Empty) || (cargo < TruckCargo::Spacecraft)) ? pTruck->truckCargoAmount_ : 1;
       }
       return 0x493D87;
     });
     patcher.LowLevelHook(0x493E14, [](Edi<MapObject*> pTruckInGarage, Ecx<TruckCargo> cargo, Ebx<int>& counter) {
       if (TruckCargo(pTruckInGarage->truckCargoType_) == cargo) {
         counter +=
-          ((cargo == TruckCargo::Empty) || (cargo >= TruckCargo::Spacecraft)) ? 1 : pTruckInGarage->truckCargoAmount_;
+          ((cargo > TruckCargo::Empty) || (cargo < TruckCargo::Spacecraft)) ? pTruckInGarage->truckCargoAmount_ : 1;
       }
       return 0x493E2A;
     });
