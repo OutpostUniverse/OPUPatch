@@ -771,7 +771,8 @@ bool SetChecksumPatch(
 
       // Normally, edentek.txt, ply_tek.txt, and multitek.txt get checksummed here.
       // Use these 3 slots instead for the actual map's tech checksum, op2ext.dll, and OPUPatch.dll.
-      AddChecksum((pAIModDesc == nullptr) ? 0 : ChecksumTech(pAIModDesc->pTechtreeName), pAIModDesc->pTechtreeName);
+      AddChecksum((pAIModDesc != nullptr) ? ChecksumTech(pAIModDesc->pTechtreeName) : 0,
+                  (pAIModDesc != nullptr) ? pAIModDesc->pTechtreeName               : "Invalid script's tech");
       AddChecksum(op2ExtChecksum,   "op2ext.dll");
       AddChecksum(opuPatchChecksum, "OPUPatch.dll");
 
@@ -782,10 +783,11 @@ bool SetChecksumPatch(
       AddChecksum(0x59010E28, "Outpost2.exe");
 
       // Checksum mission script
-      AddChecksum((pAIModDesc == nullptr) ? 0 : pAIModDesc->checksum, pFilename);
+      AddChecksum((pAIModDesc != nullptr) ? pAIModDesc->checksum : 0, pFilename);
 
       // Checksum map file
-      AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pMapName), pAIModDesc->pMapName);
+      AddChecksum((pAIModDesc != nullptr) ? g_resManager.ChecksumStream(pAIModDesc->pMapName) : 0,
+                  (pAIModDesc != nullptr) ? pAIModDesc->pMapName                              : "Invalid script's map");
 
       // Overall checksum
       AddChecksum(TApp::ChecksumData(pOut, sizeof(int) * i), "Overall");
