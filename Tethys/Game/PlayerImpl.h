@@ -80,7 +80,7 @@ public:
   void DoTransferToAllies() { return Thunk<0x4909F0, &$::DoTransferToAllies>(); }
 
   void UpdateNumColonists()          { return Thunk<0x471D60, &$::UpdateNumColonists>();          }
-  void UpdateColonyStatusAndReport() { return Thunk<0x471D60, &$::UpdateColonyStatusAndReport>(); }
+  void UpdateColonyStatusAndReport() { return Thunk<0x471FD0, &$::UpdateColonyStatusAndReport>(); }
 
   uint16 GetMiniMapColor()  const { return Thunk<0x490CE0, &$::GetMiniMapColor>();  }
   uint16 GetChatTextColor() const { return Thunk<0x490BE0, &$::GetChatTextColor>(); }

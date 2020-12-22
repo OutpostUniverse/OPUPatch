@@ -904,9 +904,9 @@ bool SetMissionListNamePatch(
       // us_them is a useless unit reference-type mission where both players are uncontrollable AIs (forced to GoAI())
       // that is set to MissionType::Colony.  Force its mission type to 0 to hide it from normal mission list UIs.
       if (moduleName == "us_them.dll") {
-        static const ModDesc Desc =
+        static const ModDesc desc =
           { MissionType{0}, pModDesc->numPlayers, pModDesc->maxTechLevel, pModDesc->unitMission };
-        pModDesc = &Desc;
+        pModDesc = &desc;
       }
     });
 

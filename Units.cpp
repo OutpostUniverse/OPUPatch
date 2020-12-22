@@ -22,7 +22,7 @@ using namespace Patcher::Util;
 using namespace Patcher::Registers;
 
 static constexpr uint32 MaxUnits = 2048;
-static_assert(MaxUnits <= 2048,                  "MaxUnits cannot exceed 2048 (map encodes unit index in 11 bits).");
+static_assert(MaxUnits <= (1u << 11),            "MaxUnits cannot exceed 2048 (map encodes unit index in 11 bits).");
 static_assert((MaxUnits & (MaxUnits - 1)) == 0,  "MaxUnits must be power-of-two.");
 
 // Replacement per-player count unit limits:  1P   2P   3P   4P   5P   6P
@@ -105,12 +105,10 @@ bool SetUnitLimitPatch(
 
     // Reimplement MapObjectDrawList::BuildDrawLists()
     patcher.HookCall(0x407EC7, ThiscallLambdaPtr([](MapObjDrawList* pThis) {
-      Viewport*const pViewport = pThis->pViewport_;
-      if (pViewport != nullptr) {
+      if (Viewport*const pViewport = pThis->pViewport_;  pViewport != nullptr) {
         pThis->numUnits_ = pThis->numEntities_ = 0;
         for (auto* pMo = g_mapImpl.pMapObjListBegin_->pNext_;  pMo->pNext_ != pMo;  pMo = pMo->pNext_) {
-          if (pMo->IsVisible(pViewport)) {
-            const bool isEntity = (pMo->flags_ & (MoFlagEntity | MoFlagEntChild));
+          if (const bool isEntity = (pMo->flags_ & (MoFlagEntity | MoFlagEntChild));  pMo->IsVisible(pViewport)) {
             (isEntity ? entityDrawList[pThis->numEntities_++] : unitDrawList[pThis->numUnits_++]) = pMo;
           }
         }
@@ -122,7 +120,7 @@ bool SetUnitLimitPatch(
           }
         }
 
-        if (TethysGame::GetImpl()->daylightEverywhere_ == false) {
+        if (g_gameImpl.daylightEverywhere_ == false) {
           memset(pViewport->pLightBitVector_, 0, pViewport->redrawBitVectorSize_);
           ++(pViewport->maxTileX_);
           ++(pViewport->maxTileY_);
@@ -219,7 +217,7 @@ bool SetDrawLightningFix(
     // ** TODO debug the case where this happens more closely, this should never be called with nullptr
     patcher.Hook(0x48AE40, SetCapturedTrampoline, ThiscallFunctor(
       [F = decltype(MapObject::VtblType::pfnDraw){}](MapObject* pThis, Viewport* pV) { if (pThis) { F(pThis, pV); } }));
-      
+
     patcher.LowLevelHook(0x48AFF5, [](Esi<MapObj::ThorsHammer*> pThis) {
       auto*const pSrc   = MapObject::GetInstance(pThis->parentIndex_);
       const int  player = (pSrc != nullptr) ? pSrc->creatorNum_ : 6;

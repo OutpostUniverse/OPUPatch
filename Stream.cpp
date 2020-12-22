@@ -736,7 +736,6 @@ static uint32 ChecksumTech(
   return checksum;
 }
 
-
 // =====================================================================================================================
 // Changes netplay game start checksum validation logic.
 bool SetChecksumPatch(
@@ -754,37 +753,42 @@ bool SetChecksumPatch(
       AIModDesc* pAIModDesc = nullptr;
       if (const std::filesystem::path scriptPath = GetFilePath(pFilename, true);  scriptPath.empty() == false) {
         pAIModDesc = MissionManager::GetModuleDesc(scriptPath.string().data());
+        if (scriptPath.is_absolute()) {
+          g_curMapPath = scriptPath.parent_path();
+        }
       }
 
       int  i      = 0;
       bool result = true;
-      auto AddChecksum = [pOut, &result, &i](uint32 checksum) { pOut[i++] = checksum;  result &= (checksum != 0); };
+      auto AddChecksum = [pOut, &result, &i](uint32 checksum, const char* pName = "") {
+        pOut[i++] = checksum; result &= (checksum != 0); DEBUG_MSG("%s checksum = %08X", pName ? pName : "", checksum);
+      };
 
       // Checksum sheets
-      for (const char* p : { "building.txt", "mines.txt", "morale.txt", "space.txt", "vehicle.txt", "weapons.txt" }) {
-        AddChecksum(g_resManager.ChecksumStream(p));
+      for (const char* p : { "building.txt", "mines.txt", "morale.txt", "space.txt", "vehicles.txt", "weapons.txt" }) {
+        AddChecksum(g_resManager.ChecksumStream(p), p);
       }
 
       // Normally, edentek.txt, ply_tek.txt, and multitek.txt get checksummed here.
       // Use these 3 slots instead for the actual map's tech checksum, op2ext.dll, and OPUPatch.dll.
-      AddChecksum((pAIModDesc == nullptr) ? 0 : ChecksumTech(pAIModDesc->pTechtreeName));
-      AddChecksum(op2ExtChecksum);
-      AddChecksum(opuPatchChecksum);
+      AddChecksum((pAIModDesc == nullptr) ? 0 : ChecksumTech(pAIModDesc->pTechtreeName), pAIModDesc->pTechtreeName);
+      AddChecksum(op2ExtChecksum,   "op2ext.dll");
+      AddChecksum(opuPatchChecksum, "OPUPatch.dll");
 
       // Checksum OP2Shell.dll (seems pointless, multiplayer setup dialogs are all handled inside Outpost2.exe)
-      AddChecksum(g_tApp.ChecksumShell());
+      AddChecksum(g_tApp.ChecksumShell(), "OP2Shell.dll");
 
       // Checksum Outpost2.exe (seems pointless as long as this is a const, maybe we can reuse this for something else)
-      AddChecksum(0x59010E28);
+      AddChecksum(0x59010E28, "Outpost2.exe");
 
       // Checksum mission script
-      AddChecksum((pAIModDesc == nullptr) ? 0 : pAIModDesc->checksum);
+      AddChecksum((pAIModDesc == nullptr) ? 0 : pAIModDesc->checksum, pFilename);
 
       // Checksum map file
-      AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pMapName));
+      AddChecksum((pAIModDesc == nullptr) ? 0 : g_resManager.ChecksumStream(pAIModDesc->pMapName), pAIModDesc->pMapName);
 
       // Overall checksum
-      AddChecksum(TApp::ChecksumData(pOut, sizeof(int) * i));
+      AddChecksum(TApp::ChecksumData(pOut, sizeof(int) * i), "Overall");
       assert(i == 14);
 
       if (pAIModDesc != nullptr) {

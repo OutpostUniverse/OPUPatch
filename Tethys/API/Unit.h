@@ -538,8 +538,8 @@ inline void Unit::DoLaunch(
 
     CommandPacket packet = { CommandType::Launch, sizeof(LaunchCommand) };
     packet.data.launch.unitID       = id_;
-    packet.data.launch.targetPixelX = target.GetPixelX();
-    packet.data.launch.targetPixelY = target.GetPixelY();
+    packet.data.launch.targetPixelX = target ? target.GetPixelX() : 0;
+    packet.data.launch.targetPixelY = target ? target.GetPixelY() : 0;
     ProcessCommandPacket(packet);
 
     if (forceEnable) {

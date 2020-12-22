@@ -37,6 +37,7 @@ public:
   void SetPlayerName(const char* pName) { if (IsValid()) { GetImpl()->SetPlayerName(pName); } }
   void SetColor(PlayerColor      color) { if (IsValid()) { GetImpl()->colorType_ = color;   } }
 
+  int  GetPopulation()            const { return GetKids() + GetWorkers() + GetScientists();               }
   int  GetKids()                  const { return IsValid() ?  GetImpl()->numKids_       : 0;               }
   int  GetWorkers()               const { return IsValid() ?  GetImpl()->numWorkers_    : 0;               }
   int  GetScientists()            const { return IsValid() ?  GetImpl()->numScientists_ : 0;               }

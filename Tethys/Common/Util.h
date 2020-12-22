@@ -10,8 +10,7 @@
 # include <intrin.h>
 #endif
 
-namespace Tethys {
-namespace TethysUtil {
+namespace Tethys::TethysUtil {
 
 /// Returns the size in elements of a C-style array.
 template <typename T, size_t N>  constexpr size_t ArrayLen(const T (&array)[N]) { return N; }
@@ -53,5 +52,4 @@ inline bool GetNextBit(
   return result;
 }
 
-} // TethysUtil
-} // Tethys
+} // Tethys::TethysUtil

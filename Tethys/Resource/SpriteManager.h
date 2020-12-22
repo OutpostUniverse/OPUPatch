@@ -57,10 +57,10 @@ public:
    SpriteManager() { InternalCtor<0x404320>(); }
   ~SpriteManager() { Thunk<0x4043C0>();        }
 
-  static SpriteManager* GetInstance() { return OP2Mem<SpriteManager*&>(0x40423B); }  // 0x4EFD68
-
   FrameOptionalInfo GetFrameOptionalInfo(int animIndex, int frameIndex)
-    { return Thunk<0x404F00, &SpriteManager::GetFrameOptionalInfo>(animIndex, frameIndex); }
+    { return Thunk<0x404F00, &$::GetFrameOptionalInfo>(animIndex, frameIndex); }
+
+  static SpriteManager* GetInstance() { return OP2Mem<SpriteManager*&>(0x40423B); }  // 0x4EFD68
 
 public:
   static constexpr size_t MaxNumImages     = 5608;

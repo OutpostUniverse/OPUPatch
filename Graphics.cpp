@@ -193,7 +193,13 @@ bool SetDpiFix(
 
   if (pfnSetThreadDpiAwarenessContext != nullptr) {
     if (enable) {
-      oldCtx  = pfnSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
+      int dpiAwareness = g_configFile.GetInt("Game", "DPIAwareness", INT_MAX);
+      if (dpiAwareness == INT_MAX) {
+        dpiAwareness = int(DPI_AWARENESS_CONTEXT_UNAWARE);  // Default to DPI-unaware
+        g_configFile.SetInt("Game", "DPIAwareness", dpiAwareness);
+      }
+
+      oldCtx  = pfnSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT(dpiAwareness));
       success = (oldCtx != NULL);
 
       if (success) {

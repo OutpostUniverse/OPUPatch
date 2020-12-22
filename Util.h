@@ -27,9 +27,11 @@ inline bool IsVirtualMachine() {
 
 
 // Printfs a debug message.  You need to include stdio.h and windows.h to use this.
-#if _DEBUG || ENABLE_DEBUG_MSG
-# define DEBUG_MSG(format, ...)  \
+#define DEBUG_MSG(format, ...)  \
   { char dbgStr[1024]; snprintf(dbgStr, sizeof(dbgStr), format "\n", __VA_ARGS__); OutputDebugStringA(dbgStr); } (void)0
+
+#if _DEBUG || ENABLE_DEBUG_MSG
+# define DEBUG_ONLY_MSG(format, ...) DEBUG_MSG(format, ...)
 #else
-# define DEBUG_MSG(format, ...)
+# define DEBUG_ONLY_MSG(format, ...)
 #endif

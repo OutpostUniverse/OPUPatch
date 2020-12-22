@@ -34,7 +34,7 @@ DLLAPI void InitMod(
 
   // Stream
   success &= SetFileSearchPathPatch(true);  // NOTE: This must handle loading patched DLLs like OP2Shell, odasl, etc.
-  //success &= SetChecksumPatch(true);
+  success &= SetChecksumPatch(true);
   success &= SetCodecFix(true);
 
   // Netplay
