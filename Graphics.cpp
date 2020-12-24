@@ -195,7 +195,7 @@ bool SetDpiFix(
     if (enable) {
       int dpiAwareness = g_configFile.GetInt("Game", "DPIAwareness", INT_MAX);
       if (dpiAwareness == INT_MAX) {
-        dpiAwareness = int(DPI_AWARENESS_CONTEXT_UNAWARE);  // Default to DPI-unaware
+        dpiAwareness = int(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);  // Default to DPI-unaware with GDI scaling
         g_configFile.SetInt("Game", "DPIAwareness", dpiAwareness);
       }
 
