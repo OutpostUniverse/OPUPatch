@@ -32,6 +32,12 @@ DLLAPI void InitMod(
   success &= SetPrintfFloatFix(true);
   success &= SetGlobalMusicFix(true);
 
+  // Graphics
+  success &= SetWindowFix(true);
+  success &= SetDwmFix(true);
+  success &= SetDpiFix(true);
+  success &= SetAlphaBlendPatch(true);
+
   // Stream
   success &= SetFileSearchPathPatch(true);  // NOTE: This must handle loading patched DLLs like OP2Shell, odasl, etc.
   success &= SetChecksumPatch(true);
@@ -57,12 +63,6 @@ DLLAPI void InitMod(
   success &= SetControlGroupHotkeyPatch(true);
   success &= SetDefaultIniSettingsPatch(true);
   success &= SetDebugRestartGamePatch(true);
-
-  // Graphics
-  success &= SetWindowFix(true);
-  success &= SetDwmFix(true);
-  success &= SetDpiFix(true);
-  success &= SetAlphaBlendPatch(true);
 
   // ScStub
   success &= SetScStubPatch(true);
