@@ -738,6 +738,7 @@ static uint32 ChecksumTech(
 
 // =====================================================================================================================
 // Changes netplay game start checksum validation logic.
+// ** TODO output checksums to log file when checksum mismatch occurs, for now there's debug messages
 bool SetChecksumPatch(
   bool enable)
 {
@@ -760,7 +761,7 @@ bool SetChecksumPatch(
 
       int  i      = 0;
       bool result = true;
-      auto AddChecksum = [pOut, &result, &i](uint32 checksum, const char* pName = "") {
+      auto AddChecksum = [pOut, &result, &i](uint32 checksum, const char* pName = nullptr) {
         pOut[i++] = checksum; result &= (checksum != 0); DEBUG_MSG("%s checksum = %08X", pName ? pName : "", checksum);
       };
 

@@ -199,11 +199,13 @@ bool SetDpiFix(
         g_configFile.SetInt("Game", "DPIAwareness", dpiAwareness);
       }
 
-      oldCtx  = pfnSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT(dpiAwareness));
-      success = (oldCtx != NULL);
+      if (dpiAwareness != 0) {
+        oldCtx  = pfnSetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT(dpiAwareness));
+        success = (oldCtx != NULL);
 
-      if (success) {
-        static const auto cleanup = atexit([] { SetDpiFix(false); });
+        if (success) {
+          static const auto cleanup = atexit([] { SetDpiFix(false); });
+        }
       }
     }
     else if (oldCtx != NULL) {
