@@ -745,7 +745,8 @@ bool SetSavantNotificationPatch(
     patcher.HookCall(
       0x47275B,
       ThiscallLambdaPtr([](MessageLog* pThis, int pixelX, int pixelY, char* pMsg, SoundID soundID) -> int {
-        const bool skip = (soundID == SoundID::Savant27) && (prevPowerSound == soundID);
+        const bool skip = ((soundID == SoundID::Savant27) && (prevPowerSound == soundID)) ||
+                          (g_gameImpl.GetPlayer(TethysGame::LocalPlayer())->amountPowerConsumed_ == 0);
         prevPowerSound  = (skip || pThis->AddMessage(pixelX, pixelY, pMsg, soundID)) ? soundID : SoundID{};
         return (prevPowerSound != SoundID{});
       }));
@@ -753,7 +754,7 @@ bool SetSavantNotificationPatch(
     // Silence repeated "metals storage needed".
     static auto DoMetalAlert = [](int capacity, int amount, size_t strIdx, SoundID soundID, bool* pStorageNeeded) {
       const int  threshold = *pStorageNeeded ? 5000 : 1000;  // Remaining storage threshold for the alert
-      const bool doAlert   = (capacity < 100000) && ((capacity - threshold) < amount);
+      const bool doAlert   = (capacity != 0) && (capacity < 100000) && ((capacity - threshold) < amount);
       if (*pStorageNeeded != doAlert) {
         *pStorageNeeded = doAlert && g_messageLog.AddMessage(-1, -1, GetLocalizedString(strIdx), soundID);
       }
@@ -783,7 +784,8 @@ bool SetSavantNotificationPatch(
       0x4721EA,
       ThiscallLambdaPtr([](MessageLog* pThis, int pixelX, int pixelY, char* pMsg, SoundID soundID) -> int {
         const bool skip =
-          ((soundID == SoundID::Savant24) || (soundID == SoundID::Savnt226)) && (prevFoodSound == soundID);
+          (((soundID == SoundID::Savant24) || (soundID == SoundID::Savnt226)) && (prevFoodSound == soundID)) ||
+          (g_gameImpl.GetPlayer(TethysGame::LocalPlayer())->totalFoodConsumption_ == 0);
         prevFoodSound   = (skip || pThis->AddMessage(pixelX, pixelY, pMsg, soundID)) ? soundID : SoundID{};
         return (prevFoodSound != SoundID{});
       }));

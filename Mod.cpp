@@ -6,8 +6,6 @@
 #include "Util.h"
 #include "Library.h"
 
-#include <list>
-
 // =====================================================================================================================
 BOOL APIENTRY DllMain(
   HINSTANCE  hInstDll,

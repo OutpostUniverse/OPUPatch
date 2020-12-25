@@ -217,6 +217,57 @@ bool SetDpiFix(
 }
 
 // =====================================================================================================================
+// Forces game to be rendered as often as possible and not just during game sim cycle updates.
+// ** TODO Fix scrolling speed handled by DetailPane and MiniMapPane, test for possible desyncs?
+bool SetFpsPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    static int noRenderFpsLimit = g_configFile.GetInt("Game", "NoRenderFPSLimit", -1);
+    if (noRenderFpsLimit == -1) {
+      noRenderFpsLimit = 0;
+      g_configFile.SetInt("Game", "NoRenderFPSLimit", noRenderFpsLimit);
+    }
+
+    static int timeMsPassed = 0;
+
+    // In GameFrame::OnIdle()
+    patcher.LowLevelHook(0x49C376, [](Eax<uint32> relTimeMs, Esi<GameFrame*> pThis) {
+      if (noRenderFpsLimit && (pThis->iniSettings_.frameSkip <= 1)) {
+        timeMsPassed = relTimeMs;
+        pThis->detailPane_.OnIdle();
+        pThis->miniMapPane_.OnIdle();
+        pThis->commandPane_.OnIdle();
+        timeMsPassed = 0;
+      }
+    });
+
+    // In DetailPane::HandleScrolling()
+    patcher.LowLevelHook(0x407B3F, [](Eax<uint32>& actualScrollRate) { return (timeMsPassed != 0) ? 0x407E3C : 0; });
+
+    // Prevent fumarole ambient sound from being played many times
+    // In Fumarole::Draw()
+    patcher.LowLevelHook(0x405AA2, [] { return (timeMsPassed != 0) ? 0x405AB6 : 0; });
+
+    // Prevent meteor defense sounds from being played many times
+    // In Meteor::Draw(), EMPMissile::Draw()
+    patcher.LowLevelHook(0x44ACB9, [] { return (timeMsPassed != 0) ? 0x44ACEC : 0; });
+    patcher.LowLevelHook(0x48075B, [] { return (timeMsPassed != 0) ? 0x48078E : 0; });
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
 // Replaces translucency effects with real alpha blending, instead of emulated with checkerboard patterns.
 // ** TODO Currently only affects Acid Cloud drawing
 bool SetAlphaBlendPatch(

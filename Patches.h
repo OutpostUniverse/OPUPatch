@@ -42,6 +42,7 @@ bool SetDebugRestartGamePatch(bool enable);
 bool SetWindowFix(bool enable);
 bool SetDwmFix(bool enable);
 bool SetDpiFix(bool enable);
+bool SetFpsPatch(bool enable);  // ** WIP
 bool SetAlphaBlendPatch(bool enable);
 
 // ScStub
@@ -64,6 +65,6 @@ bool SetPathContextLeakFix(bool enable);
 bool SetNoAlliedDockDamageFix(bool enable);
 bool SetAllyEdwardSurveyMinesPatch(bool enable);
 bool SetMultipleRepairPatch(bool enable);
-bool SetOreRoutePatch(bool enable);  // ** WIP
+bool SetOreRoutePatch(bool enable);
 bool SetTurretAnimationPatch(bool enable);
 bool SetTruckLoadPartialCargoPatch(bool enable);
