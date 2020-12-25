@@ -46,11 +46,12 @@ DLLAPI void InitMod(
   success &= SetNetGameSpeedPatch(true);
   success &= SetBindAnyNetAdapterFix(true);
   success &= SetNoCheatsPatch(true);
-  success &= SetSigsDllCheckPatch(true);
+  success &= SetNetProtocolEnabledPatch(true);
 
   // UI
   success &= SetUiResourceReplacePatch(true);
   success &= SetChatLengthPatch(true);
+  success &= SetChatPingLocationPatch(true);
   success &= SetUiHighlightFix(true);
   success &= SetIpWindowFocusPatch(true);
   success &= SetMiniMapFix(true);

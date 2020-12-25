@@ -117,15 +117,21 @@ bool SetNoCheatsPatch(
 }
 
 // =====================================================================================================================
-// Reimplement the SIGS DLL check, which is patched out in the GOG distro.
-bool SetSigsDllCheckPatch(
+// Guts DirectPlay netplay protocol checks; reimplements the SIGS DLL check, which is patched out in the GOG distro.
+bool SetNetProtocolEnabledPatch(
   bool enable)
 {
   static Patcher::PatchContext patcher;
   bool success = true;
 
   if (enable) {
-    // Reimplement NetGameProtocol::SIGS::IsEnabled() (replace vtbl entry)
+    // Remove DirectPlay protocol enumeration
+    // Reimplement {IPXGameProtocol, ModemGameProtocol, SerialGameProtocol}::IsEnabled() (replace vtbl entry)
+    for (uintptr loc : { 0x4CF8E8, 0x4CF948, 0x4CF958 }) {
+      patcher.Write(loc, ThiscallLambdaPtr([](NetGameProtocol* pProtocol) -> ibool { return false; }));
+    }
+
+    // Reimplement SIGSGameProtocol::IsEnabled() (replace vtbl entry)
     patcher.Write(0x4CF968, ThiscallLambdaPtr([](void* pThis) {
       static const bool result =
         [] { return g_resManager.FileExists("SNWValid.dll") && g_resManager.FileExists("SierraNW.dll"); }();

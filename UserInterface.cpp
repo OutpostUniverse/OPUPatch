@@ -33,6 +33,7 @@
 #include <map>
 #include <set>
 #include <deque>
+#include <charconv>
 
 using namespace Tethys;
 using namespace Tethys::API;
@@ -336,6 +337,48 @@ bool SetChatLengthPatch(
     // ** TODO See if this can be made backwards compatible with older saves
     patcher.LowLevelHook(0x43941D, [](Eax<int> index, Esi<StreamIO*> pStream)
       { return (pStream->Read(sizeof(g_messageLogRb[0]), &g_messageLogRb[index])  != 0) ? 0x439434 : 0x43944B; });
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Allows players to ping locations by sending chat messages of the form "@tileX,tileY".
+// ** TODO look into why 
+bool SetChatPingLocationPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In Player::ProcessCommandPacket()
+    patcher.LowLevelHook(0x40FE07, [](Eax<char*> pText, Esi<ChatCommand*> pData) {
+      bool isPing = false;
+      const std::string_view msg(pData->message);
+
+      if (size_t sep = msg.find(',');  (sep != std::string_view::npos) && (msg[0] == '@')) {
+        int x = 0;
+        int y = 0;
+
+        const auto [p,  ec]  = std::from_chars(msg.data() + 1,       msg.data() + sep,        x);
+        const auto [p2, ec2] = std::from_chars(msg.data() + sep + 1, msg.data() + msg.size(), y);
+        isPing = (ec == std::errc()) && (ec2 == std::errc());
+
+        if (isPing) {
+          const Location loc = GameMap::At(x, y);
+          g_messageLog.AddMessage(loc.GetPixelX(), loc.GetPixelY(), pText, SoundID::Beep9);
+        }
+      }
+
+      return isPing ? 0x4101D3 : 0;
+    });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

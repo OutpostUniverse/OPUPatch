@@ -20,12 +20,13 @@ bool SetNatFix(bool enable);
 bool SetNetGameSpeedPatch(bool enable);
 bool SetBindAnyNetAdapterFix(bool enable);
 bool SetNoCheatsPatch(bool enable);
-bool SetSigsDllCheckPatch(bool enable);
+bool SetNetProtocolEnabledPatch(bool enable);
 bool SetQuickJoinPatch(bool enable);  // ** WIP
 
 // UI
 bool SetUiResourceReplacePatch(bool enable);
 bool SetChatLengthPatch(bool enable);
+bool SetChatPingLocationPatch(bool enable);
 bool SetUiHighlightFix(bool enable);
 bool SetIpWindowFocusPatch(bool enable);
 bool SetMiniMapFix(bool enable);
