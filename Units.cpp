@@ -4,6 +4,7 @@
 #include "Tethys/API/Player.h"
 
 #include "Tethys/Game/MapObject.h"
+#include "Tethys/Game/PathFinder.h"
 
 #include "Tethys/UI/GameFrame.h"
 #include "Tethys/UI/UICommand.h"
@@ -433,6 +434,30 @@ bool SetWreckageFix(
       0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, // nop
     });
 
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Workaround PathContext memory leaks caused by ScGroup::TakeUnit() (any others?).
+// ** TODO Properly fix the leak instead of working around it
+bool SetPathContextLeakFix(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // Allocate 10x more space for PathContexts
+    // In PathContextList::Init(), PathContextList::Load()
+    patcher.Write<uint32>(0x446B07, sizeof(PathContext[20000]));
+    patcher.Write<uint32>(0x446D24, sizeof(PathContext[20000]));
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 

@@ -60,6 +60,7 @@ bool SetDoInfectFix(bool enable);
 bool SetBuildWallFix(bool enable);
 bool SetWreckageFix(bool enable);
 bool SetMissileFix(bool enable);
+bool SetPathContextLeakFix(bool enable);
 bool SetNoAlliedDockDamageFix(bool enable);
 bool SetAllyEdwardSurveyMinesPatch(bool enable);
 bool SetMultipleRepairPatch(bool enable);

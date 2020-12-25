@@ -76,14 +76,16 @@ public:
   Location Size()   const { return Thunk<0x475C70, &$::Size>();   }
 
   /// Checks if the point is in the rect  [handles x wrap around for rect coordinates]
-  int      Check(const Location& ptToCheck) { return Thunk<0x475D50, &$::Check>(ptToCheck); }
-  Location RandPt() const                   { return Thunk<0x475CC0, &$::RandPt>();         }
+  ibool    Contains(const Location& ptToCheck) const { return Thunk<0x475D50, &$::Contains>(ptToCheck); }
+  Location RandomPoint()                       const { return Thunk<0x475CC0, &$::RandomPoint>();       }
 
   MapRect& Clip()                      { Thunk<0x475AF0>();                             return *this; }
   MapRect& Inflate(int wide, int high) { Thunk<0x475A60, void(int, int)>(wide, high);   return *this; }
   MapRect& Offset(int right, int down) { Thunk<0x475BD0, void(int, int)>(right, down);  return *this; }
   MapRect& FromPtSize(const Location& a, const Location& b)
     { Thunk<0x475C10, void(const Location&, const Location&)>(a, b);  return *this; }
+
+  Location MidPoint() const { return { (x1 + x2) / 2, (y1 + y2) / 2 }; }
 
   constexpr RECT GetPixels(bool centered = false) const {
     const int c = centered ? 16 : 0;

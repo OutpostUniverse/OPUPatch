@@ -26,10 +26,10 @@ public:
   void AddUnits(const UnitBlock& unitsToAdd)   { return Thunk<0x4799D0, &$::AddUnits>(unitsToAdd);       }
   void RemoveUnit(Unit           unitToRemove) { return Thunk<0x479BD0, &$::RemoveUnit>(unitToRemove);   }
 
-  int TotalUnitCount()                       { return Thunk<0x479A10, &$::TotalUnitCount>();    }
-  int UnitCount(UnitClassification unitType) { return Thunk<0x4799F0, &$::UnitCount>(unitType); }
+  int TotalUnitCount()                       const { return Thunk<0x479A10, &$::TotalUnitCount>();    }
+  int UnitCount(UnitClassification unitType) const { return Thunk<0x4799F0, &$::UnitCount>(unitType); }
 
-  ibool HasBeenAttacked() { return Thunk<0x479AE0, &$::HasBeenAttacked>(); }
+  ibool IsUnderAttack() const { return Thunk<0x479AE0, &$::IsUnderAttack>(); }
 
   void SetLights(ibool on) { return Thunk<0x479B60, &$::SetLights>(on); }
 
@@ -38,10 +38,12 @@ public:
   void SetTargCount(MapID unitType, MapID weaponType, int targetCount)
     { return Thunk<0x479C70, void(MapID, MapID, int)>(unitType, weaponType, targetCount); }
 
-  Unit GetFirstOfType(UnitClassification unitType)
+  Unit GetFirstOfType(UnitClassification unitType) const
     { Unit u;  Thunk<0x479A20, int(Unit*, UnitClassification)>(&u, unitType);  return u; }
-  Unit GetFirstOfType(MapID unitType, MapID cargoOrWeapon)
+  Unit GetFirstOfType(MapID unitType, MapID cargoOrWeapon) const
     { Unit u;  Thunk<0x479A60, int(Unit*, MapID, MapID)>(&u, unitType, cargoOrWeapon);  return u; }
+
+  int GetOwner() const { return GetImpl()->ownerPlayerNum_; }
 };
 
 

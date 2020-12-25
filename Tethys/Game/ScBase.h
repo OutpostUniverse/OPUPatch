@@ -153,6 +153,7 @@ static_assert(sizeof(TargetCount) == 0x14, "Incorrect TargetCount size.");
 
 /// Internal implementation for ScGroups.
 class ScGroupImpl : public ScBase {
+  using $ = ScGroupImpl;
 public:
   static ScGroupImpl* GetInstance(int index) { return static_cast<ScGroupImpl*>(ScBase::GetInstance(index)); }
 
@@ -161,6 +162,8 @@ public:
   virtual void RemoveUnit(MapObject* pMapObject);
   virtual void RemoveDeadAndCapturedUnits();
   virtual void A2();                               // 0x34 **
+
+  ibool IsUnderAttack() const { return Thunk<0x42BF10, &$::IsUnderAttack>(); }
 
 public:
   struct UnitNode {
@@ -183,8 +186,8 @@ public:
   UnitNode     unitNode_[32];                                         ///< Linked list storage for pointers for 32 units
   UnitNode*    pUnitByType_[size_t(API::UnitClassification::NotSet)]; ///< Indexed by UnitClassification
   TargetCount* pTargetCount_;                                         ///< Object to keep track of target counts
-  UnitNode*    pUnitListHead_;                                        ///< Ordered by UnitClassification
-  UnitNode*    pUnitListTail_;                                        ///< Ordered by UnitClassification
+  UnitNode*    pUnitListHead_;                                        ///< Sorted by UnitClassification; null terminated
+  UnitNode*    pUnitListTail_;                                        ///< Sorted by UnitClassification
   int          numUnits_;                                             ///< Returned by TotalUnitCount()
   int          ownerPlayerNum_;                                       ///< All units in group belong to this player
   int          deleteWhenEmptyTick_;                                  ///< Inited to -1

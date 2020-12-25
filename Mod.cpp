@@ -79,6 +79,7 @@ DLLAPI void InitMod(
   success &= SetBuildWallFix(true);
   success &= SetWreckageFix(true);
   success &= SetMissileFix(true);
+  success &= SetPathContextLeakFix(true);
   success &= SetNoAlliedDockDamageFix(true);
   success &= SetAllyEdwardSurveyMinesPatch(true);
   success &= SetMultipleRepairPatch(true);
