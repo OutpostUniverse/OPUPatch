@@ -642,6 +642,14 @@ bool SetFileSearchPathPatch(
       return found ? it->second.pMappedAddress_ : pThis->LockStream(pFilename, pSize);
     }));
 
+    // Look for saved games under OPU/saves
+    // In TFileDialog::???()
+    op2Patcher.HookCall(0x416F78, ThiscallLambdaPtr([](ResManager* pThis, char* pOut) {
+      static const auto savesPath(std::filesystem::path(g_resManager.installedDir_)/OPUDir/"saves"/"");
+      std::filesystem::create_directories(savesPath);
+      strncpy_s(pOut, MAX_PATH, savesPath.string().data(), _TRUNCATE);
+    }));
+
     success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
 
     if (success) {
