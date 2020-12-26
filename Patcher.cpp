@@ -150,10 +150,6 @@ public:
     return out;
   }
 
-  /*const cs_insn& DisassembleIter(const void* pAddress) const {
-    cs_disasm_iter(hDisasm_, (const uint8**)&pAddress,  )
-  }*/
-
   Status GetLastError() const { return TranslateCsError(cs_errno(hDisasm_)); }
 
 private:

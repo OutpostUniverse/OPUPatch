@@ -350,7 +350,8 @@ bool SetChatLengthPatch(
 
 // =====================================================================================================================
 // Allows players to ping locations by sending chat messages of the form "@tileX,tileY".
-// ** TODO look into why 
+// ** TODO Look into how to make it respond to spacebar like disaster warnings etc. do
+// ** TODO Add a mouse command to ping by clicking on the detail pane or mini map
 bool SetChatPingLocationPatch(
   bool enable)
 {
@@ -525,6 +526,7 @@ bool SetFontPatch(
 // =====================================================================================================================
 // Swap the behavior of holding shift vs. not when using control group hotkeys, such that using shift centers your view.
 // ** TODO Would like to make it so if you double-select a group (e.g. press "1" twice) that also centers your view
+// ** TODO Double clicking a unit should select all units of the same type on screen
 bool SetControlGroupHotkeyPatch(
   bool enable)
 {
@@ -689,7 +691,7 @@ bool SetVehicleCargoDisplayPatch(
         return std::string(pWeaponName) + ((pWeaponName[0] != '\0') ? " " : "") + pCargoName;
       }
       case MapID::EvacuationTransport: return pVec->cargo_ ? GetLocalizedString(LocalizedString::Colonists) : "empty";
-      default:                     return "";
+      default:                         return "";
       }
     };
 
