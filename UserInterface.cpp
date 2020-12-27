@@ -80,11 +80,9 @@ static HBITMAP LoadGdiImageFromFile(
 
   // Open the image.
   if (SUCCEEDED(hResult)) {
-    hResult = pWic->CreateDecoderFromFilename(std::filesystem::absolute(path).wstring().data(),
-                                              nullptr,
-                                              GENERIC_READ,
-                                              WICDecodeMetadataCacheOnDemand,
-                                              &pDecoder);
+    const auto filename = std::filesystem::absolute(path);
+    hResult = pWic->CreateDecoderFromFilename(
+      filename.wstring().data(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &pDecoder);
   }
 
   // Get frame 0 of the image.
@@ -143,8 +141,6 @@ static HBITMAP LoadGdiImageFromFile(
 
   if (SUCCEEDED(hResult)) {
     if (HDC hDcScreen = GetDC(NULL);  hDcScreen != NULL) {
-      const int bpp = 32;
-
       BITMAPINFO createInfo = { };
       createInfo.bmiHeader.biSize         = sizeof(BITMAPINFOHEADER);
       createInfo.bmiHeader.biWidth        =  scaleWidth;
