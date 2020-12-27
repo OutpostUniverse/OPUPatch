@@ -94,10 +94,10 @@ static HBITMAP LoadGdiImageFromFile(
 
   uint32     srcWidth  = 0;
   uint32     srcHeight = 0;
-  const bool scaled = (scaleWidth > 0) && (scaleHeight > 0);
+  const bool scaled    = (srcWidth > 0) && (srcHeight > 0) && (scaleWidth > 0) && (scaleHeight > 0);
 
   if (SUCCEEDED(hResult)) {
-    pFrame->GetSize(&srcWidth, &srcHeight);
+    hResult = pFrame->GetSize(&srcWidth, &srcHeight);
   }
 
   // Convert the image to a GDI compatible bitmap.
@@ -145,15 +145,15 @@ static HBITMAP LoadGdiImageFromFile(
     scaleHeight = srcHeight;
   }
 
-  if (SUCCEEDED(hResult)) {
+  if (SUCCEEDED(hResult) && (scaleWidth > 0) && (scaleHeight > 0)) {
     if (HDC hDcScreen = GetDC(NULL);  hDcScreen != NULL) {
       BITMAPINFO createInfo = { };
-      createInfo.bmiHeader.biSize         = sizeof(BITMAPINFOHEADER);
-      createInfo.bmiHeader.biWidth        =  scaleWidth;
-      createInfo.bmiHeader.biHeight       = -scaleHeight;
-      createInfo.bmiHeader.biPlanes       = 1;
-      createInfo.bmiHeader.biBitCount     = 32;
-      createInfo.bmiHeader.biCompression  = BI_RGB;
+      createInfo.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+      createInfo.bmiHeader.biWidth       =  scaleWidth;
+      createInfo.bmiHeader.biHeight      = -scaleHeight;
+      createInfo.bmiHeader.biPlanes      = 1;
+      createInfo.bmiHeader.biBitCount    = 32;
+      createInfo.bmiHeader.biCompression = BI_RGB;
 
       // Create DIB section and copy the image source to it.
       void*   pImageBuffer = nullptr;

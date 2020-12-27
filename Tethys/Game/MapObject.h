@@ -41,7 +41,7 @@ enum MapObjectFlags : uint32 {
 
   // Flags that apply to vehicles.
   MoFlagVecHeadlights   = (1u <<  0),  ///< Vehicle headlights are turned on.
-  MoFlagVecArachnid     = (1u << 14),  ///< Vehicle is an arachnid type.
+  MoFlagVecArachnid     = (1u << 14),  ///< Vehicle is an arachnid type (cannot be repaired).
   MoFlagVecStickyfoamed = (1u << 18),  ///< Vehicle is stickyfoamed.
 
   // Flags that apply to buildings.
