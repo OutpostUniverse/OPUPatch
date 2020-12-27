@@ -54,8 +54,8 @@ static char g_statusBarMessage[MaxLogMessageLen] = { };
 enum class PreserveAspectMode : int {
   Disabled = 0,
   Enabled,
-  WidthOnly,
-  HeightOnly
+  CropWidth,
+  CropHeight
 };
 
 // =====================================================================================================================
@@ -113,12 +113,12 @@ static HBITMAP LoadGdiImageFromFile(
   // Scale the image, if requested.
   if (scaled) {
     auto ScaleWidth = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
-      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::WidthOnly)) {
+      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::CropWidth)) {
         scaleWidth = scaleHeight * srcWidth / srcHeight;
       }
     };
     auto ScaleHeight = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
-      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::HeightOnly)) {
+      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::CropHeight)) {
         scaleHeight = scaleWidth * srcHeight / srcWidth;
       }
     };
@@ -163,6 +163,7 @@ static HBITMAP LoadGdiImageFromFile(
         const size_t scanlineSize = (((scaleWidth * 32) + 31) / 32) * 4;
         const size_t bufferSize   = scanlineSize * scaleHeight;
 
+        // This actually performs the format conversion (and scaling, if requested).
         hResult = scaled ? pScaler->CopyPixels(nullptr, scanlineSize, bufferSize, (BYTE*)(pImageBuffer))
                       : pConverter->CopyPixels(nullptr, scanlineSize, bufferSize, (BYTE*)(pImageBuffer));
 
@@ -296,13 +297,14 @@ bool SetUiResourceReplacePatch(
     }));
 
     // Inject main menu background replacement, and draw the OP2 logo and game version number on the main menu screen.
-    // In OP2Shell::Init()
     static HDC    hDcLogo      = NULL;
     static HANDLE hBitmapLogo  = NULL;
     static BITMAP hPvLogo      = { };
     static HFONT  hVersionFont = NULL;
 
+    // In OP2Shell::Init()
     shellPatcher.LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmapBg, Esp<void*> pEsp) {
+      // If files of the form "MainMenuBackground{00-99}.png" (continuous) exist, pick one at random.
       std::vector<std::filesystem::path> bgFilePaths;
       char curFilename[] = "MainMenuBackground00.png";
       for (int i = 0; i < 100; ++i) {
@@ -316,6 +318,7 @@ bool SetUiResourceReplacePatch(
         }
       }
 
+      // If no files of the aforementioned form exist, try to use "MainMenuBackground.png".
       auto path = GetFilePath("MainMenuBackground.png");
       if (bgFilePaths.empty() == false) {
         std::shuffle(bgFilePaths.begin(), bgFilePaths.end(), std::mt19937());
@@ -323,6 +326,7 @@ bool SetUiResourceReplacePatch(
       }
 
       if (hDcLogo = hDcLogo ? hDcLogo : CreateCompatibleDC(NULL);  (hDcLogo != NULL) && (hBitmapLogo == NULL)) {
+        // Load the Outpost 2 logo image from op2shres.dll so we can draw it to the main menu.
         HMODULE hOp2ShRes = GetModuleHandleA("op2shres.dll");
         hBitmapLogo = (hOp2ShRes != NULL) ? LoadImageA(hOp2ShRes, MAKEINTRESOURCEA(145), IMAGE_BITMAP, 0, 0, 0) : NULL;
         if (hBitmapLogo != NULL) {
@@ -332,33 +336,35 @@ bool SetUiResourceReplacePatch(
       }
 
       if (hVersionFont == NULL) {
+        // Initialize the font to use to draw the version text on the main menu.
         LOGFONTA createInfo = { };
+        strncpy_s(&createInfo.lfFaceName[0], sizeof(createInfo.lfFaceName), "Arial", _TRUNCATE);
         createInfo.lfHeight         = -11;
         createInfo.lfWeight         = 400;
         createInfo.lfCharSet        = 1;
         createInfo.lfOutPrecision   = 7;
         createInfo.lfPitchAndFamily = 82;
-        strncpy_s(&createInfo.lfFaceName[0], sizeof(createInfo.lfFaceName), "Arial", _TRUNCATE);
-
         hVersionFont = CreateFontIndirectA(&createInfo);
       }
 
       auto*const pRect = static_cast<RECT*>(PtrInc(pEsp, 0xC));
       hBitmapBg =
-        path.empty() ? NULL : LoadGdiImageFromFile(path, pRect->right, pRect->bottom, PreserveAspectMode::WidthOnly);
-      return (hBitmapBg != NULL) ? 0x13007ED3 : 0;
+        path.empty() ? NULL : LoadGdiImageFromFile(path, pRect->right, pRect->bottom, PreserveAspectMode::CropWidth);
+      return (hBitmapBg != NULL) ? 0x13007ED3 : 0;  // Use original background image as a fallback.
     });
 
     // In OP2Shell::WndProc()
     shellPatcher.LowLevelHook(0x13008012, [](Ebx<void*> pThis, Esi<HDC> hDcWnd, Ebp<int> x, Edi<int> y) {
-      const auto [cx, cy] = std::tie(*static_cast<int*>(PtrInc(pThis, 0x1C)), *static_cast<int*>(PtrInc(pThis, 0x20)));
+      const auto [cx, cy] = std::tie(*PtrInc<int*>(pThis, 0x1C), *PtrInc<int*>(pThis, 0x20));
 
+      // Draw Outpost 2 logo.
       if ((hDcLogo != NULL) && (hBitmapLogo != NULL) && (hPvLogo.bmWidth != 0) && (hPvLogo.bmHeight != 0)) {
         SelectObject(hDcLogo, hBitmapLogo);
         BitBlt(
           hDcWnd, x + ((cx - hPvLogo.bmWidth) / 2), 40, hPvLogo.bmWidth, hPvLogo.bmHeight, hDcLogo, 0, 0, SRCCOPY);
       }
 
+      // Draw OPU mod version number.
       if (hVersionFont != NULL) {
         static constexpr char Version[] = "OPU Mod v" OP2_VERSION_TRIPLE_STR;
 

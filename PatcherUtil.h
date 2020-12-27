@@ -172,11 +172,11 @@ enum class Call : uint32 {
 template <Call C>  struct AsCall{};
 
 ///@{ Pointer arithmetic helpers.
-inline void*       PtrInc(void*       p, size_t offset) { return static_cast<uint8*>(p)       + offset; }
-inline const void* PtrInc(const void* p, size_t offset) { return static_cast<const uint8*>(p) + offset; }
+template <typename T = void*>       T PtrInc(void*       p, size_t offset) { return T((uint8*)(p)       + offset); }
+template <typename T = void*> const T PtrInc(const void* p, size_t offset) { return T((const uint8*)(p) + offset); }
 
-inline void*       PtrDec(void*       p, size_t offset) { return static_cast<uint8*>(p)       - offset; }
-inline const void* PtrDec(const void* p, size_t offset) { return static_cast<const uint8*>(p) - offset; }
+template <typename T = void*>       T PtrDec(void*       p, size_t offset) { return T((uint8*)(p)       - offset); }
+template <typename T = void*> const T PtrDec(const void* p, size_t offset) { return T((const uint8*)(p) - offset); }
 
 inline size_t      PtrDelta(const void* pHigh, const void* pLow)
   { return static_cast<size_t>(static_cast<const uint8*>(pHigh) - static_cast<const uint8*>(pLow)); }
