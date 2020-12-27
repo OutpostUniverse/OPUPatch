@@ -92,10 +92,8 @@ static HBITMAP LoadGdiImageFromFile(
     hResult = pDecoder->GetFrame(0, &pFrame);
   }
 
-  uint32     srcWidth  = 0;
-  uint32     srcHeight = 0;
-  const bool scaled    = (srcWidth > 0) && (srcHeight > 0) && (scaleWidth > 0) && (scaleHeight > 0);
-
+  uint32 srcWidth  = 0;
+  uint32 srcHeight = 0;
   if (SUCCEEDED(hResult)) {
     hResult = pFrame->GetSize(&srcWidth, &srcHeight);
   }
@@ -111,6 +109,7 @@ static HBITMAP LoadGdiImageFromFile(
   }
 
   // Scale the image, if requested.
+  const bool scaled = (srcWidth > 0) && (srcHeight > 0) && (scaleWidth > 0) && (scaleHeight > 0);
   if (scaled) {
     auto ScaleWidth = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
       if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::CropWidth)) {
