@@ -110,7 +110,7 @@ static HBITMAP LoadGdiImageFromFile(
 
   // Scale the image, if requested.
   const bool scaled = (srcWidth > 0) && (srcHeight > 0) && (scaleWidth > 0) && (scaleHeight > 0);
-  if (scaled) {
+  if (SUCCEEDED(hResult) && scaled) {
     auto ScaleWidth = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
       if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::CropWidth)) {
         scaleWidth = scaleHeight * srcWidth / srcHeight;
@@ -131,11 +131,7 @@ static HBITMAP LoadGdiImageFromFile(
       ScaleWidth();
     }
 
-    if (SUCCEEDED(hResult)) {
-      hResult = pWic->CreateBitmapScaler(&pScaler);
-    }
-
-    if (SUCCEEDED(hResult)) {
+    if (hResult = pWic->CreateBitmapScaler(&pScaler);  SUCCEEDED(hResult)) {
       hResult = pScaler->Initialize(pConverter, scaleWidth, scaleHeight, WICBitmapInterpolationModeHighQualityCubic);
     }
   }
