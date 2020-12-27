@@ -293,6 +293,9 @@
     <ClInclude Include="Tethys\API\API.h">
       <Filter>Tethys\API</Filter>
     </ClInclude>
+    <ClInclude Include="Stream.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Patcher.cpp">

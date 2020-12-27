@@ -161,6 +161,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClInclude Include="PatcherUtil.h" />
     <ClInclude Include="Patches.h" />
     <ClInclude Include="Resources.h" />
+    <ClInclude Include="Stream.h" />
     <ClInclude Include="Tethys\API\API.h" />
     <ClInclude Include="Tethys\API\Enumerators.h" />
     <ClInclude Include="Tethys\API\GameMap.h" />

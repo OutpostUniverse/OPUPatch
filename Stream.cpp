@@ -8,6 +8,7 @@
 #include "Patcher.h"
 #include "Library.h"
 #include "Util.h"
+#include "Stream.h"
 
 #include "Tethys/Game/TApp.h"
 #include "Tethys/Game/MissionManager.h"
@@ -94,10 +95,10 @@ static std::vector<std::filesystem::path> GetBasePaths() {
 
 // =====================================================================================================================
 // Gets file search paths for a particular asset type.
-static std::vector<std::filesystem::path> GetSearchPaths(
-  std::string  extension        = "",
-  bool         searchForMission = false,
-  bool         excludeStockDirs = false)
+std::vector<std::filesystem::path> GetSearchPaths(
+  std::string  extension,
+  bool         searchForMission,
+  bool         excludeStockDirs)
 {
   constexpr auto SearchOptions = std::filesystem::directory_options::follow_directory_symlink |
                                  std::filesystem::directory_options::skip_permission_denied;
@@ -204,9 +205,9 @@ static std::vector<std::filesystem::path> GetSearchPaths(
 
 // =====================================================================================================================
 // Gets the path to a game file as per GetSearchPaths().
-static std::filesystem::path GetFilePath(
+std::filesystem::path GetFilePath(
   const std::filesystem::path&  filename,
-  bool                          searchForMission = false)
+  bool                          searchForMission)
 {
   constexpr auto SearchOptions = std::filesystem::directory_options::follow_directory_symlink |
                                  std::filesystem::directory_options::skip_permission_denied;
@@ -393,9 +394,9 @@ static std::wstring GetPathEnv() {
 // Adds DLL search paths.
 // This does not use AddDllDirectory() because it's not WinXP-compatible, and multiple path search order is undefined.
 // See https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
-static void AddModuleSearchPaths(
+void AddModuleSearchPaths(
   const std::vector<std::filesystem::path>&  paths,
-  bool                                       ifUnique = false)
+  bool                                       ifUnique)
 {
   std::wstring pathEnv  = GetPathEnv();
   bool         modified = false;
@@ -427,7 +428,7 @@ static void AddModuleSearchPaths(
 
 // =====================================================================================================================
 // Removes DLL search paths.
-static void RemoveModuleSearchPaths(
+void RemoveModuleSearchPaths(
   const std::vector<std::filesystem::path>& paths)
 {
   std::wstring pathEnv  = GetPathEnv();
@@ -462,7 +463,7 @@ static void RemoveModuleSearchPaths(
 // Prefers loading DLL import dependencies from the new module's file directory first, instead of the base module's.
 // Also adds module directory to PATH for the sake of LoadLibrary().
 // See https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
-static HMODULE WINAPI LoadLibraryAltSearchPath(
+HMODULE WINAPI LoadLibraryAltSearchPath(
   const char* pFilename)
 {
   std::filesystem::path path = GetFilePath(pFilename, g_searchForMission);
