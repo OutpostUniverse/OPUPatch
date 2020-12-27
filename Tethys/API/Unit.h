@@ -36,6 +36,23 @@ enum class UnitClassification : int {
   All              = 0x11,  ///< All vehicles and buildings
 };
 
+/// Contains information about a ConVec's or factory's cargo bay contents.
+struct CargoKit {
+  constexpr operator MapID() const { return unitType; }  ///< Allows comparison operators, etc.  Assignment disallowed.
+
+  MapID unitType;
+  MapID cargoOrWeaponType;
+};
+
+/// Contains information about a Cargo Truck's contents.
+struct TruckCargo {
+  constexpr operator CargoType&()       { return cargoType; }  ///< Allows assignment and comparison operators, etc.
+  constexpr operator CargoType()  const { return cargoType; }  ///< Allows assignment and comparison operators, etc.
+
+  CargoType cargoType;
+  int       amount;
+};
+
 
 /// Exported interface wrapping a reference to a MapObject instance.
 class Unit : public OP2Class<Unit> {
@@ -80,6 +97,8 @@ public:
   bool  IsVehicle()   const { return IsLive()     && HasFlag(MoFlagVehicle);                }
   bool  IsOffensive() const { return IsLive()     && HasFlag(MoFlagOffensive);              }
   bool  IsEntity()    const { return HasFlag(MoFlagEntity | MoFlagEntChild);                }
+
+  int GetCargo() const { return IsValid() ? GetMapObject()->cargo_ : 0; }
 
   Location GetLocation() const { return IsValid() ? GetMapObject()->GetTile() : Location(); }
   MapRect  GetRect(bool includeBorder = false) const {
@@ -128,7 +147,7 @@ public:
     { return OP2Thunk<0x49D270, &$::GetClassificationFor>(unitType, cargoWeaponType); }
 
   /// Gets the UnitClassification for this unit's type.
-  UnitClassification GetClassification() const { return GetClassificationFor(GetType(), GetCargo()); }
+  UnitClassification GetClassification() const { return GetClassificationFor(GetType(), GetWeapon()); }
 
   void ClearSpecialTarget() { SetFlag(MoFlagSpecialTarget, false); }
 
@@ -185,16 +204,22 @@ public:
 
   // ---------------------------------------------- Specific to vehicles -----------------------------------------------
 
-  MapID GetCargo()       const { return IsValid()   ? MapID(GetMapObject()->cargo_)                  : MapID::None; }
-  MapID GetCargoWeapon() const { return IsVehicle() ? MapID(GetMapObject<Vehicle>()->weaponOfCargo_) : MapID::None; }
-  void  SetCargo(MapID cargo, MapID weapon)
-    { if (IsVehicle()) { auto* p = GetMapObject<Vehicle>(); p->weapon_ = cargo; p->weaponOfCargo_ = weapon; } }
+  ///@{ [ConVec]
+  CargoKit GetConVecCargo() const {
+    return IsVehicle() ? 
+      CargoKit{ MapID(GetMapObject<Vehicle>()->cargo_), MapID(GetMapObject<Vehicle>()->weaponOfCargo_) } : CargoKit{};
+  }
+  void SetCargo(MapID cargo, MapID weapon)
+    { if (IsVehicle()) { auto*const p = GetMapObject<Vehicle>();  p->weapon_ = cargo;  p->weaponOfCargo_ = weapon; } }
+  void SetCargo(CargoKit cargo) { return SetCargo(cargo.unitType, cargo.cargoOrWeaponType); }
+  ///@}
 
   ///@{ [Cargo Truck]
-  TruckCargo GetTruckCargoType()   { return TruckCargo(IsLive() ? GetMapObject()->truckCargoType_   : 0); }
-  int        GetTruckCargoAmount() { return            IsLive() ? GetMapObject()->truckCargoAmount_ : 0;  }
-  void SetCargo(TruckCargo cargo, int amount)
+  TruckCargo GetTruckCargo()
+    { auto* p = GetMapObject();  return p ? TruckCargo{ p->GetCargoType(), p->truckCargoAmount_ } : TruckCargo{}; }
+  void SetCargo(CargoType cargo, int amount)
     { if (IsVehicle()) { auto*p = GetMapObject(); p->truckCargoType_ = uint16(cargo); p->truckCargoAmount_ = amount; } }
+  void SetCargo(TruckCargo cargo) { return SetCargo(cargo.cargoType, cargo.amount); }
   ///@}
 
   int  GetStickyfoamTimer() const    { return IsVehicle() ? GetMapObject<Vehicle>()->timerStickyfoam_ : 0; }
@@ -224,17 +249,18 @@ public:
   // ---------------------------------------------- Specific to buildings ----------------------------------------------
 
   ///@{ [Factory]
-  void GetFactoryCargo(int bay, MapID* pUnitType, MapID* pCargoOrWeaponType) const {
-    auto*const pMo      = (IsFactory() && (bay >= 0) && (bay < 6)) ? GetMapObject<FactoryBuilding>() : nullptr;
-    *pUnitType          = (pMo != nullptr) ? MapID(pMo->cargoBayContents_[bay])     : MapID::None;
-    *pCargoOrWeaponType = (pMo != nullptr) ? MapID(pMo->cargoBayCargoOrWeapon_[bay]): MapID::None;
+  CargoKit GetFactoryCargo(int bay) const {
+    auto*const pMo = (IsFactory() && (bay >= 0) && (bay < 6)) ? GetMapObject<FactoryBuilding>() : nullptr;
+    return (pMo != nullptr) ? CargoKit{ MapID(pMo->cargoBayContents_[bay]), MapID(pMo->cargoBayCargoOrWeapon_[bay]) }
+                            : CargoKit{};
   }
-  void SetFactoryCargo(int bay, MapID   unitType, MapID   cargoOrWeaponType = MapID::None) {
+  void SetFactoryCargo(int bay, MapID unitType, MapID cargoOrWeaponType = MapID::None) {
     if (auto*const pMo = GetMapObject<FactoryBuilding>();  IsFactory() && (bay >= 0) && (bay < 6)) {
       pMo->cargoBayContents_[bay]      = unitType;
       pMo->cargoBayCargoOrWeapon_[bay] = cargoOrWeaponType;
     }
   }
+  void SetFactoryCargo(int bay, CargoKit cargo){ return SetFactoryCargo(bay, cargo.unitType, cargo.cargoOrWeaponType); }
 
   Location FindFactoryOutputLocation(MapID itemToProduce = MapID::CargoTruck) const
     { Location loc; MapImpl::GetInstance()->FindUnitPlacementLocation(itemToProduce, GetLocation(), &loc); return loc; }
@@ -254,7 +280,7 @@ public:
   Unit GetUnitInGarage(int bay) const
     { return Unit((IsLive() && (bay >= 0) && (bay < 6)) ? GetMapObject<MapObj::Garage>()->pUnitInBay_[bay] : nullptr); }
   void PutInGarage(Unit garage, int bay)
-    { Location dock = garage.GetDockLocation();  Thunk<0x476160, void(int, int, int)>(bay, dock.x, dock.y); }
+    { const Location dock = garage.GetDockLocation();  Thunk<0x476160, void(int, int, int)>(bay, dock.x, dock.y); }
   ///@}
 
   ///@{ [Spaceport]
@@ -345,8 +371,8 @@ inline void Unit::DoSetLights(
 inline void Unit::DoBuild(
   Location bottomRight)
 {
-  if (IsLive() && (GetCargoWeapon() != MapID::None)) {
-    const auto&   s      = MapObjectType::GetInstance(GetCargoWeapon())->stats_.building;
+  if (IsLive() && (GetConVecCargo() != MapID::None)) {
+    const auto&   s      = MapObjectType::GetInstance(GetConVecCargo())->stats_.building;
     CommandPacket packet = { CommandType::Build, sizeof(BuildCommand) };
     packet.data.build.numUnits     = 1;
     packet.data.build.unitID[0]    = id_;

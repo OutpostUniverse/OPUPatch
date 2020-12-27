@@ -276,8 +276,10 @@ public:
   static MapImpl* GetInstance() { return OP2Mem<0x54F7F8, MapImpl*>(); }
 
   /// Gets internal cell type info.
-  static CellTypeInfo* GetCellTypeInfo(CellType cellType)
-    { return (cellType < CellType::Count) ? &OP2Mem<0x4DEBA8, CellTypeInfo*>()[size_t(cellType)] : nullptr; }
+  static CellTypeInfo* GetCellTypeInfo(CellType cellType) {
+    const auto index = size_t(cellType);
+    return ((index >= 0) && (cellType < CellType::Count)) ? &OP2Mem<0x4DEBA8, CellTypeInfo*>()[index] : nullptr;
+  }
 
 public:
   int     field_00;

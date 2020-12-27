@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <timeapi.h>
+#include <wincodec.h>
 
 #include "Patcher.h"
 #include "Util.h"
@@ -48,6 +49,147 @@ static MessageLogEntry<MaxLogMessageLen> g_messageLogRb[MaxNumMessagesLogged] = 
 static char g_chatBarMessage[MaxLogMessageLen]   = { };
 static char g_statusBarMessage[MaxLogMessageLen] = { };
 
+enum class PreserveAspectMode : int {
+  Disabled = 0,
+  Enabled,
+  WidthOnly,
+  HeightOnly
+};
+
+// =====================================================================================================================
+static HBITMAP LoadGdiImageFromFile(
+  const              std::filesystem::path& path,
+  int                scaleWidth     = 0,
+  int                scaleHeight    = 0,
+  PreserveAspectMode preserveAspect = PreserveAspectMode::Disabled,
+  HDC                hDc            = NULL)
+{
+  HBITMAP hBitmapOut  = NULL;
+  HRESULT hInitResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+  HRESULT hResult     = hInitResult;
+
+  IWICImagingFactory*    pWic       = nullptr;
+  IWICBitmapDecoder*     pDecoder   = nullptr;
+  IWICBitmapFrameDecode* pFrame     = nullptr;
+  IWICBitmapScaler*      pScaler    = nullptr;
+  IWICFormatConverter*   pConverter = nullptr;
+
+  if (SUCCEEDED(hResult)) {
+    hResult = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pWic));
+  }
+
+  // Open the image.
+  if (SUCCEEDED(hResult)) {
+    hResult = pWic->CreateDecoderFromFilename(std::filesystem::absolute(path).wstring().data(),
+                                              nullptr,
+                                              GENERIC_READ,
+                                              WICDecodeMetadataCacheOnDemand,
+                                              &pDecoder);
+  }
+
+  // Get frame 0 of the image.
+  if (SUCCEEDED(hResult)) {
+    hResult = pDecoder->GetFrame(0, &pFrame);
+  }
+
+  uint32     srcWidth  = 0;
+  uint32     srcHeight = 0;
+  const bool scaled = (scaleWidth > 0) && (scaleHeight > 0);
+
+  if (SUCCEEDED(hResult)) {
+    pFrame->GetSize(&srcWidth, &srcHeight);
+  }
+
+  // Convert the image to a GDI compatible bitmap.
+  if (SUCCEEDED(hResult)) {
+    hResult = pWic->CreateFormatConverter(&pConverter);
+  }
+
+  if (SUCCEEDED(hResult)) {
+    hResult = pConverter->Initialize(
+      pFrame, GUID_WICPixelFormat32bppBGR, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+  }
+
+  // Scale the image, if requested.
+  if (scaled) {
+    auto ScaleWidth = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
+      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::WidthOnly)) {
+        scaleWidth = scaleHeight * srcWidth / srcHeight;
+      }
+    };
+    auto ScaleHeight = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
+      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::HeightOnly)) {
+        scaleHeight = scaleWidth * srcHeight / srcWidth;
+      }
+    };
+
+    if (scaleWidth >= scaleHeight) {
+      ScaleWidth();
+      ScaleHeight();
+    }
+    else {
+      ScaleHeight();
+      ScaleWidth();
+    }
+
+    if (SUCCEEDED(hResult)) {
+      hResult = pWic->CreateBitmapScaler(&pScaler);
+    }
+
+    if (SUCCEEDED(hResult)) {
+      hResult = pScaler->Initialize(pConverter, scaleWidth, scaleHeight, WICBitmapInterpolationModeHighQualityCubic);
+    }
+  }
+
+  if (SUCCEEDED(hResult)) {
+    if (HDC hDcScreen = GetDC(NULL);  hDcScreen != NULL) {
+      const int bpp = 32;
+
+      BITMAPINFO createInfo = { };
+      createInfo.bmiHeader.biSize         = sizeof(BITMAPINFOHEADER);
+      createInfo.bmiHeader.biWidth        =  scaleWidth;
+      createInfo.bmiHeader.biHeight       = -scaleHeight;
+      createInfo.bmiHeader.biPlanes       = 1;
+      createInfo.bmiHeader.biBitCount     = 32;
+      createInfo.bmiHeader.biCompression  = BI_RGB;
+
+      // Create DIB section and copy the image source to it.
+      void*   pImageBuffer = nullptr;
+      HBITMAP hDibBitmap   = CreateDIBSection(hDcScreen, &createInfo, DIB_RGB_COLORS, &pImageBuffer, NULL, 0);
+      
+      if (hDibBitmap != NULL) {
+        const size_t scanlineSize = (((scaleWidth * 32) + 31) / 32) * 4;
+        const size_t bufferSize   = scanlineSize * scaleHeight;
+
+        hResult = scaled ? pScaler->CopyPixels(nullptr, scanlineSize, bufferSize, (BYTE*)(pImageBuffer))
+                      : pConverter->CopyPixels(nullptr, scanlineSize, bufferSize, (BYTE*)(pImageBuffer));
+
+        if (SUCCEEDED(hResult)) {
+          // Create the output compatible bitmap.
+          hBitmapOut = CreateDIBitmap(
+            hDc ? hDc : hDcScreen, &createInfo.bmiHeader, CBM_INIT, pImageBuffer, &createInfo, DIB_RGB_COLORS);
+        }
+
+        DeleteObject(hDibBitmap);
+      }
+      else {
+        hResult = E_FAIL;
+      }
+
+      ReleaseDC(NULL, hDcScreen);
+    }
+    else {
+      hResult = E_FAIL;
+    }
+  }
+
+  if (SUCCEEDED(hInitResult)) {
+    CoUninitialize();
+  }
+
+  return hBitmapOut;
+}
+
 // =====================================================================================================================
 // Replacement resource template names in .rc files must be defined using the RESOURCE_REPLACE macro defined in Util.h.
 static std::string FindResourceReplacement(
@@ -86,7 +228,7 @@ static std::string FindResourceReplacement(
   std::string result = "";
   if (FindResourceA(static_cast<HMODULE>(g_hInst), &buf[0], pResType) != NULL) {
     // ** TODO This should search in all loaded modules
-    result = buf;
+    result    = buf;
     *phModule = static_cast<HMODULE>(g_hInst);
   }
 
@@ -150,6 +292,17 @@ bool SetUiResourceReplacePatch(
 
       return result;
     }));
+
+    // Inject main menu background replacement.
+    // In OP2Shell::Init()
+    shellPatcher.LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmap, Esp<void*> pEsp) {
+      auto*const pRect          = static_cast<RECT*>(PtrInc(pEsp, 0xC));
+      char       path[MAX_PATH] = "";
+      
+      hBitmap = g_resManager.GetFilePath("mainMenuBackground.png", &path[0]) ?
+        LoadGdiImageFromFile(path, pRect->right, pRect->bottom, PreserveAspectMode::WidthOnly) : NULL;
+      return (hBitmap != NULL) ? 0x13007ED3 : 0;
+    });
 
     success = ((op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok));
   }
@@ -670,15 +823,16 @@ bool SetVehicleCargoDisplayPatch(
         GetLocalizedString(LocalizedString::Wreckage),
         GetLocalizedString(LocalizedString::GeneBank),
       };
-      static_assert(TethysUtil::ArrayLen(pTruckCargoStrings) == size_t(TruckCargo::Count));
+      static_assert(TethysUtil::ArrayLen(pTruckCargoStrings) == size_t(CargoType::Count));
 
       switch (pVec->GetTypeID()) {
       case MapID::CargoTruck: {
-        const auto        cargoType  = TruckCargo(max(pVec->truckCargoType_, 0));
+        const auto        cargoType  = CargoType(max(pVec->truckCargoType_, 0));
         const char*const  pCargoName =
-          (cargoType == TruckCargo::Spacecraft) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0] :
-          (cargoType <  TruckCargo::Count)      ? pTruckCargoStrings[size_t(cargoType)] : nullptr;
-        const std::string quantity   = ((pVec->truckCargoAmount_ > 1) && (cargoType <= TruckCargo::RareRubble)) ?
+           (cargoType == CargoType::Spacecraft) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0]  :
+          ((cargoType <  CargoType::Count) && (cargoType > CargoType::Empty)) ? pTruckCargoStrings[size_t(cargoType)] :
+          nullptr;
+        const std::string quantity = ((pVec->truckCargoAmount_ > 1) && (cargoType <= CargoType::RareRubble)) ?
           std::to_string(pVec->truckCargoAmount_) : "";
 
         return (pCargoName != nullptr) ? (quantity + ((quantity[0] != '\0') ? " " : "") + pCargoName) : "empty";

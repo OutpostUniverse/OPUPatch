@@ -575,23 +575,23 @@ bool SetOreRoutePatch(
   if (enable) {
     // In UICmd::CommandSetOreRoute::IsEnabled()
     patcher.LowLevelHook(0x453FFE, [](Esi<MapObj::CargoTruck*> pThis, Edi<ibool>& isEnabled) {
-      const auto c      = TruckCargo(pThis->truckCargoType_);
-      const bool result = (c == TruckCargo::Empty) || (c == TruckCargo::CommonOre) || (c == TruckCargo::RareOre);
+      const auto c      = CargoType(pThis->truckCargoType_);
+      const bool result = (c == CargoType::Empty) || (c == CargoType::CommonOre) || (c == CargoType::RareOre);
       return result ? 0x454007 : 0x454005;
     });
 
     // In UICmd::CommandSetOreRoute::GetMouseCursor()
     patcher.LowLevelHook(0x4544B6, [](Edi<MapID> mine, Esp<void*> pEsp) {
-      TruckCargo cargo  = TruckCargo::Empty;
+      CargoType cargo  = CargoType::Empty;
       bool       result = (mine == MapID::CommonOreMine) || (mine == MapID::RareOreMine) || (mine == MapID::MagmaWell);
 
       if (result) {
         auto*const pSelection = UnitGroup::GetSelectedUnitGroup();
 
         for (int i = 0; i < pSelection->numUnits_; ++i) {
-          const TruckCargo curCargo = Unit(pSelection->unitIndex_[i]).GetTruckCargoType();
-          if (curCargo != TruckCargo::Empty) {
-            if ((cargo != TruckCargo::Empty) && (curCargo != cargo)) {
+          const CargoType curCargo = Unit(pSelection->unitIndex_[i]).GetTruckCargo();
+          if (curCargo != CargoType::Empty) {
+            if ((cargo != CargoType::Empty) && (curCargo != cargo)) {
               result = false;
               break;
             }
@@ -600,9 +600,9 @@ bool SetOreRoutePatch(
         }
       }
 
-      result &= (cargo == TruckCargo::Empty)                                         ||
-               ((cargo == TruckCargo::CommonOre) &&  (mine == MapID::CommonOreMine)) ||
-               ((cargo == TruckCargo::RareOre)   && ((mine == MapID::RareOreMine)    || (mine == MapID::MagmaWell)));
+      result &= (cargo == CargoType::Empty)                                         ||
+               ((cargo == CargoType::CommonOre) &&  (mine == MapID::CommonOreMine)) ||
+               ((cargo == CargoType::RareOre)   && ((mine == MapID::RareOreMine)    || (mine == MapID::MagmaWell)));
 
       return result ? 0x45453A : 0x4544C5;
     });
@@ -615,8 +615,8 @@ bool SetOreRoutePatch(
         const auto count    = pThis->GetPacketUnitCount(&pPacket->data);
         for (int i = 0; i < count; ++i) {
           Unit truck(pUnitIDs[i]);
-          if ((truck.GetType() == MapID::CargoTruck) && (truck.GetTruckCargoType() != TruckCargo::Empty)) {
-            truck.SetCargo(TruckCargo::Empty, 0);
+          if ((truck.GetType() == MapID::CargoTruck) && (truck.GetTruckCargo() != CargoType::Empty)) {
+            truck.SetCargo(CargoType::Empty, 0);
             TethysGame::AddMapSound(SoundID::Dump, truck.GetLocation());
           }
         }
@@ -691,24 +691,24 @@ bool SetTruckLoadPartialCargoPatch(
         const int capacity = truck.GetMapObjectType()->playerStats_[truck.GetCreator()].vehicle.cargoCapacity;
 
         int  amount = 0;
-        auto type   = TruckCargo::Empty;
+        auto type   = CargoType::Empty;
 
         switch (pThis->GetTypeID()) {
         case MapID::CommonStorage:
         case MapID::CommonOreSmelter:
           amount = min(capacity, Player[truck.GetOwner()].GetCommonOre());
-          type   = TruckCargo::CommonMetal;
+          type   = CargoType::CommonMetal;
           break;
 
         case MapID::RareStorage:
         case MapID::RareOreSmelter:
           amount = min(capacity, Player[truck.GetOwner()].GetRareOre());
-          type   = TruckCargo::RareMetal;
+          type   = CargoType::RareMetal;
           break;
 
         case MapID::Agridome:
           amount = min(capacity, Player[truck.GetOwner()].GetFoodStored());
-          type   = TruckCargo::Food;
+          type   = CargoType::Food;
           break;
 
         default:
@@ -762,24 +762,24 @@ bool SetTruckLoadPartialCargoPatch(
       { defaultTruckCapacity = MapObjType::CargoTruck::GetInstance()->playerStats_[0].vehicle.cargoCapacity; });
 
     // In CountTrigger::HasFired()
-    patcher.LowLevelHook(0x493D5C, [](Eax<int> unitID, Esi<TruckCargo> cargo, Ebx<int>& counter) {
-      if (auto* pTruck = MapObject::GetInstance(unitID);  TruckCargo(pTruck->truckCargoType_) == cargo) {
-        counter += ((cargo > TruckCargo::Empty) || (cargo < TruckCargo::Spacecraft)) ? pTruck->truckCargoAmount_ : 1;
+    patcher.LowLevelHook(0x493D5C, [](Eax<int> unitID, Esi<CargoType> cargo, Ebx<int>& counter) {
+      if (auto* pTruck = MapObject::GetInstance(unitID);  CargoType(pTruck->truckCargoType_) == cargo) {
+        counter += ((cargo > CargoType::Empty) || (cargo < CargoType::Spacecraft)) ? pTruck->truckCargoAmount_ : 1;
       }
       return 0x493D87;
     });
-    patcher.LowLevelHook(0x493E14, [](Edi<MapObject*> pTruckInGarage, Ecx<TruckCargo> cargo, Ebx<int>& counter) {
-      if (TruckCargo(pTruckInGarage->truckCargoType_) == cargo) {
+    patcher.LowLevelHook(0x493E14, [](Edi<MapObject*> pTruckInGarage, Ecx<CargoType> cargo, Ebx<int>& counter) {
+      if (CargoType(pTruckInGarage->truckCargoType_) == cargo) {
         counter +=
-          ((cargo > TruckCargo::Empty) || (cargo < TruckCargo::Spacecraft)) ? pTruckInGarage->truckCargoAmount_ : 1;
+          ((cargo > CargoType::Empty) || (cargo < CargoType::Spacecraft)) ? pTruckInGarage->truckCargoAmount_ : 1;
       }
       return 0x493E2A;
     });
     for (uintptr loc : { 0x493E50, 0x493FE5 }) {
       patcher.LowLevelHook(loc, [](Ebp<TriggerImpl*> pThis, Ebx<int>& counter) {
         const auto type      = *static_cast<MapID*>(PtrInc(pThis, 0x30));       // ** TODO Define CountTrigger
-        const auto cargoType = *static_cast<TruckCargo*>(PtrInc(pThis, 0x34));
-        if ((type == MapID::CargoTruck) && (cargoType > TruckCargo::Empty) && (cargoType < TruckCargo::Spacecraft)) {
+        const auto cargoType = *static_cast<CargoType*>(PtrInc(pThis, 0x34));
+        if ((type == MapID::CargoTruck) && (cargoType > CargoType::Empty) && (cargoType < CargoType::Spacecraft)) {
           counter /= defaultTruckCapacity;
         }
       });

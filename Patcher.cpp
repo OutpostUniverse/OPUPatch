@@ -725,7 +725,7 @@ Status PatchContext::UnlockThreads() {
   frozenThreads_.clear();
 
   if (needsUnlock) {
-    assert(g_codeThreadLock.try_lock() == false);
+    const bool ignored = g_codeThreadLock.try_lock();
     g_codeThreadLock.unlock();
   }
 

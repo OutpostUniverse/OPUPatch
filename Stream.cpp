@@ -135,6 +135,8 @@ static std::vector<std::filesystem::path> GetSearchPaths(
       { ".txt",   "techs"    },
       { ".txt",   "story"    },
       { ".rtf",   "story"    },
+      { ".png",   "ui"       },
+      { ".bmp",   "ui"       },
       { ".bmp",   "tilesets" },
       { ".bmp",   "sprites"  },
       { ".prt",   "sprites"  },

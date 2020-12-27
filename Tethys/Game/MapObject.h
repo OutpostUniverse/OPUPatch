@@ -92,8 +92,8 @@ enum class ActionType : uint8 {
   Count
 };
 
-/// Possible values for MapObject::truckCargoType_.
-enum class TruckCargo : int {
+/// Cargo Truck cargo types.
+enum class CargoType : int {
   Any   = -1,
   Empty =  0,
   Food,
@@ -268,6 +268,9 @@ public:
   /// Returns the MapID of this map object's type.
   MapID GetTypeID() const { return GetType()->type_; }
 
+  /// Returns the TruckCargo of this map object's truck cargo type.
+  CargoType GetCargoType() const { return CargoType(truckCargoType_); }
+
   ///@{ Helper functions to get the position of this map object.
   int      GetTileX() const { return pixelX_ / 32;               }
   int      GetTileY() const { return pixelY_ / 32;               }
@@ -316,7 +319,7 @@ public:
     uint16 weapon_;                   ///< [TankVehicle, GuardPost] MapID weapon type.
 
     struct {
-      uint16 truckCargoType_   :  4;  ///< [CargoTruck] Cargo type carried.  @see TruckCargo.
+      uint16 truckCargoType_   :  4;  ///< [CargoTruck] Cargo type carried.  @see CargoType.
       uint16 truckCargoAmount_ : 12;  ///< [CargoTruck] Amount of truck cargo.  For wreckage, this is (techID - 8000).
                                       ///  For starship modules, this is its MapID.
     };
@@ -2380,7 +2383,7 @@ public:
   void  DoDock()                                override { return Thunk<0x406170, &$::DoDock>();                      }
   ibool CanProduceAt(int tileX, int tileY)      override { return Thunk<0x40A4B0, &$::CanProduceAt>(tileX, tileY);    }
 
-  virtual void SetCargoToLoad(TruckCargo cargoType, int amount, ibool a)
+  virtual void SetCargoToLoad(CargoType cargoType, int amount, ibool a)
     { return Thunk<0x406630, &$::SetCargoToLoad>(cargoType, amount, a); }
   virtual void TransferCargo() { return Thunk<0x406710, &$::TransferCargo>(); }
   
