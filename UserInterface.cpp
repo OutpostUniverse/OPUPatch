@@ -138,6 +138,10 @@ static HBITMAP LoadGdiImageFromFile(
       hResult = pScaler->Initialize(pConverter, scaleWidth, scaleHeight, WICBitmapInterpolationModeHighQualityCubic);
     }
   }
+  else {
+    scaleWidth  = srcWidth;
+    scaleHeight = srcHeight;
+  }
 
   if (SUCCEEDED(hResult)) {
     if (HDC hDcScreen = GetDC(NULL);  hDcScreen != NULL) {
