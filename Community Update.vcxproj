@@ -184,7 +184,9 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClInclude Include="Tethys\Game\GameStartInfo.h" />
     <ClInclude Include="Tethys\Game\MapImpl.h" />
     <ClInclude Include="Tethys\Game\MapObject.h" />
+    <ClInclude Include="Tethys\Game\MapObjectManager.h" />
     <ClInclude Include="Tethys\Game\MapObjectType.h" />
+    <ClInclude Include="Tethys\Game\MineManager.h" />
     <ClInclude Include="Tethys\Game\MissionManager.h" />
     <ClInclude Include="Tethys\Game\MoraleManager.h" />
     <ClInclude Include="Tethys\Game\PathFinder.h" />
@@ -192,7 +194,6 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClInclude Include="Tethys\Game\Random.h" />
     <ClInclude Include="Tethys\Game\Research.h" />
     <ClInclude Include="Tethys\Game\ScBase.h" />
-    <ClInclude Include="Tethys\Game\Sheet.h" />
     <ClInclude Include="Tethys\Game\TApp.h" />
     <ClInclude Include="Tethys\Game\TubeConnection.h" />
     <ClInclude Include="Tethys\Game\UnitGroup.h" />

@@ -3,7 +3,7 @@
 
 #include "Tethys/Common/Memory.h"
 #include "Tethys/API/Location.h"
-#include "Tethys/Game/Sheet.h"
+#include "Tethys/Game/MapObjectManager.h"
 
 namespace Tethys {
 
@@ -317,8 +317,10 @@ public:
     { return OP2Thunk<0x439A10, &$::AllocateMapObj>(sizeInBytes, pixelX, pixelY, forceIndex); }
 
   /// Helper function to get the MapObjectType instance for the given MapID.
-  static MapObjectType* GetInstance(int mapID)
-    { return (size_t(mapID) <= Sheet::NumMapObjTypes()) ? Sheet::GetMapObjTypeTable()[mapID] : nullptr; }
+  static MapObjectType* GetInstance(int mapID) {
+    return
+      (size_t(mapID) <= MapObjectManager::NumMapObjTypes()) ? MapObjectManager::GetMapObjTypeTable()[mapID] : nullptr;
+  }
 
   /// Helper function to get a building type's rect centered at the given location.
   /// @note If (x2,y2) < (x1,y1), that means one of the x-coordinates has wrapped around the map.

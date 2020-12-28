@@ -233,9 +233,6 @@
     <ClInclude Include="Tethys\Game\Random.h">
       <Filter>Tethys\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Tethys\Game\Sheet.h">
-      <Filter>Tethys\Game</Filter>
-    </ClInclude>
     <ClInclude Include="Tethys\Game\UnitGroup.h">
       <Filter>Tethys\Game</Filter>
     </ClInclude>
@@ -295,6 +292,12 @@
     </ClInclude>
     <ClInclude Include="Stream.h">
       <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\MapObjectManager.h">
+      <Filter>Tethys\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Game\MineManager.h">
+      <Filter>Tethys\Game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

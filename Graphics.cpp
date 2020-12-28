@@ -10,6 +10,7 @@
 
 #include "Tethys/API/TethysGame.h"
 #include "Tethys/API/GameMap.h"
+#include "Tethys/Game/MineManager.h"
 #include "Tethys/UI/GameFrame.h"
 #include "Tethys/Resource/SpriteManager.h"
 #include "Tethys/Resource/GFXSurface.h"
@@ -328,14 +329,28 @@ bool SetMineVariantVisibilityPatch(
         int curFrame = -1;
 
         if (pThis->IsSurveyed(TethysGame::LocalPlayer())) {
-          if (pThis->mineVariant_ == OreVariant::Low) {
-            curFrame = 0;
+          OreVariant mid  = OreVariant::_1;  // OreVariant with the best minimum yield per bar yield class
+          OreVariant high = OreVariant::_1;  // OreVariant with the best peak yield per bar yield class
+
+          auto*const pMineManager = MineManager::GetInstance();
+          for (OreVariant v = OreVariant::_2; v < OreVariant::Count; ++(int&)(v)) {
+            auto*const pYieldInfo = pMineManager->GetYieldInfo(pThis->mineYield_, v);
+            if ((pYieldInfo->minYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->minYield)) {
+              high = v;
+            }
+            else if ((pYieldInfo->peakYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->peakYield)) {
+              mid = v;
+            }
           }
-          else if (pThis->mineVariant_ == OreVariant::Mid) {
+
+          if (pThis->mineVariant_ == mid) {
             curFrame = (TethysGame::Tick() % (numFrames * 4)) / 2;
             if (curFrame >= numFrames) {
               curFrame = 0;
             }
+          }
+          else if (pThis->mineVariant_ != high) {
+            curFrame = 0;
           }
         }
 

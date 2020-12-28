@@ -3,6 +3,7 @@
 
 #include "Tethys/Game/MapObjectType.h"
 #include "Tethys/Game/MapImpl.h"
+#include "Tethys/Game/MineManager.h"
 #include "Tethys/API/Location.h"
 #include <cassert>
 #include <utility>
@@ -108,29 +109,6 @@ enum class CargoType : int {
   GeneBank,
 
   Count
-};
-
-/// Mining beacon ore type.
-enum class OreType : int8 {
-  Random = -1,
-  Common =  0,
-  Rare   =  1,
-};
-
-/// Mining beacon "bar" yield type (major impact on ore output).
-enum class OreYield : int {
-  Random = -1,
-  Bar3   =  0,
-  Bar2   =  1,
-  Bar1   =  2,
-};
-
-/// Mining beacon yield variant type (minor impact on ore output).
-enum class OreVariant : int {
-  Random = -1,
-  High   =  0,
-  Mid    =  1,
-  Low    =  2,
 };
 
 

@@ -234,6 +234,114 @@ static std::string FindResourceReplacement(
 }
 
 // =====================================================================================================================
+static void MainMenuBackgroundPatch(
+  Patcher::PatchContext* pShellPatcher)
+{
+  // Inject main menu background replacement, and draw the OP2 logo and game version number on the main menu screen.
+  static HDC    hDcLogo      = NULL;
+  static HANDLE hBitmapLogo  = NULL;
+  static BITMAP hPvLogo      = { };
+  static HFONT  hVersionFont = NULL;
+
+  // In OP2Shell::Init()
+  pShellPatcher->LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmapBg, Esp<void*> pEsp) {
+    // If files of the form "MainMenuBackground{00-99}.png" (continuous) exist, pick one at random.
+    std::filesystem::path              bgPath;
+    std::vector<std::filesystem::path> bgFilePaths;
+    char curFilename[] = "MainMenuBackground00.png";
+    
+    if (auto dir = GetFilePath(curFilename);  dir.has_parent_path()) {
+      dir = dir.parent_path();
+
+      for (int i = 0; i < 100; ++i) {
+        curFilename[sizeof("MainMenuBackground") - 1] = '0' + (i / 10);
+        curFilename[sizeof("MainMenuBackground")]     = '0' + (i % 10);
+        if (auto curPath = dir/curFilename;  std::filesystem::exists(curPath)) {
+          bgFilePaths.emplace_back(std::move(curPath));
+        }
+        else {
+          break;
+        }
+      }
+    }
+
+    if (bgFilePaths.empty() == false) {
+      std::shuffle(bgFilePaths.begin(), bgFilePaths.end(), std::mt19937());
+      bgPath = bgFilePaths[0];
+    }
+
+    if (hDcLogo = hDcLogo ? hDcLogo : CreateCompatibleDC(NULL);  (hDcLogo != NULL) && (hBitmapLogo == NULL)) {
+      // Load the Outpost 2 logo image from op2shres.dll so we can draw it to the main menu.
+      HMODULE hOp2ShRes = GetModuleHandleA("op2shres.dll");
+      hBitmapLogo = (hOp2ShRes != NULL) ? LoadImageA(hOp2ShRes, MAKEINTRESOURCEA(145), IMAGE_BITMAP, 0, 0, 0) : NULL;
+      if (hBitmapLogo != NULL) {
+        hPvLogo = { };
+        GetObjectA(hBitmapLogo, sizeof(hPvLogo), &hPvLogo);
+      }
+    }
+
+    if (hVersionFont == NULL) {
+      // Initialize the font to use to draw the version text on the main menu.
+      LOGFONTA createInfo = { };
+      strncpy_s(&createInfo.lfFaceName[0], sizeof(createInfo.lfFaceName), "Arial", _TRUNCATE);
+      createInfo.lfHeight         = -11;
+      createInfo.lfWeight         = 400;
+      createInfo.lfCharSet        = 1;
+      createInfo.lfOutPrecision   = 7;
+      createInfo.lfPitchAndFamily = 82;
+      hVersionFont = CreateFontIndirectA(&createInfo);
+    }
+
+    auto*const pRect = static_cast<RECT*>(PtrInc(pEsp, 0xC));
+    hBitmapBg =
+      bgPath.empty() ? NULL : LoadGdiImageFromFile(bgPath, pRect->right, pRect->bottom, PreserveAspectMode::CropWidth);
+    return (hBitmapBg != NULL) ? 0x13007ED3 : 0;  // Use original background image as a fallback.
+  });
+
+  // In OP2Shell::WndProc()
+  // ** TODO Should do all blits to a backbuffer, modern Windows DWM presents after every window DC blit
+  pShellPatcher->LowLevelHook(0x13008012, [](Ebx<void*> pThis, Esi<HDC> hDcWnd, Ebp<int> x, Edi<int> y) {
+    const auto [cx, cy] = std::tie(*PtrInc<int*>(pThis, 0x1C), *PtrInc<int*>(pThis, 0x20));
+
+    // Draw Outpost 2 logo.
+    if ((hDcLogo != NULL) && (hBitmapLogo != NULL) && (hPvLogo.bmWidth != 0) && (hPvLogo.bmHeight != 0)) {
+      SelectObject(hDcLogo, hBitmapLogo);
+      BitBlt(
+        hDcWnd, x + ((cx - hPvLogo.bmWidth) / 2), y + 40, hPvLogo.bmWidth, hPvLogo.bmHeight, hDcLogo, 0, 0, SRCCOPY);
+    }
+
+    // Draw OPU mod version number.
+    if (hVersionFont != NULL) {
+      static constexpr char Version[] = "OPU Mod v" OP2_VERSION_TRIPLE_STR;
+
+      RECT textRect = { 10, 10, 0, 0 };
+      SetTextColor(hDcWnd, 0x606060);
+      SetBkMode(hDcWnd, TRANSPARENT);
+      SelectObject(hDcWnd, hVersionFont);
+      if (DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_CALCRECT) != 0) {
+        DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_TOP | DT_LEFT);
+      }
+    }
+  });
+
+  // In OP2Shell::ShutDown()
+  pShellPatcher->LowLevelHook(0x13009383, [] {
+    if (hDcLogo != NULL) {
+      DeleteDC(hDcLogo);
+      hDcLogo = NULL;
+    }
+    if (hBitmapLogo != NULL) {
+      DeleteObject(hBitmapLogo);
+      hBitmapLogo = NULL;
+    }
+    if (hVersionFont != NULL) {
+      DeleteObject(hVersionFont);
+      hVersionFont = NULL;
+    }
+  });
+}
+
+// =====================================================================================================================
 // Replaces several UI dialogs, as well as the icon used by game windows.
 bool SetUiResourceReplacePatch(
   bool enable)
@@ -291,103 +399,8 @@ bool SetUiResourceReplacePatch(
       return result;
     }));
 
-    // Inject main menu background replacement, and draw the OP2 logo and game version number on the main menu screen.
-    static HDC    hDcLogo      = NULL;
-    static HANDLE hBitmapLogo  = NULL;
-    static BITMAP hPvLogo      = { };
-    static HFONT  hVersionFont = NULL;
-
-    // In OP2Shell::Init()
-    shellPatcher.LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmapBg, Esp<void*> pEsp) {
-      // If files of the form "MainMenuBackground{00-99}.png" (continuous) exist, pick one at random.
-      std::vector<std::filesystem::path> bgFilePaths;
-      char curFilename[] = "MainMenuBackground00.png";
-      for (int i = 0; i < 100; ++i) {
-        curFilename[sizeof("MainMenuBackground") - 1] = '0' + (i / 10);
-        curFilename[sizeof("MainMenuBackground")]     = '0' + (i % 10);
-        if (auto curPath = GetFilePath(curFilename);  curPath.empty() == false) {
-          bgFilePaths.emplace_back(std::move(curPath));
-        }
-        else {
-          break;
-        }
-      }
-
-      // If no files of the aforementioned form exist, try to use "MainMenuBackground.png".
-      auto path = GetFilePath("MainMenuBackground.png");
-      if (bgFilePaths.empty() == false) {
-        std::shuffle(bgFilePaths.begin(), bgFilePaths.end(), std::mt19937());
-        path = bgFilePaths[0];
-      }
-
-      if (hDcLogo = hDcLogo ? hDcLogo : CreateCompatibleDC(NULL);  (hDcLogo != NULL) && (hBitmapLogo == NULL)) {
-        // Load the Outpost 2 logo image from op2shres.dll so we can draw it to the main menu.
-        HMODULE hOp2ShRes = GetModuleHandleA("op2shres.dll");
-        hBitmapLogo = (hOp2ShRes != NULL) ? LoadImageA(hOp2ShRes, MAKEINTRESOURCEA(145), IMAGE_BITMAP, 0, 0, 0) : NULL;
-        if (hBitmapLogo != NULL) {
-          hPvLogo = { };
-          GetObjectA(hBitmapLogo, sizeof(hPvLogo), &hPvLogo);
-        }
-      }
-
-      if (hVersionFont == NULL) {
-        // Initialize the font to use to draw the version text on the main menu.
-        LOGFONTA createInfo = { };
-        strncpy_s(&createInfo.lfFaceName[0], sizeof(createInfo.lfFaceName), "Arial", _TRUNCATE);
-        createInfo.lfHeight         = -11;
-        createInfo.lfWeight         = 400;
-        createInfo.lfCharSet        = 1;
-        createInfo.lfOutPrecision   = 7;
-        createInfo.lfPitchAndFamily = 82;
-        hVersionFont = CreateFontIndirectA(&createInfo);
-      }
-
-      auto*const pRect = static_cast<RECT*>(PtrInc(pEsp, 0xC));
-      hBitmapBg =
-        path.empty() ? NULL : LoadGdiImageFromFile(path, pRect->right, pRect->bottom, PreserveAspectMode::CropWidth);
-      return (hBitmapBg != NULL) ? 0x13007ED3 : 0;  // Use original background image as a fallback.
-    });
-
-    // In OP2Shell::WndProc()
-    shellPatcher.LowLevelHook(0x13008012, [](Ebx<void*> pThis, Esi<HDC> hDcWnd, Ebp<int> x, Edi<int> y) {
-      const auto [cx, cy] = std::tie(*PtrInc<int*>(pThis, 0x1C), *PtrInc<int*>(pThis, 0x20));
-
-      // Draw Outpost 2 logo.
-      if ((hDcLogo != NULL) && (hBitmapLogo != NULL) && (hPvLogo.bmWidth != 0) && (hPvLogo.bmHeight != 0)) {
-        SelectObject(hDcLogo, hBitmapLogo);
-        BitBlt(
-          hDcWnd, x + ((cx - hPvLogo.bmWidth) / 2), 40, hPvLogo.bmWidth, hPvLogo.bmHeight, hDcLogo, 0, 0, SRCCOPY);
-      }
-
-      // Draw OPU mod version number.
-      if (hVersionFont != NULL) {
-        static constexpr char Version[] = "OPU Mod v" OP2_VERSION_TRIPLE_STR;
-
-        RECT textRect = { 10, 10, 0, 0 };
-        SetTextColor(hDcWnd, 0x606060);
-        SetBkMode(hDcWnd, TRANSPARENT);
-        SelectObject(hDcWnd, hVersionFont);
-        if (DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_CALCRECT) != 0) {
-          DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_TOP | DT_LEFT);
-        }
-      }
-    });
-
-    // In OP2Shell::ShutDown()
-    shellPatcher.LowLevelHook(0x13009383, [] {
-      if (hDcLogo != NULL) {
-        DeleteDC(hDcLogo);
-        hDcLogo = NULL;
-      }
-      if (hBitmapLogo != NULL) {
-        DeleteObject(hBitmapLogo);
-        hBitmapLogo = NULL;
-      }
-      if (hVersionFont != NULL) {
-        DeleteObject(hVersionFont);
-        hVersionFont = NULL;
-      }
-    });
+    // Replace main menu background image.
+    MainMenuBackgroundPatch(&shellPatcher);
 
     success = ((op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok));
   }

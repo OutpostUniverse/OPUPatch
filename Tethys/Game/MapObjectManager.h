@@ -11,7 +11,7 @@ class MapObject;
 class MapObjectType;
 class StreamIO;
 
-class Sheet : public OP2Class<Sheet> {
+class MapObjectManager : public OP2Class<MapObjectManager> {
 public:
   MapObject* CreateMapObject(
     MapID unitType, int pixelX, int pixelY, int creatorNum, MapID cargo, int unitIndex, ibool centered)
@@ -24,7 +24,7 @@ public:
   ibool Load(StreamIO* pSavedGame) { return Thunk<0x446740, &$::Load>(pSavedGame); }
   ibool Save(StreamIO* pSavedGame) { return Thunk<0x446780, &$::Save>(pSavedGame); }
 
-  static Sheet* GetInstance() { return OP2Mem<0x55B780, Sheet*>(); }
+  static MapObjectManager* GetInstance() { return OP2Mem<0x55B780, MapObjectManager*>(); }
 
   static MapObjectType** GetMapObjTypeTable() { return OP2Mem<MapObjectType**&>(0x446743); }  // 0x4E1348
 
@@ -34,6 +34,8 @@ public:
   int field_00;
   int field_04;
 };
-static_assert(8 == sizeof(Sheet), "Incorrect Sheet size.");
+static_assert(8 == sizeof(MapObjectManager), "Incorrect MapObjectManager size.");
+
+inline auto& g_mapObjManager = *MapObjectManager::GetInstance();
 
 } // Tethys
