@@ -45,6 +45,7 @@ bool SetDwmFix(bool enable);
 bool SetDpiFix(bool enable);
 bool SetFpsPatch(bool enable);  // ** WIP
 bool SetAlphaBlendPatch(bool enable);
+bool SetMineVariantVisibilityPatch(bool enable);
 
 // ScStub
 bool SetScStubPatch(bool enable);  // ** WIP

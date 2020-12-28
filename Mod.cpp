@@ -85,4 +85,5 @@ DLLAPI void InitMod(
   success &= SetOreRoutePatch(true);
   success &= SetTurretAnimationPatch(true);
   success &= SetTruckLoadPartialCargoPatch(true);
+  success &= SetMineVariantVisibilityPatch(true);
 }

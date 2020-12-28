@@ -150,13 +150,13 @@ namespace TethysImpl {
 /// Bitmask of player IDs.
 template <typename BitmaskType>
 union PlayerBitmaskImpl {
-  operator       BitmaskType&()       { return mask; }  ///< Allows bitwise operators.
-  operator const BitmaskType&() const { return mask; }  ///< Allows bitwise operators.
+  operator       BitmaskType&()       { return mask; }  ///< Allows bitwise, assignment, etc. operators.
+  operator const BitmaskType&() const { return mask; }  ///< Allows bitwise, assignment, etc. operators.
 
   bool Get(int player) const       { return (mask & (1u << player)) != 0;                        }
   void Set(int player, bool state) { return TethysUtil::SetBitFlag(mask, (1u << player), state); }
 
-  const bool operator[](int player) const { return Get(player); }
+  const bool operator[](int player) const { return Get(player); }  ///< Read-only index operator.
 
   struct {
     BitmaskType player0 : 1;

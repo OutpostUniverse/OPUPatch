@@ -30,6 +30,7 @@ public:
   constexpr bool operator==(const Location& other) const { return (x == other.x) && (y == other.y); }
   constexpr operator bool()                        const { return (x != -1)      && (y != -1);      }
 
+  ///@{ Adds or subtracts Locations and wraps around the map.
   Location& Add(const Location& vector) { Thunk<0x475A30, void(const Location&)>(vector);  return *this; }
   static Location FASTCALL Difference(const Location& a, const Location& b)
     { return OP2Thunk<0x4759D0, &$::Difference>(a, b); }
@@ -39,15 +40,18 @@ public:
   Location   operator-(const Location& vector) const { return Difference(vector, *this);        }
   Location   operator+(int scalar)             const { return *this + Location(scalar, scalar); }
   Location   operator-(int scalar)             const { return *this - Location(scalar, scalar); }
+  ///@}
 
   Location& Clip() { Thunk<0x475960>();  return *this; }  ///< Wraps X coordinate around the map, clips Y to edge
 
   int Norm() { return Thunk<0x401E50, &$::Norm>(); }  ///< Returns euclidean distance: ftol(sqrt(x*x + y*y) + 0.5)
 
+  ///@{ Converts map tile coordinates to map pixel coordinates.
   constexpr int   GetPixelX(bool centered = true) const { return (x * 32) + (centered ? 16 : 0); }
   constexpr int   GetPixelY(bool centered = true) const { return (y * 32) + (centered ? 16 : 0); }
   constexpr POINT GetPixel(bool xCentered = true, bool yCentered = true) const
     { return { GetPixelX(xCentered), GetPixelY(yCentered) }; }
+  ///@}
 
   constexpr Waypoint AsWaypoint(bool xCentered = true, bool yCentered = true) const
     { return { uint32(GetPixelX(xCentered)), uint32(GetPixelY(yCentered)) }; }
@@ -85,8 +89,9 @@ public:
   MapRect& FromPtSize(const Location& a, const Location& b)
     { Thunk<0x475C10, void(const Location&, const Location&)>(a, b);  return *this; }
 
-  Location MidPoint() const { return { (x1 + x2) / 2, (y1 + y2) / 2 }; }
+  Location MidPoint() const { return { (x1 + x2) / 2, (y1 + y2) / 2 }; }  // ** TODO This needs to handle wraparound!
 
+  /// Converts map tile coordinates to pixel coordinates.
   constexpr RECT GetPixels(bool centered = false) const {
     const int c = centered ? 16 : 0;
     const int e = centered ? 0  : 31;

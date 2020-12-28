@@ -8,11 +8,13 @@
 #include "Util.h"
 #include "Library.h"
 
+#include "Tethys/API/TethysGame.h"
+#include "Tethys/API/GameMap.h"
 #include "Tethys/UI/GameFrame.h"
+#include "Tethys/Resource/SpriteManager.h"
 #include "Tethys/Resource/GFXSurface.h"
 #include "Tethys/Resource/GFXBitmap.h"
 #include "Tethys/Resource/CConfig.h"
-#include "Tethys/API/GameMap.h"
 
 #include <algorithm>
 
@@ -301,6 +303,46 @@ bool SetAlphaBlendPatch(
         return 0x5868B0;
       });
 
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Alters the mining beacon animation based on the mine's MineVariant.
+bool SetMineVariantVisibilityPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    patcher.LowLevelHook(
+      0x4054AC,
+      [](Esi<MapObj::MiningBeacon*> pThis, Edi<int> animIndex, Eax<int> numFrames, Edx<int>& frame, Ebp<int>& pixelX) {
+        int curFrame = -1;
+
+        if (pThis->playerSurveyedMask_[TethysGame::LocalPlayer()]) {
+          if (pThis->mineVariant_ == OreVariant::Low) {
+            curFrame = 0;
+          }
+          else if (pThis->mineVariant_ == OreVariant::Mid) {
+            curFrame = (TethysGame::Tick() % (numFrames * 4)) / 2;
+            if (curFrame >= numFrames) {
+              curFrame = 0;
+            }
+          }
+        }
+
+        frame  = (curFrame != -1) ? curFrame : (TethysGame::Tick() % numFrames);
+        pixelX = pThis->pixelX_;
+        return 0x4054B6;
+      });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 

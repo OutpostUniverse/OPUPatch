@@ -7,6 +7,8 @@ namespace Tethys {
 
 class GFXSpriteBitmap;
 
+BEGIN_PACKED
+
 struct ImageInfo {
   int    scanlineByteWidth;
   int    dataOffset;
@@ -19,7 +21,7 @@ struct ImageInfo {
 struct FrameComponentInfo {
   uint16 pixelXOffset;
   uint16 pixelYOffset;
-  uint16 imageInfoIndex;
+  uint16 imageIndex;
 };
 
 struct FrameOptionalInfo {
@@ -38,19 +40,22 @@ struct FrameInfo {
   } rect;
 
   uint16              numFrameComponents;
-  FrameComponentInfo* pFrameComponentInfo;
+  FrameComponentInfo* pFrameComponent;
 };
+static_assert(sizeof(FrameInfo) == 14, "Incorrect FrameInfo size.");
 
 struct AnimationInfo {
-  int         field_00;
-  RECT        selectionBox;
-  int         pixelXDisplacement;
-  int         pixelYDisplacement;
-  int         field_1C;
-  int         numFrames;
-  FrameInfo** ppFrameInfo;
-  uint16      frameOptionalInfoStartIndex;
+  int        field_00;
+  RECT       selectionBox;
+  int        pixelXDisplacement;
+  int        pixelYDisplacement;
+  int        field_1C;
+  int        numFrames;
+  FrameInfo* pFrameInfo;
+  uint16     frameOptionalInfoStartIndex;
+  uint8      padding[112 - 42];
 };
+static_assert(sizeof(AnimationInfo) == 112, "Incorrect AnimationInfo size.");
 
 class SpriteManager : public OP2Class<SpriteManager> {
 public:
@@ -59,6 +64,8 @@ public:
 
   FrameOptionalInfo GetFrameOptionalInfo(int animIndex, int frameIndex)
     { return Thunk<0x404F00, &$::GetFrameOptionalInfo>(animIndex, frameIndex); }
+
+  AnimationInfo* GetAnimationInfo(int animIndex) { return &animationInfo_[animIndex - 101]; }
 
   static SpriteManager* GetInstance() { return OP2Mem<SpriteManager*&>(0x40423B); }  // 0x4EFD68
 
@@ -81,5 +88,7 @@ public:
   FrameComponentInfo** ppFrameComponentInfo_;
   FrameOptionalInfo**  ppFrameOptionalInfo_;
 };
+
+END_PACKED
 
 } // Tethys
