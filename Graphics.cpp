@@ -329,17 +329,17 @@ bool SetMineVariantVisibilityPatch(
         int curFrame = -1;
 
         if (pThis->IsSurveyed(TethysGame::LocalPlayer())) {
-          OreVariant mid  = OreVariant::_1;  // OreVariant with the best minimum yield per bar yield class
-          OreVariant high = OreVariant::_1;  // OreVariant with the best peak yield per bar yield class
+          OreVariant mid  = OreVariant::_1;  // OreVariant with the best peak yield per bar yield class
+          OreVariant high = OreVariant::_1;  // OreVariant with the best minimum yield per bar yield class
 
           auto*const pMineManager = MineManager::GetInstance();
           for (OreVariant v = OreVariant::_2; v < OreVariant::Count; ++(int&)(v)) {
             auto*const pYieldInfo = pMineManager->GetYieldInfo(pThis->mineYield_, v);
-            if ((pYieldInfo->minYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->minYield)) {
-              high = v;
-            }
-            else if ((pYieldInfo->peakYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->peakYield)) {
+            if ((pYieldInfo->peakYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->peakYield)) {
               mid = v;
+            }
+            else if ((pYieldInfo->minYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->minYield)) {
+              high = v;
             }
           }
 
