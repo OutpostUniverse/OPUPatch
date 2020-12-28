@@ -17,9 +17,9 @@ enum class OreType : int8 {
 enum class OreYield : int {
   Random = -1,  ///< 20% chance of Bar3, 60% chance of Bar2, or 20% chance of Bar1 upon creation.
 
-  Bar3   =  0,  ///< 50% initial yield => 10-20 loads -> 55-60% peak => 50-60 loads -> 30-35% min (depending on variant)
-  Bar2   =  1,  ///< 30% initial yield => 10-20 loads -> 35-40% peak => 35-40 loads -> 20-25% min (depending on variant)
-  Bar1   =  2,  ///< 10% initial yield => 10-20 loads -> 20-30% peak => 40-50 loads -> 10-15% min (depending on variant)
+  Bar3   =  0,  ///< 50% initial yield -> 10-20 loads => 55-60% peak -> 50-60 loads => 30-35% min (depending on variant)
+  Bar2   =  1,  ///< 30% initial yield -> 10-20 loads => 35-40% peak -> 35-40 loads => 20-25% min (depending on variant)
+  Bar1   =  2,  ///< 10% initial yield -> 10-20 loads => 20-30% peak -> 40-50 loads => 10-15% min (depending on variant)
   Count
 };
 
@@ -33,21 +33,27 @@ enum class OreVariant : int {
 };
 
 
+/// Internal mine yield stats manager class.
 class MineManager : public OP2Class<MineManager> {
 public:
   struct TruckLoadInfo;
   struct YieldPercentInfo;
 
-  ibool LoadMinesFile() { return Thunk<0x44B010, &$::LoadMinesFile>(); }
+  ibool LoadMinesFile() { return Thunk<0x44B010, &$::LoadMinesFile>(); }  ///< Load mines.txt from sheets.
+
+  /// Calculates a mine's output ore quantity based on its yield, variantNum, and number of truck loads thus far.
   int   CalculateMineYield(OreYield yield, int variantNum, int numTruckLoadsSoFar) const
     { return Thunk<0x44B1C0, &$::CalculateMineYield>(yield, variantNum, numTruckLoadsSoFar); }
 
+  /// Gets the global MineManager instance.
   static MineManager* GetInstance() { return OP2Mem<0x5651A0, MineManager*>(); }
 
-  auto& Trucks(OreYield yield, int variantNum)       { return truckLoadInfo_[(variantNum * NumVariants) + int(yield)]; }
-  auto& Trucks(OreYield yield, int variantNum) const { return truckLoadInfo_[(variantNum * NumVariants) + int(yield)]; }
+  ///@{ Gets yield percent or truck load data for the specified OreYield and variantNum.  Do not use Random for either.
   auto& Yields(OreYield yield, int variantNum)       { return  yieldPctInfo_[(variantNum * NumVariants) + int(yield)]; }
   auto& Yields(OreYield yield, int variantNum) const { return  yieldPctInfo_[(variantNum * NumVariants) + int(yield)]; }
+  auto& Trucks(OreYield yield, int variantNum)       { return truckLoadInfo_[(variantNum * NumVariants) + int(yield)]; }
+  auto& Trucks(OreYield yield, int variantNum) const { return truckLoadInfo_[(variantNum * NumVariants) + int(yield)]; }
+  ///@}
 
   /// Gets the variantNum corresponding to the given OreYield and OreVariant.
   /// @note Supplying OreYield::Random will always output -1 for any OreVariant.
