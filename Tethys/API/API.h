@@ -15,3 +15,5 @@
 #include "Tethys/API/ScStub.h"
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Trigger.h"
+
+namespace TethysAPI = Tethys::API;

@@ -742,9 +742,9 @@ public:
 
 public:
   // ** TODO this doesn't look correct
-  //int        numTruckLoads_;
-  //OreVariant variant_;
-  //OreYield   barYield_;
+  //int      numTruckLoads_;
+  //int      variant_;
+  //OreYield barYield_;
 
   // Object size = 0x74
 };
@@ -1161,9 +1161,9 @@ public:
 public:
   int numTruckLoads_;  ///< Number of truck loads so far for ore yield peaking calculation.
   
-  OreYield   mineYield_;    ///< Bar yield type (major impact on output).
-  OreVariant mineVariant_;  ///< Yield variant  (minor impact on output).
-  OreType    mineType_;     ///< Common or rare ore.
+  OreYield mineYield_;    ///< Bar yield type (major impact on output).
+  int      mineVariant_;  ///< Yield variant  (minor impact on output).
+  OreType  mineType_;     ///< Common or rare ore.
 
   uint16 field_65;
 

@@ -315,7 +315,7 @@ bool SetAlphaBlendPatch(
 }
 
 // =====================================================================================================================
-// Alters the mining beacon animation based on the mine's MineVariant.
+// Alters the mining beacon animation based on the mine's OreVariant.
 bool SetMineVariantVisibilityPatch(
   bool enable)
 {
@@ -329,28 +329,20 @@ bool SetMineVariantVisibilityPatch(
         int curFrame = -1;
 
         if (pThis->IsSurveyed(TethysGame::LocalPlayer())) {
-          OreVariant mid  = OreVariant::_1;  // OreVariant with the best peak yield per bar yield class
-          OreVariant high = OreVariant::_1;  // OreVariant with the best minimum yield per bar yield class
-
-          auto*const pMineManager = MineManager::GetInstance();
-          for (OreVariant v = OreVariant::_2; v < OreVariant::Count; ++(int&)(v)) {
-            auto*const pYieldInfo = pMineManager->GetYieldInfo(pThis->mineYield_, v);
-            if ((pYieldInfo->peakYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->peakYield)) {
-              mid = v;
-            }
-            else if ((pYieldInfo->minYield > pMineManager->GetYieldInfo(pThis->mineYield_, high)->minYield)) {
-              high = v;
-            }
-          }
-
-          if (pThis->mineVariant_ == mid) {
-            curFrame = (TethysGame::Tick() % (numFrames * 4)) / 2;
-            if (curFrame >= numFrames) {
+          switch (MineManager::GetInstance()->GetOreVariant(pThis->mineYield_, pThis->mineVariant_)) {
+            case OreVariant::Low:
+              // Low variant (no animation)
               curFrame = 0;
-            }
-          }
-          else if (pThis->mineVariant_ != high) {
-            curFrame = 0;
+              break;
+            case OreVariant::Mid:
+              // Mid variant (slower animation)
+              curFrame = (TethysGame::Tick() % (numFrames * 4)) / 2;
+              if (curFrame >= numFrames) {
+                curFrame = 0;
+              }
+              break;
+            default:
+              break;
           }
         }
 

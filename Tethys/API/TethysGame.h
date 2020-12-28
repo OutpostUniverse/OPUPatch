@@ -115,15 +115,17 @@ public:
   }
 
   /// Creates a mining beacon, magma vent, or fumarole on the map.
-  /// @note yield and variant are only meaningful when @ref type is RandomOre, CommonOre, or RareOre.
+  /// @note @ref yield and @ref variant are only meaningful when @ref type is RandomOre, CommonOre, or RareOre.
   static Unit CreateMine(
     Location location, MineType type = MineType::RandomOre,
     OreYield yield = OreYield::Random, OreVariant variant = OreVariant::Random)
   {
     const MapID mapID = (type == MineType::MagmaVent) ? MapID::MagmaVent :
                         (type == MineType::Fumarole)  ? MapID::Fumarole  : MapID::MiningBeacon;
-    return OP2Thunk<0x478940, ibool FASTCALL(MapID, int, int, MineType, OreYield, OreVariant)>(
-      mapID, location.x, location.y, max(type, MineType::RandomOre), yield, variant) ? Player[6].GetBeacons() : Unit();
+    yield = ((mapID == MapID::MiningBeacon) && (yield == OreYield::Random)) ? OreYield(TethysGame::GetRand(3)) : yield;
+    const int varNum = MineManager::GetInstance()->GetVariantNum(yield, variant);
+    return OP2Thunk<0x478940, ibool FASTCALL(MapID, int, int, MineType, OreYield, int)>(
+      mapID, location.x, location.y, max(type, MineType::RandomOre), yield, varNum) ? Player[6].GetBeacons() : Unit();
   }
 
   /// Creates wreckage that grants the given tech ID when turned in at a spaceport.  Tech ID must be within 8000-12095.
