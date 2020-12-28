@@ -7,27 +7,28 @@ namespace Tethys {
 
 /// Mining beacon ore type.
 enum class OreType : int8 {
-  Random = -1,  ///< 70% chance of Common, 30% chance of Rare upon creation.
-  Common =  0,
-  Rare   =  1,
+  Random = -1,  ///< 70% chance of Common, or 30% chance of Rare upon creation.
+  Common =  0,  ///< Common ore.
+  Rare   =  1,  ///< Rare ore.  @note Requires Rare Ore Processing to be visible.
   Count
 };
 
 /// Mining beacon "bar" yield type (major impact on ore output).
 enum class OreYield : int {
-  Random = -1,  ///< 20% chance of Bar3, 60% chance of Bar2, 20% chance of Bar1 upon creation.
-  Bar3   =  0,
-  Bar2   =  1,
-  Bar1   =  2,
+  Random = -1,  ///< 20% chance of Bar3, 60% chance of Bar2, or 20% chance of Bar1 upon creation.
+
+  Bar3   =  0,  ///< 50% initial yield => 10-20 loads -> 55-60% peak => 50-60 loads -> 30-35% min (depending on variant)
+  Bar2   =  1,  ///< 30% initial yield => 10-20 loads -> 35-40% peak => 35-40 loads -> 20-25% min (depending on variant)
+  Bar1   =  2,  ///< 10% initial yield => 10-20 loads -> 20-30% peak => 40-50 loads -> 10-15% min (depending on variant)
   Count
 };
 
 /// Mining beacon yield variant type (minor impact on ore output).
 enum class OreVariant : int {
   Random = -1,  ///< Even chance to pick any variant upon creation.
-  High   = 0,   ///< Rated by best minimum yield, then total # of truckloads.  (Internal: 2/3 bar = #2, 1 bar = #0)
-  Mid,          ///< Rated by best peak yield, then total # of truckloads.     (Internal: 2/3 bar = #0, 1 bar = #1)
-  Low,          ///< Neither of the above.                                     (Internal: 2/3 bar = #1, 1 bar = #2)
+  High   = 0,   ///< Rated by best minimum yield, then total # of truckloads.  (Internal:  1 bar = #0,  2/3 bar = #2)
+  Mid,          ///< Rated by best peak yield, then total # of truckloads.     (Internal:  1 bar = #1,  2/3 bar = #0)
+  Low,          ///< Neither of the above.                                     (Internal:  1 bar = #2,  2/3 bar = #1)
   Count
 };
 
@@ -66,8 +67,8 @@ public:
 
   struct TruckLoadData {
     int field_00;
-    int peakTruck;  ///< 'PEAK_TRUCK'
-    int minTruck;   ///< 'MIN_TRUCK'
+    int peakTruck;     ///< 'PEAK_TRUCK'
+    int minTruck;      ///< 'MIN_TRUCK'
   } truckLoadInfo_[NumYields * NumVariants];
 
   struct YieldPercentData {
