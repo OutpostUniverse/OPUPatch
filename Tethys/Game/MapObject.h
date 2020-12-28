@@ -1169,7 +1169,7 @@ public:
 
   virtual OreType  GetOreType()                        { return Thunk<0x405520, &$::GetOreType>();                    }
   virtual void     Survey(int playerNum)               { return Thunk<0x405530, &$::Survey>(playerNum);               }
-  virtual ibool    IsBeaconSurveyed(int playerNum)     { return Thunk<0x4055F0, &$::IsBeaconSurveyed>(playerNum);     }
+  virtual ibool    IsSurveyed(int playerNum)           { return Thunk<0x4055F0, &$::IsSurveyed>(playerNum);           }
   virtual void     CreateBeacon(int oreType, int barYield, int variant)
     { return Thunk<0x405650, &$::CreateBeacon>(oreType, barYield, variant); }
   virtual OreYield GetBarYield()                       { return Thunk<0x405720, &$::GetBarYield>();                   }
@@ -1177,7 +1177,7 @@ public:
   virtual void     SetNumTruckLoads(int numTruckLoads) { return Thunk<0x405770, &$::SetNumTruckLoads>(numTruckLoads); }
 
 #define OP2_MO_MININGBEACON_VTBL($)  \
-  $(GetOreType)  $(Survey)  $(IsBeaconSurveyed)  $(CreateBeacon)  $(GetBarYield)  $(BuildMine)  $(SetNumTruckLoads)
+  $(GetOreType)  $(Survey)  $(IsSurveyed)  $(CreateBeacon)  $(GetBarYield)  $(BuildMine)  $(SetNumTruckLoads)
   DEFINE_VTBL_TYPE(OP2_MO_MININGBEACON_VTBL, 0x4CF218);
 
 public:

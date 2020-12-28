@@ -512,10 +512,10 @@ bool SetAllyEdwardSurveyMinesPatch(
 
   if (enable) {
     // Replace MiningMeacon::IsBeaconSurveyed() vftable entry with our function
-    static auto*const pfnOldIsBeaconSurveyed = MapObj::MiningBeacon::Vtbl()->pfnIsBeaconSurveyed;
-    patcher.Write(&MapObj::MiningBeacon::Vtbl()->pfnIsBeaconSurveyed, ThiscallLambdaPtr(
+    static auto*const pfnOldIsSurveyed = MapObj::MiningBeacon::Vtbl()->pfnIsSurveyed;
+    patcher.Write(&MapObj::MiningBeacon::Vtbl()->pfnIsSurveyed, ThiscallLambdaPtr(
       [](MapObj::MiningBeacon* pThis, int playerNum) {
-        ibool result = pfnOldIsBeaconSurveyed(pThis, playerNum);
+        ibool result = pfnOldIsSurveyed(pThis, playerNum);
 
         if (result == false) {
           uint32 mask = Player[playerNum].GetImpl()->alliedBy_;

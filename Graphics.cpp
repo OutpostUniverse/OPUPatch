@@ -327,7 +327,7 @@ bool SetMineVariantVisibilityPatch(
       [](Esi<MapObj::MiningBeacon*> pThis, Edi<int> animIndex, Eax<int> numFrames, Edx<int>& frame, Ebp<int>& pixelX) {
         int curFrame = -1;
 
-        if (pThis->playerSurveyedMask_[TethysGame::LocalPlayer()]) {
+        if (pThis->IsSurveyed(TethysGame::LocalPlayer())) {
           if (pThis->mineVariant_ == OreVariant::Low) {
             curFrame = 0;
           }
