@@ -245,13 +245,13 @@ public:
   void SetStickyfoamed(int duration) { if (IsLive()) { GetMapObject()->SetStickyfoamed(duration); }        }
   ///@}
 
-  bool GetLights() { return IsLive() && HasFlag(MoFlagVecHeadlights); }  ///< Vehicle's headlights are on?
-
-  void DoSetLights(bool on);
+  bool GetLights() { return IsLive() && HasFlag(MoFlagVecHeadlights); }  ///< Vehicle's headlights are turned on?
+  
+  void DoSetLights(bool on);                                                  ///< Turns vehicle's headlights on or off.
   void DoMove(Location where) { if (IsLive()) { const auto [x, y] = where.GetPixel(); GetMapObject()->CmdMove(x, y); } }
-  void DoDock(Unit at)
+  void DoDock(Unit at)                                                        ///< Docks this Unit at a structure.
     { auto d = at.GetDockLocation();  if (IsLive() && d) { GetMapObject()->CmdDock(d.GetPixelX(), d.GetPixelY()); } }
-  void DoDockAtGarage(Unit garage);
+  void DoDockAtGarage(Unit garage);                                           ///< Docks this Unit at a Garage.
   void DoBuild(Location  bottomRight);                                        ///< [ConVec] Build a structure.
   void DoDeploy(Location center);                                             ///< [Robo-Miner, GeoCon] Deploy building.
   void DoDismantle(Unit what);                                                ///< [ConVec] Dismantle a structure.

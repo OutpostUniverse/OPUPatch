@@ -16,10 +16,9 @@ enum class OreType : int8 {
 /// Mining beacon "bar" yield type (major impact on ore output).
 enum class OreYield : int {
   Random = -1,  ///< 20% chance of Bar3, 60% chance of Bar2, or 20% chance of Bar1 upon creation.
-
-  Bar3   =  0,  ///< 50% initial yield -> 10-20 loads => 55-60% peak -> 50-60 loads => 30-35% min (depending on variant)
-  Bar2   =  1,  ///< 30% initial yield -> 10-20 loads => 35-40% peak -> 35-40 loads => 20-25% min (depending on variant)
-  Bar1   =  2,  ///< 10% initial yield -> 10-20 loads => 20-30% peak -> 40-50 loads => 10-15% min (depending on variant)
+  Bar3   =  0,  ///< 50% yield -> 14/20/10 loads => 60/55/55% peak -> 50/60/50 loads => 30/30/35% min (variant #0/1/2)
+  Bar2   =  1,  ///< 30% yield -> 10/12/20 loads => 40/40/35% peak -> 40/35/40 loads => 20/20/25% min (variant #0/1/2)
+  Bar1   =  2,  ///< 10% yield -> 10/14/20 loads => 25/30/20% peak -> 40/45/50 loads => 15/10/10% min (variant #0/1/2)
   Count
 };
 
