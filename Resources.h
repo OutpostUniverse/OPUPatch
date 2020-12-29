@@ -20,4 +20,7 @@
 
 // Macro to define or match resource replacement template names.
 #define RESOURCE_REPLACE(moduleName, resourceId)      __RESOURCE_REPLACE__(moduleName!resourceId)
-#define RESOURCE_REPLACE_STR(moduleName, resourceId)  STRINGIFY(RESOURCE_REPLACE(moduleName, resourceId))
+#define RESOURCE_REPLACE_NAME(moduleName, resourceId)  STRINGIFY(RESOURCE_REPLACE(moduleName, resourceId))
+
+// Macro to define raw string resources.
+#define RESOURCE_STRING(text) 6 { text, L"\0" }

@@ -7,8 +7,9 @@
 #include "Patcher.h"
 #include "Util.h"
 #include "Resources.h"
-#include "Library.h"
 #include "Stream.h"
+
+#include "Tethys/Common/Library.h"
 
 #include "Tethys/API/Mission.h"
 #include "Tethys/API/TethysGame.h"
@@ -21,9 +22,11 @@
 #include "Tethys/UI/IWnd.h"
 #include "Tethys/UI/GameFrame.h"
 
+#include "Tethys/Resource/CConfig.h"
 #include "Tethys/Resource/StreamIO.h"
 #include "Tethys/Resource/ResManager.h"
 #include "Tethys/Resource/Font.h"
+#include "Tethys/Resource/Odasl.h"
 #include "Tethys/Resource/SoundManager.h"
 #include "Tethys/Resource/LocalizedStrings.h"
 
@@ -40,8 +43,11 @@
 
 using namespace Tethys;
 using namespace Tethys::API;
+using namespace Tethys::TethysUtil;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
+
+static constexpr char NewIconName[] = "FENRISUL_OP2_ICON";
 
 static constexpr uint32 MaxNumMessagesLogged = 64;                           // ** TODO Try to increase this?
 static constexpr uint32 MaxLogMessageLen     = sizeof(ListItem::text) - 10;  // ** TODO Try to increase this?
@@ -51,7 +57,7 @@ static MessageLogEntry<MaxLogMessageLen> g_messageLogRb[MaxNumMessagesLogged] = 
 static char g_chatBarMessage[MaxLogMessageLen]   = { };
 static char g_statusBarMessage[MaxLogMessageLen] = { };
 
-enum class PreserveAspectMode : int {
+enum class PreserveAspect : int {
   Disabled = 0,
   Enabled,
   CropWidth,
@@ -60,11 +66,11 @@ enum class PreserveAspectMode : int {
 
 // =====================================================================================================================
 static HBITMAP LoadGdiImageFromFile(
-  const              std::filesystem::path& path,
-  int                scaleWidth     = 0,
-  int                scaleHeight    = 0,
-  PreserveAspectMode preserveAspect = PreserveAspectMode::Disabled,
-  HDC                hDc            = NULL)
+  const          std::filesystem::path& path,
+  int            scaleWidth     = 0,
+  int            scaleHeight    = 0,
+  PreserveAspect preserveAspect = PreserveAspect::Disabled,
+  HDC            hDc            = NULL)
 {
   HBITMAP hBitmapOut  = NULL;
   HRESULT hInitResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
@@ -112,12 +118,12 @@ static HBITMAP LoadGdiImageFromFile(
   const bool scaled = (srcWidth > 0) && (srcHeight > 0) && (scaleWidth > 0) && (scaleHeight > 0);
   if (SUCCEEDED(hResult) && scaled) {
     auto ScaleWidth = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
-      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::CropWidth)) {
+      if ((preserveAspect == PreserveAspect::Enabled) || (preserveAspect == PreserveAspect::CropWidth)) {
         scaleWidth = scaleHeight * srcWidth / srcHeight;
       }
     };
     auto ScaleHeight = [preserveAspect, srcWidth, srcHeight, &scaleWidth, &scaleHeight]() {
-      if ((preserveAspect == PreserveAspectMode::Enabled) || (preserveAspect == PreserveAspectMode::CropHeight)) {
+      if ((preserveAspect == PreserveAspect::Enabled) || (preserveAspect == PreserveAspect::CropHeight)) {
         scaleHeight = scaleWidth * srcHeight / srcWidth;
       }
     };
@@ -217,128 +223,167 @@ static std::string FindResourceReplacement(
   char buf[256] = "";
   if (IS_INTRESOURCE(pTemplate)) {
     snprintf(
-      &buf[0], sizeof(buf), RESOURCE_REPLACE_STR(%s, %i), moduleName.data(), reinterpret_cast<int>(pTemplate));
+      &buf[0], sizeof(buf), RESOURCE_REPLACE_NAME(%s, %i), moduleName.data(), reinterpret_cast<int>(pTemplate));
   }
   else {
-    snprintf(&buf[0], sizeof(buf), RESOURCE_REPLACE_STR(%s, %s), moduleName.data(), pTemplate);
+    snprintf(&buf[0], sizeof(buf), RESOURCE_REPLACE_NAME(%s, %s), moduleName.data(), pTemplate);
   }
 
   std::string result = "";
-  if (FindResourceA(static_cast<HMODULE>(g_hInst), &buf[0], pResType) != NULL) {
+  if (FindResourceA(g_hInst, &buf[0], pResType) != NULL) {
     // ** TODO This should search in all loaded modules
     result    = buf;
-    *phModule = static_cast<HMODULE>(g_hInst);
+    *phModule = g_hInst;
   }
 
   return result;
 }
 
 // =====================================================================================================================
-static void MainMenuBackgroundPatch(
-  Patcher::PatchContext* pShellPatcher)
+// Replaces main menu assets.
+static bool SetMainMenuPatch(
+  bool enable)
 {
-  // Inject main menu background replacement, and draw the OP2 logo and game version number on the main menu screen.
-  static HDC    hDcLogo      = NULL;
-  static HANDLE hBitmapLogo  = NULL;
-  static BITMAP hPvLogo      = { };
-  static HFONT  hVersionFont = NULL;
+  static Patcher::PatchContext patcher("OP2Shell.dll", true);
+  bool success = true;
 
-  // In OP2Shell::Init()
-  pShellPatcher->LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmapBg, Esp<void*> pEsp) {
-    // If files of the form "MainMenuBackground{00-99}.png" (continuous) exist, pick one at random.
-    std::filesystem::path              bgPath;
-    std::vector<std::filesystem::path> bgFilePaths;
-    char curFilename[] = "MainMenuBackground00.png";
+  if (enable) {
+    // Inject main menu background replacement, and draw the OP2 logo and game version number on the main menu screen.
+    static HDC    hDcLogo      = NULL;
+    static HANDLE hBitmapLogo  = NULL;
+    static BITMAP hPvLogo      = { };
+    static HFONT  hVersionFont = NULL;
+
+    // In OP2Shell::Init()
+    patcher.LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmapBg, Esp<void*> pEsp) {
+      // If files of the form "MainMenuBackground{00-99}.png" (continuous) exist, pick one at random.
+      std::filesystem::path              bgPath;
+      std::vector<std::filesystem::path> bgFilePaths;
+      char curFilename[] = "MainMenuBackground00.png";
     
-    if (auto dir = GetFilePath(curFilename);  dir.has_parent_path()) {
-      dir = dir.parent_path();
+      if (auto dir = GetFilePath(curFilename);  dir.has_parent_path()) {
+        dir = dir.parent_path();
 
-      for (int i = 0; i < 100; ++i) {
-        curFilename[sizeof("MainMenuBackground") - 1] = '0' + (i / 10);
-        curFilename[sizeof("MainMenuBackground")]     = '0' + (i % 10);
-        if (auto curPath = dir/curFilename;  std::filesystem::exists(curPath)) {
-          bgFilePaths.emplace_back(std::move(curPath));
-        }
-        else {
-          break;
+        for (int i = 0; i < 100; ++i) {
+          curFilename[sizeof("MainMenuBackground") - 1] = '0' + (i / 10);
+          curFilename[sizeof("MainMenuBackground")]     = '0' + (i % 10);
+          if (auto curPath = dir/curFilename;  std::filesystem::exists(curPath)) {
+            bgFilePaths.emplace_back(std::move(curPath));
+          }
+          else {
+            break;
+          }
         }
       }
-    }
 
-    if (bgFilePaths.empty() == false) {
-      std::shuffle(bgFilePaths.begin(), bgFilePaths.end(), std::mt19937());
-      bgPath = bgFilePaths[0];
-    }
+      if (bgFilePaths.empty() == false) {
+        std::shuffle(bgFilePaths.begin(), bgFilePaths.end(), std::mt19937());
+        bgPath = bgFilePaths[0];
+      }
 
-    if (hDcLogo = hDcLogo ? hDcLogo : CreateCompatibleDC(NULL);  (hDcLogo != NULL) && (hBitmapLogo == NULL)) {
-      // Load the Outpost 2 logo image from op2shres.dll so we can draw it to the main menu.
-      HMODULE hOp2ShRes = GetModuleHandleA("op2shres.dll");
-      hBitmapLogo = (hOp2ShRes != NULL) ? LoadImageA(hOp2ShRes, MAKEINTRESOURCEA(145), IMAGE_BITMAP, 0, 0, 0) : NULL;
+      if (hDcLogo = hDcLogo ? hDcLogo : CreateCompatibleDC(NULL);  (hDcLogo != NULL) && (hBitmapLogo == NULL)) {
+        // Load the Outpost 2 logo image from op2shres.dll so we can draw it to the main menu.
+        HMODULE hOp2ShRes = GetModuleHandleA("op2shres.dll");
+        hBitmapLogo = (hOp2ShRes != NULL) ? LoadImageA(hOp2ShRes, MAKEINTRESOURCEA(145), IMAGE_BITMAP, 0, 0, 0) : NULL;
+        if (hBitmapLogo != NULL) {
+          hPvLogo = { };
+          GetObjectA(hBitmapLogo, sizeof(hPvLogo), &hPvLogo);
+        }
+      }
+
+      if (hVersionFont == NULL) {
+        // Initialize the font to use to draw the version text on the main menu.
+        LOGFONTA createInfo = { };
+        strncpy_s(&createInfo.lfFaceName[0], sizeof(createInfo.lfFaceName), "Arial", _TRUNCATE);
+        createInfo.lfHeight         = -11;
+        createInfo.lfWeight         = 400;
+        createInfo.lfCharSet        = 1;
+        createInfo.lfOutPrecision   = 7;
+        createInfo.lfPitchAndFamily = 82;
+        hVersionFont = CreateFontIndirectA(&createInfo);
+      }
+
+      auto*const pRect = static_cast<RECT*>(PtrInc(pEsp, 0xC));
+      hBitmapBg =
+        bgPath.empty() ? NULL : LoadGdiImageFromFile(bgPath, pRect->right, pRect->bottom, PreserveAspect::CropWidth);
+      return (hBitmapBg != NULL) ? 0x13007ED3 : 0;  // Use original background image as a fallback.
+    });
+
+    // In OP2Shell::WndProc()
+    // ** TODO Should do all blits to a backbuffer, modern Windows DWM presents after every window DC blit
+    patcher.LowLevelHook(0x13008012, [](Ebx<void*> pThis, Esi<HDC> hDcWnd, Ebp<int> x, Edi<int> y) {
+      const auto [cx, cy] = std::tie(*PtrInc<int*>(pThis, 0x1C), *PtrInc<int*>(pThis, 0x20));
+
+      // Draw Outpost 2 logo.
+      if ((hDcLogo != NULL) && (hBitmapLogo != NULL) && (hPvLogo.bmWidth != 0) && (hPvLogo.bmHeight != 0)) {
+        SelectObject(hDcLogo, hBitmapLogo);
+        BitBlt(
+          hDcWnd, x + ((cx - hPvLogo.bmWidth) / 2), y + 40, hPvLogo.bmWidth, hPvLogo.bmHeight, hDcLogo, 0, 0, SRCCOPY);
+      }
+
+      // Draw OPU mod version number.
+      if (hVersionFont != NULL) {
+        static constexpr char Version[] = "OPU Mod v" OP2_VERSION_TRIPLE_STR;
+
+        RECT textRect = { 10, 10, 0, 0 };
+        SetTextColor(hDcWnd, 0x606060);
+        SetBkMode(hDcWnd, TRANSPARENT);
+        SelectObject(hDcWnd, hVersionFont);
+        if (DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_CALCRECT) != 0) {
+          DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_TOP | DT_LEFT);
+        }
+      }
+    });
+
+    // In OP2Shell::ShutDown()
+    patcher.LowLevelHook(0x13009383, [] {
+      if (hDcLogo != NULL) {
+        DeleteDC(hDcLogo);
+        hDcLogo = NULL;
+      }
       if (hBitmapLogo != NULL) {
-        hPvLogo = { };
-        GetObjectA(hBitmapLogo, sizeof(hPvLogo), &hPvLogo);
+        DeleteObject(hBitmapLogo);
+        hBitmapLogo = NULL;
       }
-    }
-
-    if (hVersionFont == NULL) {
-      // Initialize the font to use to draw the version text on the main menu.
-      LOGFONTA createInfo = { };
-      strncpy_s(&createInfo.lfFaceName[0], sizeof(createInfo.lfFaceName), "Arial", _TRUNCATE);
-      createInfo.lfHeight         = -11;
-      createInfo.lfWeight         = 400;
-      createInfo.lfCharSet        = 1;
-      createInfo.lfOutPrecision   = 7;
-      createInfo.lfPitchAndFamily = 82;
-      hVersionFont = CreateFontIndirectA(&createInfo);
-    }
-
-    auto*const pRect = static_cast<RECT*>(PtrInc(pEsp, 0xC));
-    hBitmapBg =
-      bgPath.empty() ? NULL : LoadGdiImageFromFile(bgPath, pRect->right, pRect->bottom, PreserveAspectMode::CropWidth);
-    return (hBitmapBg != NULL) ? 0x13007ED3 : 0;  // Use original background image as a fallback.
-  });
-
-  // In OP2Shell::WndProc()
-  // ** TODO Should do all blits to a backbuffer, modern Windows DWM presents after every window DC blit
-  pShellPatcher->LowLevelHook(0x13008012, [](Ebx<void*> pThis, Esi<HDC> hDcWnd, Ebp<int> x, Edi<int> y) {
-    const auto [cx, cy] = std::tie(*PtrInc<int*>(pThis, 0x1C), *PtrInc<int*>(pThis, 0x20));
-
-    // Draw Outpost 2 logo.
-    if ((hDcLogo != NULL) && (hBitmapLogo != NULL) && (hPvLogo.bmWidth != 0) && (hPvLogo.bmHeight != 0)) {
-      SelectObject(hDcLogo, hBitmapLogo);
-      BitBlt(
-        hDcWnd, x + ((cx - hPvLogo.bmWidth) / 2), y + 40, hPvLogo.bmWidth, hPvLogo.bmHeight, hDcLogo, 0, 0, SRCCOPY);
-    }
-
-    // Draw OPU mod version number.
-    if (hVersionFont != NULL) {
-      static constexpr char Version[] = "OPU Mod v" OP2_VERSION_TRIPLE_STR;
-
-      RECT textRect = { 10, 10, 0, 0 };
-      SetTextColor(hDcWnd, 0x606060);
-      SetBkMode(hDcWnd, TRANSPARENT);
-      SelectObject(hDcWnd, hVersionFont);
-      if (DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_CALCRECT) != 0) {
-        DrawTextA(hDcWnd, &Version[0], -1, &textRect, DT_TOP | DT_LEFT);
+      if (hVersionFont != NULL) {
+        DeleteObject(hVersionFont);
+        hVersionFont = NULL;
       }
-    }
-  });
+    });
 
-  // In OP2Shell::ShutDown()
-  pShellPatcher->LowLevelHook(0x13009383, [] {
-    if (hDcLogo != NULL) {
-      DeleteDC(hDcLogo);
-      hDcLogo = NULL;
-    }
-    if (hBitmapLogo != NULL) {
-      DeleteObject(hBitmapLogo);
-      hBitmapLogo = NULL;
-    }
-    if (hVersionFont != NULL) {
-      DeleteObject(hVersionFont);
-      hVersionFont = NULL;
-    }
-  });
+    // In OP2Shell::RegisterClass()
+    patcher.HookCall(0x130092ED, StdcallLambdaPtr([](HMODULE, const char*)
+      { return LoadIconA(g_hInst, &NewIconName[0]); }));
+
+    // In AviWnd::RegisterClass()
+    patcher.LowLevelHook(0x1300129E, [](Esp<void*> pEsp)
+      { PtrInc<WNDCLASSA*>(pEsp, 20)->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
+
+    // Enable D keyboard shortcut for the hidden debug menu button on the main menu dialog.
+    // Hook MainMenuDialog::DlgProc() (replace vtbl entry)
+    patcher.Write(0x130110A0, ThiscallLambdaPtr([](IDlgWnd* pThis, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+      static auto*const pfnDialogProc =
+        static_cast<INT_PTR(__thiscall*)(IDlgWnd*, UINT, WPARAM, LPARAM)>(patcher.FixPtr(0x13002900));
+
+      const INT_PTR result = pfnDialogProc(pThis, uMsg, wParam, lParam);
+
+      if (uMsg == WM_INITDIALOG) {
+        if (const HWND hDebugButton = GetDlgItem(pThis->hWnd_, 1033);  hDebugButton != NULL) {
+          SendMessageA(hDebugButton, WM_SETTEXT, 0, LPARAM("&DEBUG TEST..."));
+        }
+      }
+
+      return result;
+    }));
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
 }
 
 // =====================================================================================================================
@@ -347,7 +392,10 @@ bool SetUiResourceReplacePatch(
   bool enable)
 {
   static Patcher::PatchContext op2Patcher;
-  static Patcher::PatchContext shellPatcher("OP2Shell.dll", true);
+  static Patcher::PatchContext odaslPatcher("odasl.dll", true);
+  static Patcher::PatchContext sysPatcher(&LoadStringA);
+  static Library odasl("odasl.lib");
+
   bool success = true;
 
   if (enable) {
@@ -364,50 +412,62 @@ bool SetUiResourceReplacePatch(
         return F(pThis, (newName.empty() ? pTmpl : newName.data()), hMod, hWnd);
       }));
 
-    static constexpr char NewIconName[] = "FENRISUL_OP2_ICON";
-
     // In GameFrame::RegisterClass()
     op2Patcher.HookCall(0x49B1C4, StdcallLambdaPtr([](HMODULE, const char*)
       { return LoadIconA(g_hInst, &NewIconName[0]); }));
 
-    // In OP2Shell::RegisterClass()
-    shellPatcher.HookCall(0x130092ED, StdcallLambdaPtr([](HMODULE, const char*)
-      { return LoadIconA(g_hInst, &NewIconName[0]); }));
-
     // In IWnd::RegisterClass()
     op2Patcher.LowLevelHook(0x43151D, [](Esp<void*> pEsp)
-      { static_cast<WNDCLASSA*>(PtrInc(pEsp,  8))->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
+      { PtrInc<WNDCLASSA*>(pEsp, 8)->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
 
-    // In AviWnd::RegisterClass()
-    shellPatcher.LowLevelHook(0x1300129E, [](Esp<void*> pEsp)
-      { static_cast<WNDCLASSA*>(PtrInc(pEsp, 20))->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
+    // In wplLoadResourceBitmap()
+    static std::set<std::string> resourceNames;
+    odaslPatcher.LowLevelHook(0x2000B129, [](Eax<const char*>& pName, Esp<void*> pEsp) {
+      auto it = resourceNames.insert(FindResourceReplacement(RT_BITMAP, pName, PtrInc<HMODULE*>(pEsp, 0x10))).first;
+      pName   = ((it == resourceNames.end()) || it->empty()) ? pName : it->data();
+    });
 
-    // Enable D keyboard shortcut for the hidden debug menu button on the main menu dialog.
-    // Hook MainMenuDialog::DlgProc() (replace vtbl entry)
-    shellPatcher.Write(0x130110A0, ThiscallLambdaPtr([](IDlgWnd* pThis, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-      static auto*const pfnDialogProc =
-        static_cast<INT_PTR(__thiscall*)(IDlgWnd*, UINT, WPARAM, LPARAM)>(shellPatcher.FixPtr(0x13002900));
-
-      const INT_PTR result = pfnDialogProc(pThis, uMsg, wParam, lParam);
-
-      if (uMsg == WM_INITDIALOG) {
-        if (const HWND hDebugButton = GetDlgItem(pThis->hWnd_, 1033);  hDebugButton != NULL) {
-          SendMessageA(hDebugButton, WM_SETTEXT, 0, LPARAM("&DEBUG TEST..."));
+    // Hook LoadStringA() to replace string table resources (which are used by odasl for fonts and element colors).
+    sysPatcher.Hook(&LoadStringA, SetCapturedTrampoline, StdcallFunctor(
+      [F = decltype(&LoadStringA){}](HMODULE hMod, UINT id, char* pBuffer, int size) -> int {
+        if (auto name = FindResourceReplacement(RT_STRING, MAKEINTRESOURCE(id), &hMod);  name.empty() == false) {
+          if (HRSRC hRsrc = FindResourceA(hMod, name.data(), RT_STRING);  hRsrc != NULL) {
+            if (size == 0) {
+              return SizeofResource(hMod, hRsrc);
+            }
+            else if (HANDLE hRes = LoadResource(hMod, hRsrc);  hRes != NULL) {
+              if (void* pStr = LockResource(hRes);  pStr != nullptr) {
+                return (strncpy_s(pBuffer, size, static_cast<char*>(pStr), _TRUNCATE) == 0) ? strlen(pBuffer) : 0;
+              }
+            }
+          }
         }
-      }
+        return F(hMod, id, pBuffer, size);
+      }));
 
-      return result;
-    }));
+    success = (op2Patcher.GetStatus()   == PatcherStatus::Ok) &&
+              (odaslPatcher.GetStatus() == PatcherStatus::Ok) &&
+              (sysPatcher.GetStatus()   == PatcherStatus::Ok) &&
+              SetMainMenuPatch(true);
 
-    // Replace main menu background image.
-    MainMenuBackgroundPatch(&shellPatcher);
-
-    success = ((op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok));
+    if (success) {
+      static const auto cleanup = atexit([] { SetUiResourceReplacePatch(false); });
+    }
   }
 
   if ((enable == false) || (success == false)) {
     success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
-    success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
+    success &= (odaslPatcher.RevertAll() == PatcherStatus::Ok);
+    success &= (sysPatcher.RevertAll()   == PatcherStatus::Ok);
+    success &= (SetMainMenuPatch(false));
+  }
+
+  // Re-init Odasl to refresh loaded resources.
+  if (HMODULE hShell = GetModuleHandleA("OP2Shell.dll");  hShell && g_configFile.GetInt("Game", "SpiffyDraw", 1)) {
+    Odasl::wplExit();
+    auto*const pfnShellInitOdasl = reinterpret_cast<ibool(FASTCALL*)(void* pShell)>(
+      reinterpret_cast<uint8*>(hShell) - OP2ShellBase + 0x13007D30);
+    pfnShellInitOdasl(reinterpret_cast<uint8*>(hShell) - OP2ShellBase + 0x130158F0);
   }
 
   return success;

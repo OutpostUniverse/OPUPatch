@@ -89,9 +89,6 @@
     <ClInclude Include="Resources.h">
       <Filter>Resources</Filter>
     </ClInclude>
-    <ClInclude Include="Library.h">
-      <Filter>Util</Filter>
-    </ClInclude>
     <ClInclude Include="Tethys\Common\Types.h">
       <Filter>Tethys\Common</Filter>
     </ClInclude>
@@ -299,6 +296,12 @@
     <ClInclude Include="Tethys\Game\MineManager.h">
       <Filter>Tethys\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Tethys\Resource\Odasl.h">
+      <Filter>Tethys\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\Common\Library.h">
+      <Filter>Tethys\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Patcher.cpp">
@@ -346,6 +349,9 @@
       <Filter>Resources</Filter>
     </ResourceCompile>
     <ResourceCompile Include="MultiplayerMethodMenu.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="UI.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
   </ItemGroup>

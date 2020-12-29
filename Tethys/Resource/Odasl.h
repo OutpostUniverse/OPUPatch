@@ -2,11 +2,12 @@
 #pragma once
 
 #include "Tethys/Common/Memory.h"
+#include "Tethys/Common/Library.h"
 
-namespace Tethys {
+namespace Tethys::Odasl {
 
 /// Structure used to pass information to ODASL in wplInit.
-struct wplOptions {
+struct WplCreateInfo {
 	uint32    structSize;   ///< [60]
 	uint32    field_04;     ///< Flags?  [87]
 	HINSTANCE hAppInst;     ///< OS handle to OP2Shell.dll.
@@ -18,16 +19,23 @@ struct wplOptions {
 	uint32    field_20[7];  ///< [{0}]
 };
 
-CAPI DLLIMPORT int     CDECL wplInit(wplOptions* pCreateInfo);  ///< Initializes ODASL.
-CAPI DLLIMPORT void    CDECL wplExit();                         ///< Uninitializes ODASL.
-CAPI DLLIMPORT void    CDECL wplEnable();                       ///< Enables ODASL skinning.
-CAPI DLLIMPORT void    CDECL wplDisable();                      ///< Disables ODASL skinning.
+inline const TethysUtil::Library& GetOdasl() { static TethysUtil::Library odaslLib("odasl.dll");  return odaslLib; }
 
-// The following APIs are exposed, but not used by OP2Shell.
-CAPI DLLIMPORT void    CDECL wplSetPalette(HPALETTE palette);
-CAPI DLLIMPORT int     CDECL wplGetSystemMetrics(int nIndex);
-CAPI DLLIMPORT BOOL    CDECL wplAdjustWindowRect(RECT* lpRect, DWORD dwStyle, BOOL bMenu);
-CAPI DLLIMPORT HBITMAP CDECL wplLoadResourceBitmap(HINSTANCE hInstance, const char* lpName); ///< Gets a resource image.
-CAPI DLLIMPORT int     CDECL wplManualDialogSubclass(HWND hDlg);
+/// Initializes ODASL.
+inline int  STDCALL wplInit(WplCreateInfo* pCreateInfo) { return GetOdasl().Get<&wplInit>(__func__)(pCreateInfo); }
+inline void STDCALL wplExit()    { return GetOdasl().Get<&wplExit>(__func__)();    } ///< Uninitializes ODASL.
+inline void STDCALL wplEnable()  { return GetOdasl().Get<&wplEnable>(__func__)();  } ///< Enables ODASL skinning.
+inline void STDCALL wplDisable() { return GetOdasl().Get<&wplDisable>(__func__)(); } ///< Disables ODASL skinning.
 
-}
+// The following APIs are exported, but not directly used by OP2 or OP2Shell.
+inline void    STDCALL wplSetPalette(HPALETTE hPalette) { return GetOdasl().Get<&wplSetPalette>(__func__)(hPalette); }
+inline HBITMAP STDCALL wplLoadResourceBitmap(HINSTANCE hInstance, const char* lpName)
+	{ return GetOdasl().Get<&wplLoadResourceBitmap>(__func__)(hInstance, lpName); }
+inline int     STDCALL wplManualDialogSubclass(HWND hDlg)
+	{ return GetOdasl().Get<&wplManualDialogSubclass>(__func__)(hDlg); }
+
+inline int  STDCALL wplGetSystemMetrics(int nIndex) { return GetOdasl().Get<&wplGetSystemMetrics>(__func__)(nIndex); }
+inline BOOL STDCALL wplAdjustWindowRect(RECT* lpRect, DWORD dwStyle, BOOL bMenu)
+	{ return GetOdasl().Get<&wplAdjustWindowRect>(__func__)(lpRect, dwStyle, bMenu); }
+
+} // Tethys::Odasl

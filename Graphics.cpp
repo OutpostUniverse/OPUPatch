@@ -6,8 +6,8 @@
 
 #include "Patcher.h"
 #include "Util.h"
-#include "Library.h"
 
+#include "Tethys/Common/Library.h"
 #include "Tethys/API/TethysGame.h"
 #include "Tethys/API/GameMap.h"
 #include "Tethys/Game/MineManager.h"
@@ -21,6 +21,7 @@
 
 using namespace Tethys;
 using namespace Tethys::API;
+using namespace Tethys::TethysUtil;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
 
@@ -319,6 +320,7 @@ bool SetAlphaBlendPatch(
 bool SetMineVariantVisibilityPatch(
   bool enable)
 {
+
   static Patcher::PatchContext patcher;
   bool success = true;
 

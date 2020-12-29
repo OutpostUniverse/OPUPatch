@@ -153,7 +153,6 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <Text Include="imported\capstone\LICENSE_LLVM.TXT" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Library.h" />
     <ClInclude Include="imported\capstone\include\capstone.h" />
     <ClInclude Include="imported\capstone\include\platform.h" />
     <ClInclude Include="imported\capstone\include\x86.h" />
@@ -174,6 +173,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClInclude Include="Tethys\API\Trigger.h" />
     <ClInclude Include="Tethys\API\Unit.h" />
     <ClInclude Include="Tethys\API\UnitBlock.h" />
+    <ClInclude Include="Tethys\Common\Library.h" />
     <ClInclude Include="Tethys\Common\Memory.h" />
     <ClInclude Include="Tethys\Common\Types.h" />
     <ClInclude Include="Tethys\Common\Util.h" />
@@ -210,6 +210,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClInclude Include="Tethys\Resource\LocalizedStrings.h" />
     <ClInclude Include="Tethys\Resource\CodecStream.h" />
     <ClInclude Include="Tethys\Resource\MemoryMappedFile.h" />
+    <ClInclude Include="Tethys\Resource\Odasl.h" />
     <ClInclude Include="Tethys\Resource\ResManager.h" />
     <ClInclude Include="Tethys\Resource\SoundID.h" />
     <ClInclude Include="Tethys\Resource\SoundManager.h" />
@@ -251,6 +252,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ResourceCompile Include="MultiplayerIpDropdown.rc" />
     <ResourceCompile Include="MultiplayerLobby.rc" />
     <ResourceCompile Include="MultiplayerMethodMenu.rc" />
+    <ResourceCompile Include="UI.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="OP2Icon.ico" />

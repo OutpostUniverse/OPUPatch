@@ -6,10 +6,10 @@
 #include <vfw.h>
 
 #include "Patcher.h"
-#include "Library.h"
 #include "Util.h"
 #include "Stream.h"
 
+#include "Tethys/Common/Library.h"
 #include "Tethys/Game/TApp.h"
 #include "Tethys/Game/MissionManager.h"
 #include "Tethys/Resource/CConfig.h"
@@ -30,6 +30,7 @@
 
 using namespace Tethys;
 using namespace Tethys::API;
+using namespace Tethys::TethysUtil;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
 
