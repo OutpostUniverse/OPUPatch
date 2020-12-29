@@ -394,7 +394,6 @@ bool SetUiResourceReplacePatch(
   static Patcher::PatchContext op2Patcher;
   static Patcher::PatchContext odaslPatcher("odasl.dll", true);
   static Patcher::PatchContext sysPatcher(&LoadStringA);
-  static Library odasl("odasl.lib");
 
   bool success = true;
 
