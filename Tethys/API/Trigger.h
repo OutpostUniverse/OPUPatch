@@ -9,7 +9,7 @@ namespace Tethys::API {
 
 // ** TODO The Trigger API will be changed substantially.  The current interface should be considered a placeholder.
 
-/// Used by various trigger creation functions.
+/// Comparison modes used by various trigger creation functions.
 enum class CompareMode : int {
   Equal = 0,
   LowerEqual,
@@ -18,7 +18,7 @@ enum class CompareMode : int {
   Greater,
 };
 
-/// Used by CreateResourceTrigger.
+/// Trigger resource types used by CreateResourceTrigger.
 enum class TriggerResource : int {
   Food = 0,
   CommonOre,
@@ -74,11 +74,11 @@ Trigger CreateSetTrigger(
 
 // --------------------------------------------- Typical victory triggers ----------------------------------------------
 
-/// Last One Standing and later part of Land Rush
+/// Creates a trigger used for victory condition in Last One Standing and later part of Land Rush.
 inline Trigger CreateLastOneStandingTrigger(const char* pTriggerFunction, bool oneShot = true, bool enabled = true)
   { return OP2Thunk<0x478F30, Trigger FASTCALL(ibool, ibool, const char*)>(enabled, oneShot, pTriggerFunction); }
 
-/// Space Race
+/// Creates a trigger used for victory condition in Space Race.
 inline Trigger CreateSpaceRaceTrigger(
   const char* pTriggerFunction, int playerNum = AllPlayers, bool oneShot = true, bool enabled = true)
 {
@@ -86,7 +86,7 @@ inline Trigger CreateSpaceRaceTrigger(
     enabled, oneShot, playerNum, pTriggerFunction);
 }
 
-/// Midas
+/// Creates a trigger used for victory condition in Midas.
 inline Trigger CreateMidasTrigger(int time, const char* pTriggerFunction, bool oneShot = true, bool enabled = true) {
   return OP2Thunk<0x479300, Trigger FASTCALL(ibool, ibool, int, const char*)>(enabled, oneShot, time, pTriggerFunction);
 }
@@ -102,6 +102,7 @@ inline Trigger CreateResourceTrigger(
     enabled, oneShot, resourceType, refAmount, playerNum, compare, pTriggerFunction);
 }
 
+/// Creates a tech research trigger.
 inline Trigger CreateResearchTrigger(
   int techID, const char* pTriggerFunction, int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
 {
@@ -109,6 +110,7 @@ inline Trigger CreateResearchTrigger(
     enabled, oneShot, techID, playerNum, pTriggerFunction);
 }
 
+/// Creates a structure kit count trigger.
 inline Trigger CreateKitTrigger(
   MapID structureKitType, int refCount, const char* pTriggerFunction,
   int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
@@ -119,6 +121,7 @@ inline Trigger CreateKitTrigger(
 
 // ------------------------------------------------ Unit count triggers ------------------------------------------------
 
+/// Creates a unit/cargo type count trigger.
 inline Trigger CreateCountTrigger(
   MapID unitType, MapID cargoOrWeapon, CompareMode compare, int refCount, const char* pTriggerFunction,
   int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
@@ -137,15 +140,7 @@ inline Trigger CreateOperationalTrigger(
     enabled, oneShot, playerNum, structureType, refCount, compare, pTriggerFunction);
 }
 
-inline Trigger CreateEscapeTrigger(
-  MapRect area, MapID unitType, int refCount, int cargoType, int cargoAmount, const char* pTriggerFunction,
-  int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
-{
-  return OP2Thunk<0x4796E0, Trigger FASTCALL(ibool, ibool, int, int, int, int, int, int, MapID, int, int, const char*)>(
-    enabled, oneShot, playerNum, area.x1, area.y1, area.Width(), area.Height(), refCount, unitType, cargoType,
-    cargoAmount, pTriggerFunction);
-}
-
+/// Creates a trigger that fires based on the player(s)' total number of vehicles.
 inline Trigger CreateVehicleCountTrigger(
   CompareMode compare, int refCount, const char* pTriggerFunction,
   int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
@@ -154,6 +149,7 @@ inline Trigger CreateVehicleCountTrigger(
     enabled, oneShot, playerNum, refCount, compare, pTriggerFunction);
 }
 
+/// Creates a trigger that fires based on the player(s)' total number of structures.
 inline Trigger CreateBuildingCountTrigger(
   CompareMode compare, int refCount, const char* pTriggerFunction,
   int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
@@ -164,10 +160,14 @@ inline Trigger CreateBuildingCountTrigger(
 
 // --------------------------------------------------- Time triggers ---------------------------------------------------
 
+/// Creates a trigger that fires on the specified time interval in ticks.
+/// If @ref oneShot = false, fires again on every interval.
 inline Trigger CreateTimeTrigger(int time, const char* pTriggerFunction, bool oneShot = true, bool enabled = true) {
   return OP2Thunk<0x478D00, Trigger FASTCALL(ibool, ibool, int, const char*)>(enabled, oneShot, time, pTriggerFunction);
 }
 
+/// Creates a trigger that fires randomly between the specified time interval in ticks.
+/// If @ref oneShot = false, fires again on every interval, chosen randomly each time.
 inline Trigger CreateTimeTrigger(
   int timeMin, int timeMax, const char* pTriggerFunction, bool oneShot = true, bool enabled = true)
 {
@@ -191,6 +191,7 @@ inline Unit GetSpecialTargetData(const Trigger& specialTargetTrigger)
 
 // ---------------------------------------------- Attack/Damage triggers -----------------------------------------------
 
+/// Creates a trigger that fires when the given ScGroup is under attack.
 inline Trigger CreateAttackedTrigger(
   const ScGroup& group, const char* pTriggerFunction, bool oneShot = true, bool enabled = true)
 {
@@ -198,6 +199,7 @@ inline Trigger CreateAttackedTrigger(
     enabled, oneShot, group, pTriggerFunction);
 }
 
+/// Creates a trigger that fires when a percentage of the given ScGroup has been destroyed.
 inline Trigger CreateDamagedTrigger(
   const ScGroup& group, TriggerDamage damage, const char* pTriggerFunction, bool oneShot = true, bool enabled = true)
 {
@@ -207,6 +209,7 @@ inline Trigger CreateDamagedTrigger(
 
 // ------------------------------------------------ Positional triggers ------------------------------------------------
 
+/// Creates a trigger that fires when any unit is at the location.
 inline Trigger CreatePointTrigger(
   Location where, const char* pTriggerFunction, int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
 {
@@ -214,11 +217,22 @@ inline Trigger CreatePointTrigger(
     enabled, oneShot, playerNum, where.x, where.y, pTriggerFunction);
 }
 
+/// Creates a trigger that fires when any unit enters the area rect.
 inline Trigger CreateRectTrigger(
   MapRect area, const char* pTriggerFunction, int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
 {
   return OP2Thunk<0x478FC0, Trigger FASTCALL(ibool, ibool, int, int, int, int, int, const char*)>(
     enabled, oneShot, playerNum, area.x1, area.x2, area.Width(), area.Height(), pTriggerFunction);
+}
+
+/// Creates a rect trigger that filters based on the specified unit type (and cargo type/amount).
+inline Trigger CreateEscapeTrigger(
+  MapRect area, MapID unitType, int refCount, int cargoType, int cargoAmount, const char* pTriggerFunction,
+  int playerNum = AllPlayers, bool oneShot = false, bool enabled = true)
+{
+  return OP2Thunk<0x4796E0, Trigger FASTCALL(ibool, ibool, int, int, int, int, int, int, MapID, int, int, const char*)>(
+    enabled, oneShot, playerNum, area.x1, area.y1, area.Width(), area.Height(), refCount, unitType, cargoType,
+    cargoAmount, pTriggerFunction);
 }
 
 } // Tethys::API

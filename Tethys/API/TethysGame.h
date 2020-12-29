@@ -16,6 +16,7 @@ namespace Tethys {
 class TFileDialog;
 class GameNetLayer;
 
+/// Defines initial unit rotations and path-finding directions.
 enum class UnitDirection : int {
   East = 0,
   SouthEast,
@@ -29,14 +30,16 @@ enum class UnitDirection : int {
 
 namespace API {
 
+/// Defines mine resource types for TethysGame::CreateMine().
 enum class MineType : int {
-  RandomOre = int(OreType::Random),
-  CommonOre = int(OreType::Common),
-  RareOre   = int(OreType::Rare),
-  MagmaVent = -2,
-  Fumarole  = -3,
+  RandomOre = int(OreType::Random),  ///< 70% chance of CommonOre or 30% chance of RareOre.
+  CommonOre = int(OreType::Common),  ///< Common ore.
+  RareOre   = int(OreType::Rare),    ///< Rare ore.  @note Requires Rare Ore Processing to be visible.
+  MagmaVent = -2,                    ///< Magma vent.  Robo-Miners can build Magma Wells, roughly equal to a 2 bar rare.
+  Fumarole  = -3,                    ///< Fumarole.  GeoCons can build Geothermal Plants.
 };
 
+/// Defines meteor sizes for TethysGame::CreateMeteor().
 enum class MeteorSize : int {
   Random = -1,
   Small,
@@ -44,12 +47,14 @@ enum class MeteorSize : int {
   Large
 };
 
+/// Defines marker graphic types for TethysGame::CreateMarker().
 enum class MarkerType : int {
   Circle = 0,  ///< Circular marker
   DNA,         ///< DNA strand
   Beaker,      ///< Beaker
 };
 
+/// Tri-state enum defining force-enable/disable toggle state.
 enum class ToggleState : int {
   Default = 0,
   On      = 1,

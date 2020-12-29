@@ -86,72 +86,82 @@ public:
   const MapEntityType* GetMapObjectType() const { return MapEntityType::GetInstance(GetType()); }
   ///@}
 
-  int GetOwner()       const { return IsValid() ? GetMapObject()->ownerNum_            : -1; }
-  int GetCreator()     const { return IsValid() ? GetMapObject()->creatorNum_          : -1; }
-  int GetInstanceNum() const { return IsValid() ? GetMapObject()->unitTypeInstanceNum_ :  0; }
+  int GetOwner()       const { return IsValid() ? GetMapObject()->ownerNum_            : -1; } ///< Owner player ID.
+  int GetCreator()     const { return IsValid() ? GetMapObject()->creatorNum_          : -1; } ///< Creator player ID.
+  int GetInstanceNum() const { return IsValid() ? GetMapObject()->unitTypeInstanceNum_ :  0; } ///< Type instance #.
 
-  MapID GetType()     const { return IsValid() ? GetMapObject()->GetTypeID() : MapID::None; }
-  bool  IsLive()      const { return IsValid()    && GetMapObject()->IsLive();              }
-  bool  IsBuilding()  const { return IsLive()     && HasFlag(MoFlagBuilding);               }
-  bool  IsFactory()   const { return IsBuilding() && HasFlag(MoFlagBldFactory);             }
-  bool  IsVehicle()   const { return IsLive()     && HasFlag(MoFlagVehicle);                }
-  bool  IsOffensive() const { return IsLive()     && HasFlag(MoFlagOffensive);              }
-  bool  IsEntity()    const { return HasFlag(MoFlagEntity | MoFlagEntChild);                }
+  MapID GetType()     const { return IsValid() ? GetMapObject()->GetTypeID() : MapID::None; } ///< Unit type ID.
+  bool  IsLive()      const { return IsValid()    && GetMapObject()->IsLive();              } ///< Unit is alive?
+  bool  IsBuilding()  const { return IsLive()     && HasFlag(MoFlagBuilding);               } ///< Unit is a structure?
+  bool  IsFactory()   const { return IsBuilding() && HasFlag(MoFlagBldFactory);             } ///< Unit is a factory?
+  bool  IsVehicle()   const { return IsLive()     && HasFlag(MoFlagVehicle);                } ///< Unit is a vehicle?
+  bool  IsOffensive() const { return IsLive()     && HasFlag(MoFlagOffensive);              } ///< Unit is a tank or GP?
+  bool  IsEntity()    const { return HasFlag(MoFlagEntity | MoFlagEntChild);                } ///< Unit is a Gaia unit?
 
-  int GetCargo() const { return IsValid() ? GetMapObject()->cargo_ : 0; }
+  int GetCargo() const { return IsValid() ? GetMapObject()->cargo_ : 0; }  ///< Gets the raw cargo value for this unit.
 
+  ///@{ Gets the position of this unit as a Location, MapRect, or pixel point.
   Location GetLocation() const { return IsValid() ? GetMapObject()->GetTile() : Location(); }
   MapRect  GetRect(bool includeBorder = false) const {
     return IsBuilding() ? GetMapObject<Building>()->GetTileRect(includeBorder) : MapRect(GetLocation(), GetLocation());
   }
   POINT    GetPixel() const { auto*const p = GetMapObject(); return p ? POINT{p->pixelX_, p->pixelY_} : POINT{-1, -1}; }
+  ///@}
 
-  int  GetMaxHitpoints() const { return IsLive() ? GetPlayerUnitStats().hp : 0; }
-  int  GetDamage()       const { return IsLive() ? GetMapObject()->damage_ : 0; }
-  void AddDamage(int damage)   { SetDamage(GetDamage() + damage);               }
-  void SetDamage(int damage)
+  int  GetMaxHitpoints() const { return IsLive() ? GetPlayerUnitStats().hp : 0; } ///< Gets the unit's max hitpoints.
+  int  GetDamage()       const { return IsLive() ? GetMapObject()->damage_ : 0; } ///< Gets the unit's damage amount.
+  void AddDamage(int damage)   { SetDamage(GetDamage() + damage);               } ///< Sets the unit's damage amount.
+  void SetDamage(int damage)                                                      ///< Adds to the unit's damage amount.
     { if (IsLive() && ((GetMapObject()->damage_ = damage) >= GetMaxHitpoints())) { DoDeath(); } }
 
+  /// Returns true if the target Unit is hostile to this Unit.
   bool IsHostile(Unit   what) const {
     return IsLive() && what.IsLive() && (GameImpl::GetInstance()->player_[GetOwner()].alliedBy_[what.GetOwner()] == 0);
   }
+  /// Returns true if this unit is hostile to the target Unit.
   bool IsHostileTo(Unit what) const {
     return IsLive() && what.IsLive() && GameImpl::GetInstance()->player_[GetOwner()].GetHostileTo()[what.GetOwner()];
   }
-  void SetAutoTargeted(bool on) { SetFlag(MoFlagOppFiredUpon, on); }  ///< Set if unit can be auto-targeted by enemies.
+  void SetAutoTargeted(bool on) { SetFlag(MoFlagOppFiredUpon, on); }  ///< Set if unit can be auto-targeted by hostiles.
 
-  void DoSimpleCommand(CommandType commandType);
-  void DoPoof()         { DoSimpleCommand(CommandType::Poof);           }  ///< Immediately delete unit w/o animation
-  void DoDeath()        { if (IsValid()) { GetMapObject()->DoDeath(); } }  ///< Order unit to die
-  void DoSelfDestruct() { DoSimpleCommand(CommandType::SelfDestruct);   }  ///< Order unit to self-destruct
-  void DoStop()         { DoSimpleCommand(CommandType::Stop);           }  ///< Order unit to stop its current command
-  void DoTransfer(int toPlayerNum);                                        ///< Transfer unit to another player
+  void DoSimpleCommand(CommandType commandType);                           ///< Issues a simple command packet.
+  void DoPoof()         { DoSimpleCommand(CommandType::Poof);           }  ///< Immediately delete unit w/o animation.
+  void DoDeath()        { if (IsValid()) { GetMapObject()->DoDeath(); } }  ///< Order unit to die.
+  void DoSelfDestruct() { DoSimpleCommand(CommandType::SelfDestruct);   }  ///< Order unit to self-destruct.
+  void DoStop()         { DoSimpleCommand(CommandType::Stop);           }  ///< Order unit to stop its current command.
+  void DoTransfer(int toPlayerNum);                                        ///< Transfer unit to another player.
 
+  ///@{ Gets the Unit's command or action status.
 	CommandType GetCommand()     const { return CommandType(IsValid() ? GetMapObject()->command_ : 0);        }
   ActionType  GetAction()      const { return IsValid() ?  GetMapObject()->action_      : ActionType::Done; }
   int         GetActionTimer() const { return IsValid() ?  GetMapObject()->actionTimer_ : 0;                }
   bool        IsBusy()         const { return IsValid() && GetMapObject()->isBusy_;                         }
+  ///@}
   
+  ///@{ Gets or sets the Unit's EMPed status.
   int  GetEMPTimer() const
     { return IsBuilding() ? GetMapObject<Building>()->timerEMP_ : IsVehicle() ? GetMapObject<Vehicle>()->timerEMP_ :0; }
   bool IsEMPed()     const    { return HasFlag(MoFlagEMPed);                          }
   void SetEMPed(int duration) { if (IsLive()) { GetMapObject()->SetEMPed(duration); } }
+  ///@}
 
+  ///@{ Gets or sets the Unit's ESGed status.
   int  GetESGTimer() const { return IsVehicle() ? GetMapObject<Vehicle>()->timerESG_ : 0; }
   int  IsESGed()     const { return HasFlag(MoFlagESGed); }
   void SetESGed(int duration)
     { if (IsVehicle()) { GetMapObject<Vehicle>()->timerESG_ = duration; }  SetFlag(MoFlagESGed, true); }
+  ///@}
 
   /// Global helper function to get the UnitClassification for the given unit type and cargo type combination.
   static UnitClassification FASTCALL GetClassificationFor(MapID unitType, MapID cargoWeaponType)
     { return OP2Thunk<0x49D270, &$::GetClassificationFor>(unitType, cargoWeaponType); }
 
-  /// Gets the UnitClassification for this unit's type.
+  /// Gets the UnitClassification for this Unit's type.
   UnitClassification GetClassification() const { return GetClassificationFor(GetType(), GetWeapon()); }
 
-  void ClearSpecialTarget() { SetFlag(MoFlagSpecialTarget, false); }
+  void ClearSpecialTarget() { SetFlag(MoFlagSpecialTarget, false); }  ///< Removes any SpecialTarget from this Unit.
 
-  ///@{ [Wreckage]
+  ///@{ [Wreckage]  Sets Wreckage to discovered for the specified player.
   bool IsDiscovered() const
     { return IsValid() && GetMapObject<MapObj::Wreckage>()->IsDiscovered(GameImpl::GetInstance()->localPlayer_); }
   void SetDiscovered(int playerNum = AllPlayers) {
@@ -161,20 +171,23 @@ public:
   }
   ///@}
 
-  /// [Mining Beacon]
+  /// [Mining Beacon]  Sets Mining Beacon to surveyed for the specified player.
   void SetSurveyed(int playerNum = AllPlayers) {
     if (IsValid()) {
       GetMapObject<MapObj::MiningBeacon>()->playerSurveyedMask_ |= (playerNum == AllPlayers) ? ~0 : (1u << playerNum);
     }
   }
 
+  /// [Ambient Animation]  Sets the specified animation on this marker.
   void SetAnimation(int animIdx, int delay, int startDelay, bool isSpecialAnim, bool skipDoDeath)
     { if (IsValid()) { GetMapObject()->SetAnimation(animIdx, delay, startDelay, isSpecialAnim, skipDoDeath); } }
 
+  ///@{ Gets the per-player or global unit type stats for this Unit.
         PerPlayerUnitStats& GetPlayerUnitStats()       { return GetMapObjectType()->playerStats_[GetCreator()]; }
   const PerPlayerUnitStats& GetPlayerUnitStats() const { return GetMapObjectType()->playerStats_[GetCreator()]; }
         GlobalUnitStats&    GetGlobalUnitStats()       { return GetMapObjectType()->stats_;                     }
   const GlobalUnitStats&    GetGlobalUnitStats() const { return GetMapObjectType()->stats_;                     }
+  ///@}
 
   ///@{ Get/set internal @ref MapObjectFlags.
   bool HasFlag(uint32  flag)  const   { return IsValid() && TethysUtil::BitFlagTest(GetMapObject()->flags_,  flag);  }
@@ -191,20 +204,24 @@ public:
 
   // ---------------------------------------- Specific to weapons/combat units -----------------------------------------
 
+  ///@{ Gets or sets this Unit's weapon turret type.
   MapID GetWeapon() const       { return IsLive() ? MapID(GetMapObject()->weapon_) : MapID::None; }
   void  SetWeapon(MapID weapon) {    if (IsLive())      { GetMapObject()->weapon_ = weapon; }     }
+  ///@}
 
   void DoAttack(Unit what) { if (what.IsLive()) { DoAttack({ what.id_, -1 }); } } ///< Orders unit to attack target unit
   void DoAttack(Location where);                                                  ///< Orders unit to attack the ground
   void DoGuard(Unit what);                                                        ///< [TankVehicle]
   void DoStandGround(Location where);                                             ///< [TankVehicle]
-
+  
+  ///@{ Gets or sets 2x fire rate mode for this Unit (normally applied to Tigers).
   bool HasDoubleFireRate() const  { return IsLive() && HasFlag(MoFlagDoubleFireRate);       }
   void SetDoubleFireRate(bool on) {    if (IsLive()) { SetFlag(MoFlagDoubleFireRate, on); } }
+  ///@}
 
   // ---------------------------------------------- Specific to vehicles -----------------------------------------------
 
-  ///@{ [ConVec]
+  ///@{ [ConVec]  Gets or sets ConVec cargo.
   CargoKit GetConVecCargo() const {
     return IsVehicle() ? 
       CargoKit{ MapID(GetMapObject<Vehicle>()->cargo_), MapID(GetMapObject<Vehicle>()->weaponOfCargo_) } : CargoKit{};
@@ -214,7 +231,7 @@ public:
   void SetCargo(CargoKit cargo) { return SetCargo(cargo.unitType, cargo.cargoOrWeaponType); }
   ///@}
 
-  ///@{ [Cargo Truck]
+  ///@{ [Cargo Truck]  Gets or sets Cargo Truck cargo.
   TruckCargo GetTruckCargo()
     { auto* p = GetMapObject();  return p ? TruckCargo{ p->GetCargoType(), p->truckCargoAmount_ } : TruckCargo{}; }
   void SetCargo(CargoType cargo, int amount)
@@ -222,33 +239,37 @@ public:
   void SetCargo(TruckCargo cargo) { return SetCargo(cargo.cargoType, cargo.amount); }
   ///@}
 
+  ///@{ Gets or sets the Unit's stickyfoamed status.
   int  GetStickyfoamTimer() const    { return IsVehicle() ? GetMapObject<Vehicle>()->timerStickyfoam_ : 0; }
   bool IsStickyfoamed()     const    { return IsVehicle() && HasFlag(MoFlagVecStickyfoamed);               }
   void SetStickyfoamed(int duration) { if (IsLive()) { GetMapObject()->SetStickyfoamed(duration); }        }
+  ///@}
 
-  bool GetLights() { return IsLive() && HasFlag(MoFlagVecHeadlights); }
+  bool GetLights() { return IsLive() && HasFlag(MoFlagVecHeadlights); }  ///< Vehicle's headlights are on?
 
   void DoSetLights(bool on);
   void DoMove(Location where) { if (IsLive()) { const auto [x, y] = where.GetPixel(); GetMapObject()->CmdMove(x, y); } }
   void DoDock(Unit at)
     { auto d = at.GetDockLocation();  if (IsLive() && d) { GetMapObject()->CmdDock(d.GetPixelX(), d.GetPixelY()); } }
   void DoDockAtGarage(Unit garage);
-  void DoBuild(Location  bottomRight);                                                       ///< [ConVec]
-  void DoDeploy(Location center);                                                            ///< [Robo-Miner, GeoCon]
-  void DoDismantle(Unit what);                                                               ///< [ConVec]
-	void DoRepair(Unit    what) { if (IsLive()) { GetMapObject()->CmdRepair(what.id_); }    }
-	void DoReprogram(Unit what) { if (IsLive()) { GetMapObject()->CmdReprogram(what.id_); } }  ///< [Spider]
-  void DoBuildWall(MapID tubeWallType, MapRect area);                                        ///< [Earthworker]
-  void DoRemoveWall(MapRect area);                                                           ///< [Earthworker]
-  void DoDoze(MapRect area);                                                                 ///< [Robo-Dozer]
-	void DoSalvage(MapRect area, Unit gorf);                                                   ///< [Cargo Truck]
-  void DoDumpCargo()   { if (IsLive()) { GetMapObject()->CmdDumpCargo(); } }
-  void DoLoadCargo()   { DoSimpleCommand(CommandType::LoadCargo);          }
-  void DoUnloadCargo() { DoSimpleCommand(CommandType::UnloadCargo);        }
+  void DoBuild(Location  bottomRight);                                        ///< [ConVec] Build a structure.
+  void DoDeploy(Location center);                                             ///< [Robo-Miner, GeoCon] Deploy building.
+  void DoDismantle(Unit what);                                                ///< [ConVec] Dismantle a structure.
+	void DoRepair(Unit    what)                                                 ///< Repair a structure or vehicle.
+    { if (IsLive()) { GetMapObject()->CmdRepair(what.id_); }    }
+	void DoReprogram(Unit what)                                                 ///< [Spider] Reprogram a vehicle.
+    { if (IsLive()) { GetMapObject()->CmdReprogram(what.id_); } }
+  void DoBuildWall(MapID tubeWallType, MapRect area);                         ///< [Earthworker] Build walls in an area.
+  void DoRemoveWall(MapRect area);                                            ///< [Earthworker] Remove walls in an area
+  void DoDoze(MapRect area);                                                  ///< [Robo-Dozer]  Bulldoze an area.
+	void DoSalvage(MapRect area, Unit gorf);                                    ///< [Cargo Truck] Salvage rubble.
+  void DoDumpCargo()   { if (IsLive()) { GetMapObject()->CmdDumpCargo(); } }  ///< [Cargo Truck] Dispose of cargo.
+  void DoLoadCargo()   { DoSimpleCommand(CommandType::LoadCargo);          }  ///< [Cargo Truck] Load truck cargo.
+  void DoUnloadCargo() { DoSimpleCommand(CommandType::UnloadCargo);        }  ///< [Cargo Truck] Unload truck cargo.
 
   // ---------------------------------------------- Specific to buildings ----------------------------------------------
 
-  ///@{ [Factory]
+  ///@{ [Factory]  Gets or sets factory cargo in the specified cargo bay.
   CargoKit GetFactoryCargo(int bay) const {
     auto*const pMo = (IsFactory() && (bay >= 0) && (bay < 6)) ? GetMapObject<FactoryBuilding>() : nullptr;
     return (pMo != nullptr) ? CargoKit{ MapID(pMo->cargoBayContents_[bay]), MapID(pMo->cargoBayCargoOrWeapon_[bay]) }
@@ -261,12 +282,13 @@ public:
     }
   }
   void SetFactoryCargo(int bay, CargoKit cargo){ return SetFactoryCargo(bay, cargo.unitType, cargo.cargoOrWeaponType); }
-
-  Location FindFactoryOutputLocation(MapID itemToProduce = MapID::CargoTruck) const
-    { Location loc; MapImpl::GetInstance()->FindUnitPlacementLocation(itemToProduce, GetLocation(), &loc); return loc; }
   ///@}
 
-  /// [Garage, StructureFactory, Spaceport]
+  /// [Factory]  Finds the output location for the next vehicle produced at this building.
+  Location FindFactoryOutputLocation(MapID itemToProduce = MapID::CargoTruck) const
+    { Location loc; MapImpl::GetInstance()->FindUnitPlacementLocation(itemToProduce, GetLocation(), &loc); return loc; }
+
+  /// [Garage, StructureFactory, Spaceport]  Is any cargo bay occupied?
   bool HasOccupiedBay() const {
     bool result = (GetType() == MapID::Garage) && (GetMapObject<MapObj::Garage>()->GetNumOccupiedBays() != 0);
     if ((result == false) && IsFactory()) {
@@ -276,14 +298,14 @@ public:
     return result;
   }
 
-  ///@{ [Garage]
+  ///@{ [Garage]  Gets or puts Unit in the specified bay.
   Unit GetUnitInGarage(int bay) const
     { return Unit((IsLive() && (bay >= 0) && (bay < 6)) ? GetMapObject<MapObj::Garage>()->pUnitInBay_[bay] : nullptr); }
   void PutInGarage(Unit garage, int bay)
     { const Location dock = garage.GetDockLocation();  Thunk<0x476160, void(int, int, int)>(bay, dock.x, dock.y); }
   ///@}
 
-  ///@{ [Spaceport]
+  ///@{ [Spaceport]  Gets or sets the rocket type or cargo on the launch pad.
   MapID GetRocketOnPad() const { return IsBuilding() ? GetMapObject<MapObj::Spaceport>()->objectOnPad_ : MapID::None; }
   MapID GetRocketCargo() const { return IsBuilding() ? GetMapObject<MapObj::Spaceport>()->launchCargo_ : MapID::None; }
   void  SetRocketOnPad(MapID rocket, MapID cargo = MapID::None) {
@@ -294,31 +316,36 @@ public:
   }
   ///@}
 
+  /// Gets the structure's dock location.
   Location GetDockLocation() const
     { Location dock;  if (IsBuilding()) { GetMapObject<Building>()->GetDockLocation(&dock); }  return dock; }
-  Unit     GetUnitOnDock()   const {
+
+  /// Gets the vehicle that is on the structure's dock.
+  Unit GetUnitOnDock() const {
     const auto dock = GetDockLocation();
     Unit       unit = Unit(dock ? g_mapImpl.Tile(dock).unitIndex : 0);
     return unit.IsVehicle() ? unit : Unit();
   }
 
-  bool IsUnderConstruction() const
+  bool IsUnderConstruction() const  ///< Building is under construction?
     { const auto cmd = GetCommand();  return (cmd == CommandType::Develop) || (cmd == CommandType::UnDevelop); }
-  bool IsDisabled() const
+  bool IsDisabled() const           ///< Building is disabled?
     { return IsBuilding() && (IsUnderConstruction() == false) && (GetMapObject<Building>()->IsEnabled() == false); }
-  bool IsIdled()    const { return IsBuilding() && (HasFlag(MoFlagBldActive)    == false); }
-  bool IsEnabled()  const { return IsBuilding() && ((IsIdled() || IsDisabled()) == false); }
-  bool IsInfected() const { return IsBuilding() &&  HasFlag(MoFlagBldInfected);            }
+  bool IsIdled()    const { return IsBuilding() && (HasFlag(MoFlagBldActive)    == false); }  ///< Building is idled?
+  bool IsEnabled()  const { return IsBuilding() && ((IsIdled() || IsDisabled()) == false); }  ///< Buidling is enabled?
+  bool IsInfected() const { return IsBuilding() &&  HasFlag(MoFlagBldInfected);            }  ///< Building is infected?
 
-  void DoIdle()   { DoSimpleCommand(CommandType::Idle);   }
-  void DoUnidle() { DoSimpleCommand(CommandType::Unidle); }
-  void DoInfect() { Thunk<0x476B90, &$::DoInfect>();      }
-  void DoProduce(MapID itemType, MapID weaponType = MapID::None, uint16 scGroupIndex = -1)    ///< [Factory]
-    { if (IsLive()) { GetMapObject()->CmdProduce(itemType, weaponType, scGroupIndex); } }
-  void DoLaunch(Location target = { }, bool forceEnable = false);                             ///< [Spaceport]
-  void DoTransferCargo(int bay) { if (IsLive()) { GetMapObject()->CmdTransferCargo(bay); } }  ///< [Factory, Garage]
-	void DoResearch(int techID, int numScientists);                                             ///< [Lab]
-	void DoTrainScientists(int numToTrain);                                                     ///< [University]
+  void DoIdle()   { DoSimpleCommand(CommandType::Idle);   }        ///< Idle the building.
+  void DoUnidle() { DoSimpleCommand(CommandType::Unidle); }        ///< Unidle the building.
+  void DoInfect() { Thunk<0x476B90, &$::DoInfect>();      }        ///< Set building to Blight-infected.
+  void DoProduce(                                                  ///< [Factory] Issue a factory build command.
+    MapID itemType, MapID weaponType = MapID::None, uint16 scGroupIndex = -1)
+      { if (IsLive()) { GetMapObject()->CmdProduce(itemType, weaponType, scGroupIndex); } }
+  void DoLaunch(Location target = { }, bool forceEnable = false);  ///< [Spaceport] Launch the rocket on launch pad.
+  void DoTransferCargo(int bay)                                    ///< [Factory, Garage] Move cargo to a bay.
+    { if (IsLive()) { GetMapObject()->CmdTransferCargo(bay); } }
+	void DoResearch(int techID, int numScientists);                  ///< [Lab] Begin researching a technology.
+	void DoTrainScientists(int numToTrain);                          ///< [University] Begin training new scientists.
 
 protected:
   bool ProcessCommandPacket(const CommandPacket& packet) const

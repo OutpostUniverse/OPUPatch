@@ -10,7 +10,7 @@ namespace Tethys::API {
 
 class UnitBlock;
 
-/// Exported interface for UI unit groups (wraps ScGroupImpl).
+/// Exported interface for UI unit groups (wraps ScGroupImpl).  @see @ref GroupEnumerator.
 class ScGroup : public ScStub {
   using $ = ScGroup;
 public:
@@ -19,31 +19,42 @@ public:
         auto* GetImpl()       { return IsValid() ? ScGroupImpl::GetInstance(id_) : nullptr; }
   const auto* GetImpl() const { return IsValid() ? ScGroupImpl::GetInstance(id_) : nullptr; }
 
+  /// Sets this ScGroup to auto-delete when all units are dead.
   void SetDeleteWhenEmpty(ibool state) { return Thunk<0x479B80, &$::SetDeleteWhenEmpty>(state); }
 
+  ///@{ Adds or removes units to/from the ScGroup.
   void TakeUnit(Unit             unitToAdd)    { return Thunk<0x479AF0, &$::TakeUnit>(unitToAdd);        }
   void TakeAllUnits(ScGroup*     pSourceGroup) { return Thunk<0x479BA0, &$::TakeAllUnits>(pSourceGroup); }
   void AddUnits(const UnitBlock& unitsToAdd)   { return Thunk<0x4799D0, &$::AddUnits>(unitsToAdd);       }
   void RemoveUnit(Unit           unitToRemove) { return Thunk<0x479BD0, &$::RemoveUnit>(unitToRemove);   }
+  ///@}
 
+  ///@{ Gets the number of units (of the specified classification).
   int TotalUnitCount()                       const { return Thunk<0x479A10, &$::TotalUnitCount>();    }
   int UnitCount(UnitClassification unitType) const { return Thunk<0x4799F0, &$::UnitCount>(unitType); }
+  ///@}
 
+  /// Returns true if this group is currently being attacked.
   ibool IsUnderAttack() const { return Thunk<0x479AE0, &$::IsUnderAttack>(); }
 
+  /// Sets headlights on all vehicles in the group.
   void SetLights(ibool on) { return Thunk<0x479B60, &$::SetLights>(on); }
 
+  ///@{ Requests units to be built (by this or other ScGroups) and added to the group.
   void ClearTargCount()                         { return Thunk<0x479CB0, &$::ClearTargCount>();              }
   void SetTargCount(const UnitBlock& unitTypes) { return Thunk<0x479C40, void(const UnitBlock&)>(unitTypes); }
   void SetTargCount(MapID unitType, MapID weaponType, int targetCount)
     { return Thunk<0x479C70, void(MapID, MapID, int)>(unitType, weaponType, targetCount); }
+  ///@}
 
+  ///@{ Gets the first Unit of the specified type.
   Unit GetFirstOfType(UnitClassification unitType) const
     { Unit u;  Thunk<0x479A20, int(Unit*, UnitClassification)>(&u, unitType);  return u; }
   Unit GetFirstOfType(MapID unitType, MapID cargoOrWeapon) const
     { Unit u;  Thunk<0x479A60, int(Unit*, MapID, MapID)>(&u, unitType, cargoOrWeapon);  return u; }
+  ///@}
 
-  int GetOwner() const { return GetImpl()->ownerPlayerNum_; }
+  int GetOwner() const { return GetImpl()->ownerPlayerNum_; }  ///< Gets the owner player ID of this ScGroup.
 };
 
 

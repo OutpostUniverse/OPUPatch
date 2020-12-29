@@ -1,5 +1,7 @@
 
-/// This is a convenience header that may be included by mission DLLs, which includes all the headers under Tethys/API.
+/// This is a convenience header that may be included by mission DLLs, which includes all the headers under Tethys/API
+/// and defines the TethysAPI namespace alias.
+///
 /// NOTE:  This header is not referenced internally within TethysAPI.  Including this in your project is optional.
 
 #pragma once

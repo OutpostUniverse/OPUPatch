@@ -12,6 +12,7 @@
 namespace Tethys::API {
 
 /// Exported interface for accessing player data (wraps PlayerImpl).
+/// @note Some of this class's functions return values that are cached.  You may need to call ResetChecks() first.
 class _Player : public OP2Class<_Player> {
 public:
   _Player(int playerNum) : id_(playerNum), check_() { }
@@ -19,24 +20,32 @@ public:
   bool IsValid()  const { return (id_ >= 0) && (id_ < MaxPlayers); }
   operator bool() const { return IsValid(); }
 
-  bool IsEden()     const { return IsValid() &&  GetImpl()->isEden_;           }
-  bool IsPlymouth() const { return IsValid() && (GetImpl()->isEden_ == false); }
-  void GoEden()           {    if (IsValid())  { GetImpl()->isEden_ = true;  } }
-  void GoPlymouth()       {    if (IsValid())  { GetImpl()->isEden_ = false; } }
+  bool IsEden()     const { return IsValid() &&  GetImpl()->isEden_;           }  ///< Player is Eden?
+  bool IsPlymouth() const { return IsValid() && (GetImpl()->isEden_ == false); }  ///< Player is Plymouth?
+  void GoEden()           {    if (IsValid())  { GetImpl()->isEden_ = true;  } }  ///< Set player's faction to Eden.
+  void GoPlymouth()       {    if (IsValid())  { GetImpl()->isEden_ = false; } }  ///< Set player's faction to Plymouth.
 
-  bool IsHuman() const { return IsValid() &&  GetImpl()->isHuman_;           }
-  bool IsAI()    const { return IsValid() && (GetImpl()->isHuman_ == false); }
-  void GoHuman()       {    if (IsValid())  { GetImpl()->GoHuman(); }        }
-  void GoAI()          {    if (IsValid())  { GetImpl()->GoAI();    }        }
+  bool IsHuman() const { return IsValid() &&  GetImpl()->isHuman_;           }  ///< Player is human?
+  bool IsAI()    const { return IsValid() && (GetImpl()->isHuman_ == false); }  ///< Player is AI?
+  void GoHuman()       {    if (IsValid())  { GetImpl()->GoHuman(); }        }  ///< Set player to human.
+  void GoAI()          {    if (IsValid())  { GetImpl()->GoAI();    }        }  ///< Set player to AI.
 
+  ///@{ Gets the player's resource/difficulty level.
   ResourceLevel   GetResourceLevel() const { return IsValid() ? GetImpl()->resourceLevel_  : ResourceLevel::Count;   }
   DifficultyLevel GetDifficulty()    const { return IsValid() ? GetImpl()->difficulty_     : DifficultyLevel::Count; }
-  PlayerColor     GetColor()         const { return IsValid() ? GetImpl()->colorType_      : PlayerColor::Count;     }
-  const char*     GetPlayerName()    const { return IsValid() ? GetImpl()->GetPlayerName() : nullptr;                }
+  ///@}
 
-  void SetPlayerName(const char* pName) { if (IsValid()) { GetImpl()->SetPlayerName(pName); } }
-  void SetColor(PlayerColor      color) { if (IsValid()) { GetImpl()->colorType_ = color;   } }
+  ///@{ Gets or sets the player's name.
+  const char* GetPlayerName() const            { return IsValid() ? GetImpl()->GetPlayerName() : nullptr; }
+  void        SetPlayerName(const char* pName) { if (IsValid()) { GetImpl()->SetPlayerName(pName);      } }
+  ///@}
 
+  ///@{ Gets or sets the player's color.
+  PlayerColor GetColor() const            { return IsValid() ? GetImpl()->colorType_ : PlayerColor::Count; }
+  void        SetColor(PlayerColor color) { if (IsValid()) { GetImpl()->colorType_ = color;              } }
+  ///@}
+
+  ///@{ Gets or sets the player's population or resources.
   int  GetPopulation()            const { return GetKids() + GetWorkers() + GetScientists();               }
   int  GetKids()                  const { return IsValid() ?  GetImpl()->numKids_       : 0;               }
   int  GetWorkers()               const { return IsValid() ?  GetImpl()->numWorkers_    : 0;               }
@@ -50,13 +59,19 @@ public:
   void SetCommonOre(int  newCommonOre)  {    if (IsValid()) { GetImpl()->commonOre_     = newCommonOre;  } }
   void SetRareOre(int    newRareOre)    {    if (IsValid()) { GetImpl()->rareOre_       = newRareOre;    } }
   void SetFoodStored(int newFoodStored) {    if (IsValid()) { GetImpl()->foodStored_    = newFoodStored; } }
+  ///@}
 
+  /// Gets the player's net food production trend.
   FoodStatus  GetFoodSupply()  const { return IsValid() ? GetImpl()->moraleState_.foodSupply  : FoodStatus::Count;  }
+
+  /// Gets the player's morale category.
   MoraleLevel GetMoraleLevel() const { return IsValid() ? GetImpl()->moraleState_.moraleLevel : MoraleLevel::Count; }
 
+  /// Gets the amount of a satelllite type the player has in orbit.
   int GetSatelliteCount(MapID objectType) const { return IsValid() ? GetImpl()->GetSatelliteCount(objectType) : 0; }
   /// Steals an RLV from the source Player, provided they have one.
   void CaptureRLV(int srcPlayerNum) { return Thunk<0x477130, &$::CaptureRLV>(srcPlayerNum); }
+  /// Sets the player's number of Solar Satellites in orbit.
   void SetSolarSat(int numSolarSatellites)
     { if (IsValid()) { GetImpl()->satellites_.numSolarSatellites = numSolarSatellites; } }
 
@@ -66,14 +81,18 @@ public:
   /// Gives all techs with techID <= (techLevel * 1000), and all free subsequent techs.
   void  SetTechLevel(int techLevel)            { Research::GetInstance()->SetTechLevel(id_, techLevel * 1000); }
 
-  bool IsAlliedTo(int playerNum) const { return IsValid() && (GetImpl()->GetAlliedTo()[playerNum]); }
-  bool IsAlliedBy(int playerNum) const { return IsValid() && (GetImpl()->alliedBy_[playerNum]);     }
-  bool IsAlly(int     playerNum) const { return IsValid() &&  GetImpl()->IsAlly(playerNum);         }
-  void AllyWith(int   playerNum)       { return Thunk<0x4774C0, &$::AllyWith>(playerNum);           }
+  ///@{ Gets or sets player's ally status.
+  bool IsAlliedTo(int       playerNum) const { return IsValid() && (GetImpl()->GetAlliedTo()[playerNum]);   }
+  bool IsAlliedBy(int       playerNum) const { return IsValid() && (GetImpl()->alliedBy_[playerNum]);       }
+  bool IsAlly(int           playerNum) const { return IsValid() &&  GetImpl()->IsAlly(playerNum);           }
+  void AllyWith(int         playerNum)       { return Thunk<0x4774C0, &$::AllyWith>(playerNum);             }
+  void MutuallyAllyWith(int playerNum)       { AllyWith(playerNum);  GetInstance(playerNum)->AllyWith(id_); }
+  ///@}
 
-  /// Sets the view for this Player (does nothing if player is not the local player).
+  ///@{ Sets the view for this Player (does nothing if player is not the local player).
   void CenterViewOn(Location location) const { return Thunk<0x477490, void(Location)>(location); }
   void CenterViewOn(Unit     unit)     const { CenterViewOn(unit.GetLocation());                 }
+  ///@}
 
   /// Returns (strength / 8), where strength is the sum of all units owned by the player in the given map rectangle
   /// 
@@ -128,6 +147,7 @@ public:
   Unit GetEntities()  const { return Unit(IsValid() ? GetImpl()->GetEntities()  : nullptr); }
   ///@}
 
+  /// Kills the specified number of player's colonists.
   void Starve(int numToStarve, bool skipMoraleUpdate)
     { if (IsValid()) { GetImpl()->Starve(numToStarve, skipMoraleUpdate); } }
 
@@ -140,12 +160,15 @@ public:
   /// @note This does not buffer packets for network transport, so the timestamp and net ID need not be filled in.
   bool ProcessCommandPacket(const CommandPacket& packet){ return IsValid() && GetImpl()->ProcessCommandPacket(packet); }
 
-  /// Returns a pointer to the internal Player implementation.
+  ///@{ Returns a pointer to the internal Player implementation.
         PlayerImpl* GetImpl()       { return IsValid() ? GameImpl::GetInstance()->GetPlayer(id_) : nullptr; }
   const PlayerImpl* GetImpl() const { return IsValid() ? GameImpl::GetInstance()->GetPlayer(id_) : nullptr; }
+  ///@}
 
   /// Gets the global _Player array instance.
-  static auto&    GetInstance() { return OP2Mem<0x56C280, _Player(&)[MaxPlayers]>(); }
+  static auto& GetInstance() { return OP2Mem<0x56C280, _Player(&)[MaxPlayers]>(); }
+
+  /// Gets the global _Player instance for the given player ID.
   static _Player* GetInstance(int playerNum)
     { return ((playerNum >= 0) && (playerNum < MaxPlayers)) ? &GetInstance()[playerNum] : nullptr; }
 
