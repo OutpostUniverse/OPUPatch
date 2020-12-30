@@ -83,13 +83,13 @@ bool SetMissionCallbackPatch(
     // Because trigger callbacks always used cdecl, this is ABI-compatible with existing callbacks (caller cleanup).
     // In MissionManager::ProcessScStubs()
     patcher.LowLevelHook(0x403251, [] {
-      using TriggerFunc = void __cdecl(OnTriggerArgs&&);
-      std::deque<std::pair<TriggerImpl*, TriggerFunc*>> firedTriggers;
+      using PfnTrigger = void(__cdecl*)(OnTriggerArgs&&);
+      std::deque<std::pair<TriggerImpl*, PfnTrigger>> firedTriggers;
 
       for (TriggerImpl* pTrigger = TriggerImpl::GetTriggerList(); pTrigger != nullptr; pTrigger = pTrigger->pNext_) {
         if (pTrigger->isEnabled_ && pTrigger->HasFired()) {
           if (auto* pfn = pTrigger->GetCallbackFunction();  pfn != nullptr) {
-            firedTriggers.emplace_back(pTrigger, reinterpret_cast<TriggerFunc*>(pfn));
+            firedTriggers.emplace_back(pTrigger, reinterpret_cast<PfnTrigger>(pfn));
           }
         }
       }
