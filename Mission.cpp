@@ -83,20 +83,20 @@ bool SetMissionCallbackPatch(
     // Because trigger callbacks always used cdecl, this is ABI-compatible with existing callbacks (caller cleanup).
     // In MissionManager::ProcessScStubs()
     patcher.LowLevelHook(0x403251, [] {
-      using PfnTrigger = void(__cdecl*)(OnTriggerArgs&&);
-      std::deque<std::pair<TriggerImpl*, PfnTrigger>> pFiredTriggers;
+      using TriggerFunc = void __cdecl(OnTriggerArgs&&);
+      std::deque<std::pair<TriggerImpl*, TriggerFunc*>> firedTriggers;
 
-      for (TriggerImpl* pTrig = TriggerImpl::GetTriggerList(); pTrig != nullptr; pTrig = pTrig->pNext_) {
-        if (pTrig->isEnabled_ && pTrig->HasFired()) {
-          if (auto* pfn = pTrig->GetCallbackFunction();  pfn != nullptr) {
-            pFiredTriggers.emplace_back(pTrig, reinterpret_cast<PfnTrigger>(pfn));
+      for (TriggerImpl* pTrigger = TriggerImpl::GetTriggerList(); pTrigger != nullptr; pTrigger = pTrigger->pNext_) {
+        if (pTrigger->isEnabled_ && pTrigger->HasFired()) {
+          if (auto* pfn = pTrigger->GetCallbackFunction();  pfn != nullptr) {
+            firedTriggers.emplace_back(pTrigger, reinterpret_cast<TriggerFunc*>(pfn));
           }
         }
       }
 
       // Defer calling user callbacks in case they have side effects that would cause other triggers to fire.
-      for (auto [pTrig, pfn] : pFiredTriggers) {
-        pfn({ sizeof(OnTriggerArgs), Trigger(pTrig) });
+      for (auto [pTrigger, pfnOnTrigger] : firedTriggers) {
+        pfnOnTrigger({ sizeof(OnTriggerArgs), Trigger(pTrigger) });
       }
 
       return 0x40329C;
