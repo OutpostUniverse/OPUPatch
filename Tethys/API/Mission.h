@@ -7,16 +7,28 @@
 ///                             isUnitMission(, numMultiplayerAIs))
 /// 
 /// Mission DLLs may (optionally) define the follow functions to interface with the game:
-///   MISSION_API int  InitProc() { return 1; }          // Set up bases, triggers, etc. here.  Return 1 = OK, 0 = error
-///   MISSION_API void AIProc()   {           }          // Gets called every 4 ticks during gameplay
-///   MISSION_API void GetSaveRegions(SaveRegion* pSave) // Single-player maps set pSave to point at a buffer to save
+///   MISSION_API ibool InitProc() { return 1; }          // Set up bases, triggers, etc. here.  Return false = error
+///   MISSION_API void  AIProc()   {           }          // Gets called every 4 ticks during gameplay.
+///   MISSION_API void  GetSaveRegions(SaveRegion* pSave) // Single-player maps set pSave to point at a buffer to save.
 ///     { pSave->pData = nullptr;  pSave->size = 0; }
+/// 
+/// The following are extended APIs introduced in OPU mod 1.4.0+:
+///   MISSION_API ibool OnLoad(const   OnLoadArgs&   args) { return 1; } // Called on DLL load.    Return false = error
+///   MISSION_API ibool OnUnload(const OnUnloadArgs& args) { return 1; } // Called on DLL unload.  Return false = error
+///   MISSION_API void  OnEnd(const    OnEndArgs&    args) {           } // Called on mission end (not on restart).
+///   MISSION_API void  OnChat(const   OnChatArgs&   args) {           } // Called when any player sends a chat message.
+///   MISSION_API void  OnCreateUnit(const  OnCreateUnitArgs& args) {  } // Called when a unit or entity is created.
+///   MISSION_API void  OnDestroyUnit(const OnCreateUnitArgs& args) {  } // Called when a unit or entity is destroyed.
 
 #pragma once
 
 #include "Tethys/Common/Types.h"
 
-namespace Tethys::API {
+namespace Tethys {
+
+struct MissionResults;
+
+namespace TethysAPI {
 
 #ifndef MISSION_API
 # define MISSION_API DLLAPI
@@ -66,6 +78,7 @@ enum class MissionType : int {
   LastOneStanding = -8
 };
 
+/// Defines mission information and dependencies.
 struct ModDesc {
   constexpr ModDesc() : missionType(), numPlayers(), maxTechLevel(), unitMission() { }
   constexpr ModDesc(MissionType missionType, int numPlayers, int maxTechLevel = 12, ibool unitMission = false)
@@ -101,4 +114,59 @@ struct SaveRegion {
   size_t size;
 };
 
-} // Tethys::API
+
+// Args used by extended mission callbacks.  Requires OPU mod 1.4.0+.
+
+/// Info passed to OnLoad() user callback.
+struct OnLoadArgs {
+  size_t structSize;
+};
+
+/// Info passed to OnUnload() user callback.
+struct OnUnloadArgs {
+  size_t structSize;
+};
+
+/// Info passed to OnEnd() user callback.
+struct OnEndArgs {
+  size_t          structSize;
+  MissionResults* pMissionResults;
+};
+
+/// Info passed to OnChat() user callback.
+struct OnChatArgs {
+  size_t structSize;
+  char*  pText;
+  size_t bufferSize;
+  int    playerNum;
+};
+
+/// Info passed to OnCreateUnit() user callback.  @see Unit.h.
+struct OnCreateUnitArgs;
+
+/// Info passed to OnDestroyUnit() user callback.  @see Unit.h.
+struct OnDestroyUnitArgs;
+
+/// Info passed to trigger callbacks.  @see Trigger.h.
+struct OnTriggerArgs;
+
+
+///@{ Type aliases showing the function signature for each mission API callback.
+using PfnInitProc        = ibool(CDECL*)();
+using PfnAIProc          = void(CDECL*)();
+using PfnGetSaveRegions  = void(CDECL*)(SaveRegion* pSave);
+using PfnLegacyOnTrigger = void(CDECL*)();
+
+// The following require OPU mod 1.4.0+.
+using PfnOnLoad        = ibool(CDECL*)(const OnLoadArgs&);
+using PfnOnUnload      = ibool(CDECL*)(const OnUnloadArgs&);
+using PfnOnEnd         =  void(CDECL*)(const OnEndArgs&);
+using PfnOnChat        =  void(CDECL*)(const OnChatArgs&);
+using PfnOnCreateUnit  =  void(CDECL*)(const OnCreateUnitArgs&);
+using PfnOnDestroyUnit =  void(CDECL*)(const OnDestroyUnitArgs&);
+
+using PfnOnTrigger = void(CDECL*)(const OnTriggerArgs&);
+///@}
+
+} // TethysAPI
+} // Tethys

@@ -18,7 +18,7 @@
 #include "Util.h"
 
 using namespace Tethys;
-using namespace Tethys::API;
+using namespace TethysAPI;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
 

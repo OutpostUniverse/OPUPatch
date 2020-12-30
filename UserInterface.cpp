@@ -42,7 +42,7 @@
 #include <charconv>
 
 using namespace Tethys;
-using namespace Tethys::API;
+using namespace TethysAPI;
 using namespace Tethys::TethysUtil;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
@@ -782,7 +782,7 @@ bool SetLocalizationPatch(
 
 // =====================================================================================================================
 // Replaces usage of Arial in the game's UI with the given font.
-// ** TODO Figure out how to make antialiasing look better.  Replacing main menu fonts requires replacing all dialogs.
+// ** TODO Figure out how to make antialiasing look better
 bool SetFontPatch(
   const char* pNewFont)
 {
@@ -808,7 +808,9 @@ bool SetFontPatch(
   createInfo.lfWeight = 400;
 
   // ** TODO Define these font fields
-  for (Font* pFont: { g_gameFrame.pFont1_, (Font*)PtrInc(&g_gameFrame, 0x2828), (Font*)PtrInc(&g_gameFrame, 0x4488) }) {
+  for (Font* pFont:
+    { PtrInc<Font*>(&g_gameFrame, 0x0BC8), PtrInc<Font*>(&g_gameFrame, 0x2828), PtrInc<Font*>(&g_gameFrame, 0x4488) })
+  {
     pFont->Init(createInfo);
   }
 

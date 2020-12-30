@@ -1,5 +1,5 @@
 
-// Common platform type definitions.
+/// Common platform type definitions.
 // ** TODO remove SWIG/CLIF stuff
 
 #pragma once
@@ -10,6 +10,11 @@
 #ifndef SWIG
 # include "Tethys/Common/WinTypes.h"
 #endif  // !SWIG
+
+namespace Tethys::TethysAPI{};
+
+/// Convenience alias for Tethys::TethysAPI nested namespace.
+namespace TethysAPI = Tethys::TethysAPI;
 
 namespace Tethys {
 
@@ -77,19 +82,19 @@ using uintptr = uintptr_t;
 # define CAPI extern "C"
 #endif  // CAPI
 
-#ifdef BUILDING_STUBS
+#ifdef BUILDING_OP2API_STUBS
 
 # ifndef OP2API
 #  define OP2API DLLEXPORT
 # endif  // OP2API
 
-#else  // BUILDING_STUBS
+#else  // BUILDING_OP2API_STUBS
 
 # ifndef OP2API
 #  define OP2API DLLIMPORT
 # endif  // OP2API
 
-#endif  // BUILDING_STUBS
+#endif  // BUILDING_OP2API_STUBS
 
 #ifndef DLLAPI
 # define DLLAPI CAPI DLLEXPORT

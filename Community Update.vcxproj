@@ -237,6 +237,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
   <ItemGroup>
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Misc.cpp" />
+    <ClCompile Include="Mission.cpp" />
     <ClCompile Include="Mod.cpp" />
     <ClCompile Include="Netplay.cpp" />
     <ClCompile Include="Patcher.cpp" />

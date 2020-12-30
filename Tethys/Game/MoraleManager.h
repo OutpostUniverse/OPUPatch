@@ -10,14 +10,14 @@ using MapID = MapIDImpl::MapID;
 class PlayerImpl;
 
 enum class MoraleBonusModifier : size_t {
-  PtsTot = 0,     ///< 'M_PTS_TOT' in sheets
-  PowerBonus,     ///< 'M_POW_BONUS'
-  ResearchBonus,  ///< 'M_RSCH_BONUS'
-  FactoryBonus,   ///< 'M_FACT_BONUS'
-  FoodBonus,      ///< 'M_FOOD_BONUS'
-  DefectRate,     ///< 'M_DEFECT_RATE'
-  FertilityRate,  ///< 'M_FERT_RATE'
-  DeathRate,      ///< 'M_DIE_RATE'
+  PointsTotal = 0,  ///< 'M_PTS_TOT' in sheets
+  PowerBonus,       ///< 'M_POW_BONUS'
+  ResearchBonus,    ///< 'M_RSCH_BONUS'
+  FactoryBonus,     ///< 'M_FACT_BONUS'
+  FoodBonus,        ///< 'M_FOOD_BONUS'
+  DefectRate,       ///< 'M_DEFECT_RATE'
+  FertilityRate,    ///< 'M_FERT_RATE'
+  DeathRate,        ///< 'M_DIE_RATE'
   Count
 };
 

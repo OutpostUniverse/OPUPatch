@@ -295,9 +295,9 @@ enum class SongID : int {
   Count
 };
 
-namespace API {
+namespace TethysAPI {
   using SoundID = Tethys::SoundID;
   using SongID  = Tethys::SongID;
-} // API
+} // TethysAPI
 
 } // Tethys

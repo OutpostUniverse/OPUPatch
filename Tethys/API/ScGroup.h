@@ -6,7 +6,7 @@
 #include "Tethys/API/ScStub.h"
 #include "Tethys/API/Unit.h"
 
-namespace Tethys::API {
+namespace Tethys::TethysAPI {
 
 class UnitBlock;
 
@@ -193,4 +193,4 @@ public:
   void SetPoints(const PWDef* pPwDefList)    { return Thunk<0x47A8B0, &$::SetPoints>(pPwDefList);             }
 };
 
-} // Tethys::API
+} // Tethys::TethysAPI

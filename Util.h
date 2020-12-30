@@ -16,7 +16,7 @@ inline HINSTANCE g_hInst = nullptr;  // HINSTANCE of this DLL.  DllMain must set
 
 /// Returns true if the virtual machine hypervisor bit of cpuid is set.
 inline bool IsVirtualMachine() {
-  Tethys::uint32 out[4] = { };
+  uint32_t out[4] = { };
 #if defined(_WIN32)
   __cpuid(reinterpret_cast<int*>(&out[0]), 0x1);
 #elif defined(__GNUC__)

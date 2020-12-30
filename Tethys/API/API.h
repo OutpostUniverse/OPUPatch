@@ -1,6 +1,5 @@
 
-/// This is a convenience header that may be included by mission DLLs, which includes all the headers under Tethys/API
-/// and defines the TethysAPI namespace alias.
+/// This is a convenience header that may be included by mission DLLs, which includes all the headers under Tethys/API.
 ///
 /// NOTE:  This header is not referenced internally within TethysAPI.  Including this in your project is optional.
 
@@ -17,5 +16,3 @@
 #include "Tethys/API/ScStub.h"
 #include "Tethys/API/ScGroup.h"
 #include "Tethys/API/Trigger.h"
-
-namespace TethysAPI = Tethys::API;

@@ -9,7 +9,7 @@
 #include "Tethys/Game/GameImpl.h"
 #include "Tethys/Game/PlayerImpl.h"
 
-namespace Tethys::API {
+namespace Tethys::TethysAPI {
 
 /// Exported interface for accessing player data (wraps PlayerImpl).
 /// @note Some of this class's functions return values that are cached.  You may need to call ResetChecks() first.
@@ -195,4 +195,4 @@ inline BuildingGroup FASTCALL CreateBuildingGroup(_Player   p) { return OP2Thunk
 inline FightGroup    FASTCALL CreateFightGroup(_Player      p) { return OP2Thunk<0x47A0A0, &CreateFightGroup>(p);    }
 inline Pinwheel      FASTCALL CreatePinwheel(const _Player& p) { return OP2Thunk<0x47A880, &CreatePinwheel>(p);      }
 
-} // Tethys::API
+} // Tethys::TethysAPI

@@ -13,6 +13,7 @@
 
 // Defines
 
+// Compiler/ABI detection
 #if (defined(PATCHER_CLANG) || defined(PATCHER_ICC) || defined(PATCHER_GCC) || defined(PATCHER_MSVC)) == false
 # if   defined(__clang__) || defined(__INTEL_CLANG_COMPILER)
 #  define PATCHER_CLANG  1
@@ -34,6 +35,7 @@
 # endif
 #endif
 
+// Build settings detection
 #if PATCHER_MSVC && defined(_DEBUG) && (defined(PATCHER_INCREMENTAL_LINKING) == false)
 # define PATCHER_INCREMENTAL_LINKING  1  // MSVC incremental linking is typically on in debug builds and off in release.
 #endif
@@ -49,6 +51,7 @@
 # define PATCHER_UNSAFE_TRY(...)     { __VA_ARGS__; }
 #endif
 
+// Architecture detection
 #if (defined(PATCHER_X86_32) || defined(PATCHER_X86_64)) == false
 # if   defined(_M_IX86) || (defined(__i386__) && (defined(__x86_64__) == false))
 #  define PATCHER_X86_32  1
@@ -58,6 +61,7 @@
 #endif
 #define  PATCHER_X86      (PATCHER_X86_32 || PATCHER_X86_64)
 
+// Calling conventions.  These are ignored if they do not exist for the given target ISA and build config.
 #if PATCHER_MSVC || defined(__ICL)
 # define  PATCHER_CDECL       __cdecl
 # define  PATCHER_STDCALL     __stdcall
@@ -178,11 +182,11 @@ template <typename T = void*> const T PtrInc(const void* p, size_t offset) { ret
 template <typename T = void*>       T PtrDec(void*       p, size_t offset) { return T((uint8*)(p)       - offset); }
 template <typename T = void*> const T PtrDec(const void* p, size_t offset) { return T((const uint8*)(p) - offset); }
 
-inline size_t      PtrDelta(const void* pHigh, const void* pLow)
+inline size_t PtrDelta(const void* pHigh, const void* pLow)
   { return static_cast<size_t>(static_cast<const uint8*>(pHigh) - static_cast<const uint8*>(pLow)); }
 
 template <typename T = uint32>  T PcRelPtr(const void* pFrom, size_t fromSize, const void* pTo)
-  { return (T)(PtrDelta(pTo, PtrInc(pFrom, fromSize))); }  // C-style cast works for both T as integer or pointer type.
+  { return T(PtrDelta(pTo, PtrInc(pFrom, fromSize))); }  // C-style cast works for both T as integer or pointer type.
 template <typename R = uint32, typename T>
 R PcRelPtr(const T* pFrom, const void* pTo) { return PcRelPtr<R>(pFrom, sizeof(T), pTo); }
 ///@}

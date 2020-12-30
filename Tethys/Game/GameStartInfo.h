@@ -5,7 +5,7 @@
 
 namespace Tethys {
 
-namespace API { enum class MissionType : int; }
+namespace TethysAPI { enum class MissionType : int; }
 
 BEGIN_PACKED
 enum class GameTermReasons : int {
@@ -141,15 +141,15 @@ struct ResearchState {
 };
 
 struct MissionResults : public GameStartInfo {
-  GameTermReasons  gameTermReason;
-  uint32           field_BE;
-  PlayerEndInfo    playerEndInfo[6];
-  API::MissionType missionType;       ///< Mission type (negative values) or campaign mission number (positive values)
-  PlayerStartInfo  playerStartInfo;   ///< Start info for local player
-  uint8            localPlayerID;
-  int              tick;
-  MoraleState      moraleState;
-  ResearchState    researchState;
+  GameTermReasons        gameTermReason;
+  uint32                 field_BE;
+  PlayerEndInfo          playerEndInfo[6];
+  TethysAPI::MissionType missionType;       ///< Mission type (negative values) or campaign mission number (positive values)
+  PlayerStartInfo        playerStartInfo;   ///< Start info for local player
+  uint8                  localPlayerID;
+  int                    tick;
+  MoraleState            moraleState;
+  ResearchState          researchState;
 };
 static_assert(sizeof(MissionResults) == 0x3DD, "Incorrect MissionResults size.");
 

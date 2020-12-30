@@ -7,7 +7,7 @@
 namespace Tethys::Odasl {
 
 /// Structure used to pass information to ODASL in wplInit.
-struct WplCreateInfo {
+struct WplInfo {
 	uint32    structSize;   ///< [60]
 	uint32    field_04;     ///< Flags?  [87]
 	HINSTANCE hAppInst;     ///< OS handle to OP2Shell.dll.
@@ -19,15 +19,16 @@ struct WplCreateInfo {
 	uint32    field_20[7];  ///< [{0}]
 };
 
+/// Get the ODASL Library object.  Loads odasl.dll if needed.
 inline const TethysUtil::Library& GetOdasl() { static TethysUtil::Library odaslLib("odasl.dll");  return odaslLib; }
 
-/// Initializes ODASL.
-inline int  STDCALL wplInit(WplCreateInfo* pCreateInfo) { return GetOdasl().Get<&wplInit>(__func__)(pCreateInfo); }
-inline void STDCALL wplExit()    { return GetOdasl().Get<&wplExit>(__func__)();    } ///< Uninitializes ODASL.
-inline void STDCALL wplEnable()  { return GetOdasl().Get<&wplEnable>(__func__)();  } ///< Enables ODASL skinning.
-inline void STDCALL wplDisable() { return GetOdasl().Get<&wplDisable>(__func__)(); } ///< Disables ODASL skinning.
+inline int  STDCALL wplInit(WplInfo* pInfo) { return GetOdasl().Get<&wplInit>(__func__)(pInfo); } ///< Initialize ODASL.
+inline void STDCALL wplExit()               { return GetOdasl().Get<&wplExit>(__func__)(); }      ///< Deinit ODASL.
 
-// The following APIs are exported, but not directly used by OP2 or OP2Shell.
+inline void STDCALL wplEnable()  { return GetOdasl().Get<&wplEnable>(__func__)();  } ///< Begin paint with skinning.
+inline void STDCALL wplDisable() { return GetOdasl().Get<&wplDisable>(__func__)(); } ///< End paint with skinning.
+
+// The following APIs are exported, but only used internally within ODASL, not directly by OP2 or OP2Shell.
 inline void    STDCALL wplSetPalette(HPALETTE hPalette) { return GetOdasl().Get<&wplSetPalette>(__func__)(hPalette); }
 inline HBITMAP STDCALL wplLoadResourceBitmap(HINSTANCE hInstance, const char* lpName)
 	{ return GetOdasl().Get<&wplLoadResourceBitmap>(__func__)(hInstance, lpName); }

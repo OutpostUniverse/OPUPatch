@@ -10,7 +10,7 @@
 #include "Tethys/Game/MapImpl.h"
 #include "Tethys/API/Location.h"
 
-namespace Tethys::API {
+namespace Tethys {
 
 /// Enum specifying unit type classifications.  Used by AI and UnitBlock-related interfaces.
 enum class UnitClassification : int {
@@ -36,6 +36,10 @@ enum class UnitClassification : int {
   All              = 0x11,  ///< All vehicles and buildings
 };
 
+namespace TethysAPI {
+
+using UnitClassification = Tethys::UnitClassification;
+
 /// Contains information about a ConVec's or factory's cargo bay contents.
 struct CargoKit {
   constexpr operator MapID() const { return unitType; }  ///< Allows comparison operators, etc.  Assignment disallowed.
@@ -57,8 +61,8 @@ struct TruckCargo {
 /// Exported interface wrapping a reference to a MapObject instance.
 class Unit : public OP2Class<Unit> {
 public:
-  Unit() : id_(0) { }
-  explicit Unit(int unitID) : id_(unitID) { }
+  constexpr Unit()           : id_(0)      { }
+  explicit  Unit(int unitID) : id_(unitID) { }
   Unit& operator=(const Unit& unit) = default;
 
   bool operator==(const Unit& unit) const { return id_ == unit.id_; }
@@ -73,7 +77,7 @@ public:
   void SetID(int newUnitID) { id_ = newUnitID; }  ///< Change referenced internal unit of this Unit wrapper instance.
 
   bool IsValid()  const { return (id_ > 0); }  ///< Returns true if this Unit instance is valid (not necessarily live!)
-  operator bool() const { return IsValid(); }
+  operator bool() const { return IsValid(); }  ///< Converts to true if IsValid()
 
   ///@{ Get the underlying MapObject that this Unit is a proxy for.
   template <typename T = MapObject>  T* GetMapObject() { return IsValid() ? T::GetInstance(size_t(id_)) : nullptr; }
@@ -355,6 +359,18 @@ public:
   int id_;
 };
 
+/// Info passed to OnCreateUnit() user callback.
+struct OnCreateUnitArgs {
+  size_t structSize;
+  Unit   unit;
+};
+
+/// Info passed to OnDestroyUnit() user callback.
+struct OnDestroyUnitArgs {
+  size_t structSize;
+  Unit   unit;
+};
+
 
 // =====================================================================================================================
 inline void Unit::DoSimpleCommand(
@@ -629,4 +645,5 @@ inline void Unit::DoTrainScientists(
   }
 }
 
-} // Tethys::API
+} // TethysAPI
+} // Tethys

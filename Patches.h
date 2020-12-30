@@ -54,6 +54,9 @@ bool SetScStubPatch(bool enable);  // ** WIP
 bool SetLargeMapPatch(bool enable);
 bool SetCustomMapFlagsPatch(bool enable);
 
+// Mission
+bool SetMissionCallbackPatch(bool enable);
+
 // Units
 bool SetUnitLimitPatch(bool enable);
 bool SetUnitTypeLimitPatch(bool enable);  // ** WIP

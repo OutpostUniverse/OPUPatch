@@ -334,6 +334,9 @@
     <ClCompile Include="Stream.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
+    <ClCompile Include="Mission.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AboutDialog.rc">

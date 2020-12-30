@@ -12,11 +12,11 @@ class ScBase;
 
 /// Structure describing a mission script.  Returned by GetModuleDesc().
 struct AIModDesc {
-  API::ModDesc descBlock;
-  char*        pMapName;
-  char*        pLevelDesc;
-  char*        pTechtreeName;
-  int          checksum;
+  TethysAPI::ModDesc descBlock;
+  char*              pMapName;
+  char*              pLevelDesc;
+  char*              pTechtreeName;
+  int                checksum;
 };
 
 /// Internal MissionManager class.
@@ -30,7 +30,7 @@ public:
   ibool LoadScript(char* pFilename) { return Thunk<0x402B20, &$::LoadScript>(pFilename); }
   int   Checksum()                  { return Thunk<0x403650, &$::Checksum>();            }
   ibool InitLevel()                 { return Thunk<0x402F20, &$::InitLevel>();           }
-  void  ProcessTriggers()           { return Thunk<0x403230, &$::ProcessTriggers>();     }
+  void  ProcessScStubs()            { return Thunk<0x403230, &$::ProcessScStubs>();      }
 
   void OnCreateUnit(MapObject*   pUnit, uint16 scGroupIndex)
     { return Thunk<0x403200, &$::OnCreateUnit>(pUnit, scGroupIndex); }
@@ -75,11 +75,11 @@ public:
   static void FASTCALL FreeModuleDesc(AIModDesc* pModDesc) { return OP2Thunk<0x402890, &$::FreeModuleDesc>(pModDesc); }
 
   /// Internal global function to get DescBlockEx.  Call FreeModuleDescEx() to destroy the returned memory.
-  static API::ModDescEx* GetModuleDescEx(const char* pFilename)
+  static TethysAPI::ModDescEx* GetModuleDescEx(const char* pFilename)
     { return OP2Thunk<0x402780, &$::GetModuleDescEx>(pFilename); }
 
   /// Frees the ModDescEx allocated by GetModuleDescEx.
-  static void FreeModuleDescEx(API::ModDescEx* pDescBlockEx) { operator delete(pDescBlockEx, OP2Heap); }
+  static void FreeModuleDescEx(TethysAPI::ModDescEx* pDescBlockEx) { operator delete(pDescBlockEx, OP2Heap); }
 
   /// Gets the global MissionManager instance.
   static MissionManager* GetInstance() { return OP2Mem<0x4EFD18, MissionManager*>(); }
@@ -91,14 +91,14 @@ public:
                                 ///  default group is destroyed and this gets set to true.
   };
 
-  HINSTANCE          hModule_;
-  int  (CDECL*       pfnInitProc_)();
-  void (CDECL*       pfnAIProc_)();
-  int  (CDECL*       pfnStatusProc_)();
-  API::SaveRegion    saveRegion_;
-  char*              pScriptName_;
-  DefaultScGroupInfo defaultScGroupInfo_[6];
-  AIModDesc*         pDescBlock_;
+  HINSTANCE             hModule_;
+  int  (CDECL*          pfnInitProc_)();
+  void (CDECL*          pfnAIProc_)();
+  int  (CDECL*          pfnStatusProc_)();
+  TethysAPI::SaveRegion saveRegion_;
+  char*                 pScriptName_;
+  DefaultScGroupInfo    defaultScGroupInfo_[6];
+  AIModDesc*            pDescBlock_;
 };
 
 } // Tethys

@@ -8,7 +8,7 @@
 // ** TODO The Enumerator API will be changed substantially to work more like std::iterator.
 // The current interface should be considered a placeholder.
 
-namespace Tethys::API {
+namespace Tethys::TethysAPI {
 
 /// Group (enumerate all units in a group)
 class GroupEnumerator : public OP2Class<GroupEnumerator> {

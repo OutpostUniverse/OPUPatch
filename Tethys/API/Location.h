@@ -114,10 +114,10 @@ struct PatrolRoute {
 };
 
 
-namespace API {
+namespace TethysAPI {
   using Location    = Tethys::Location;
   using MapRect     = Tethys::MapRect;
   using PatrolRoute = Tethys::PatrolRoute;
-} // API
+} // TethysAPI
 
 } // Tethys

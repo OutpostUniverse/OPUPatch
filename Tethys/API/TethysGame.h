@@ -28,7 +28,9 @@ enum class UnitDirection : int {
   NorthEast,
 };
 
-namespace API {
+namespace TethysAPI {
+
+using UnitDirection = Tethys::UnitDirection;
 
 /// Defines mine resource types for TethysGame::CreateMine().
 enum class MineType : int {
@@ -281,5 +283,5 @@ public:
   uint8 field_00;
 };
 
-} // API
+} // TethysAPI
 } // Tethys

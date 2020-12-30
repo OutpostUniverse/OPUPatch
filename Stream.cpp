@@ -29,7 +29,7 @@
 #include <memory>
 
 using namespace Tethys;
-using namespace Tethys::API;
+using namespace TethysAPI;
 using namespace Tethys::TethysUtil;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;
@@ -137,6 +137,9 @@ std::vector<std::filesystem::path> GetSearchPaths(
       { ".txt",   "techs"    },
       { ".txt",   "story"    },
       { ".rtf",   "story"    },
+      { ".ttf",   "ui"       },
+      { ".ttc",   "ui"       },
+      { ".otf",   "ui"       },
       { ".png",   "ui"       },
       { ".bmp",   "ui"       },
       { ".bmp",   "tilesets" },

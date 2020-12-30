@@ -20,7 +20,7 @@
 #include <algorithm>
 
 using namespace Tethys;
-using namespace Tethys::API;
+using namespace TethysAPI;
 using namespace Tethys::TethysUtil;
 using namespace Patcher::Util;
 using namespace Patcher::Registers;

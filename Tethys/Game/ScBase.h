@@ -1,14 +1,18 @@
 
 #pragma once
 
+// ** TODO Flesh out functions, more trigger subclasses, victory condition, failure condition, anything else?
+
 #include "Tethys/Common/Memory.h"
 #include "Tethys/API/Unit.h"
+#include "Tethys/API/Mission.h"
 
 namespace Tethys {
 
 class ScBase;
 class StreamIO;
 class MapObject;
+namespace TethysAPI { struct OnTriggerArgs; }
 
 /// Internal class managing the ScStub list.
 class ScStubList : public OP2Class<ScStubList> {
@@ -82,6 +86,8 @@ public:
 /// Internal implementation class for entities from the mission DLL.
 class ScriptDataBlock : public ScBase {
 public:
+  // ** TODO
+
   static ScriptDataBlock* GetInstance(int index) { return static_cast<ScriptDataBlock*>(ScBase::GetInstance(index)); }
 
 public:
@@ -95,6 +101,8 @@ public:
 /// Internal implementation class for mission DLL function references.
 class FuncReference : public ScriptDataBlock {
 public:
+  // ** TODO
+
   static FuncReference* GetInstance(int index) { return static_cast<FuncReference*>(ScBase::GetInstance(index)); }
 
 public:
@@ -106,8 +114,6 @@ public:
 class TriggerImpl : public ScBase {
   using $ = TriggerImpl;
 public:
-  using Callback = void(*)();
-
   void*          Destroy(ibool freeMem)     override { return Thunk<0x4920B0, &$::Destroy>(freeMem);   }
   ScStubFactory* GetScStubFactory()         override { return Thunk<0x492090, &$::GetScStubFactory>(); }
   void           Init()                     override { return Thunk<0x4920A0, &$::Init>();             }
@@ -116,10 +122,15 @@ public:
   void           RaiseEvent()               override { return Thunk<0x491FF0, &$::RaiseEvent>();       }
   ibool          IsEnabled()                override { return Thunk<0x491F90, &$::IsEnabled>();        }
 
-  virtual ibool    HasFired() = 0;
-  virtual Callback GetCallbackFunction() { return Thunk<0x491E70, &$::GetCallbackFunction>(); }
+  virtual ibool HasFired() = 0;
+
+  virtual TethysAPI::PfnOnTrigger GetCallbackFunction() { return Thunk<0x491E70, &$::GetCallbackFunction>(); }
+
+  auto* GetLegacyCallbackFunction() { return TethysAPI::PfnLegacyOnTrigger(GetCallbackFunction()); }
 
   static TriggerImpl* GetInstance(int index) { return static_cast<TriggerImpl*>(ScBase::GetInstance(index)); }
+
+  static TriggerImpl* GetTriggerList() { return OP2Mem<0x4E9E9C, TriggerImpl*&>(); }
 
 public:
   int            field_14;
@@ -157,11 +168,14 @@ class ScGroupImpl : public ScBase {
 public:
   static ScGroupImpl* GetInstance(int index) { return static_cast<ScGroupImpl*>(ScBase::GetInstance(index)); }
 
-  virtual void HasFired();                         // 0x24 ** [Name?]
+  static ScGroupImpl* GetScGroupList() { return OP2Mem<0x4E0B74, ScGroupImpl*&>(); }
+
+  // ** TODO
+  virtual void HasFired();
   virtual void AddUnit(MapObject* pMapObject);
   virtual void RemoveUnit(MapObject* pMapObject);
   virtual void RemoveDeadAndCapturedUnits();
-  virtual void A2();                               // 0x34 **
+  virtual void Func13();
 
   ibool IsUnderAttack() const { return Thunk<0x42BF10, &$::IsUnderAttack>(); }
 
@@ -176,25 +190,25 @@ public:
 
     int issueCommandTick;  ///< Set to 0xFFF00000 when adding unit (related to gameTick and deleteWhenEmpty)
 
-    API::UnitClassification classification;
+    UnitClassification classification;
   };
 
   int          field_14;
   int          field_18;
-  int          lastFreeUnitNodeIndex_;                                ///< (+= 1)
-  int          field_20;                                              ///< (+= 1)
-  UnitNode     unitNode_[32];                                         ///< Linked list storage for pointers for 32 units
-  UnitNode*    pUnitByType_[size_t(API::UnitClassification::NotSet)]; ///< Indexed by UnitClassification
-  TargetCount* pTargetCount_;                                         ///< Object to keep track of target counts
-  UnitNode*    pUnitListHead_;                                        ///< Sorted by UnitClassification; null terminated
-  UnitNode*    pUnitListTail_;                                        ///< Sorted by UnitClassification
-  int          numUnits_;                                             ///< Returned by TotalUnitCount()
-  int          ownerPlayerNum_;                                       ///< All units in group belong to this player
-  int          deleteWhenEmptyTick_;                                  ///< Inited to -1
-                                                                      ///  Set to tick+10000 by SetDeleteWhenEmpty(true)
-  ibool        setLights_;                                            ///< Inited to  1 (on)
-  int          field_300;                                             ///< (Part of this class, or derived classes?)
-  int          field_304;                                             ///< (Part of this class, or derived classes?)
+  int          lastFreeUnitNodeIndex_;                           ///< (+= 1)
+  int          field_20;                                         ///< (+= 1)
+  UnitNode     unitNode_[32];                                    ///< Linked list storage for pointers for 32 units
+  UnitNode*    pUnitByType_[size_t(UnitClassification::NotSet)]; ///< Indexed by UnitClassification
+  TargetCount* pTargetCount_;                                    ///< Object to keep track of target counts
+  UnitNode*    pUnitListHead_;                                   ///< Sorted by UnitClassification; null terminated
+  UnitNode*    pUnitListTail_;                                   ///< Sorted by UnitClassification
+  int          numUnits_;                                        ///< Returned by TotalUnitCount()
+  int          ownerPlayerNum_;                                  ///< All units in group belong to this player
+  int          deleteWhenEmptyTick_;                             ///< Inited to -1
+                                                                 ///  Set to tick+10000 by SetDeleteWhenEmpty(true)
+  ibool        setLights_;                                       ///< Inited to  1 (on)
+  int          field_300;                                        ///< (Part of this class, or derived classes?)
+  int          field_304;                                        ///< (Part of this class, or derived classes?)
 };
 
 
@@ -241,6 +255,8 @@ struct RecordInfo {
 /// Internal implementation for BuildingGroups.
 class BuildingGroupImpl : public ScGroupImpl {
 public:
+  // ** TODO member functions, vtbl
+
   static BuildingGroupImpl* GetInstance(int index)
     { return static_cast<BuildingGroupImpl*>(ScBase::GetInstance(index)); }
 
@@ -270,6 +286,8 @@ enum class CombatGroupObjective : int {
 /// Internal implementation for CombatGroups.
 class FightGroupImpl : public ScGroupImpl {
 public:
+  // ** TODO member functions, vtbl
+
   static FightGroupImpl* GetInstance(int index) { return static_cast<FightGroupImpl*>(ScBase::GetInstance(index)); }
 
 public:
@@ -295,6 +313,8 @@ static_assert(sizeof(FightGroupImpl) == 0x3E8, "Incorrect CombatBase size.");
 /// Internal implementation for MineGroups.
 class MineGroupImpl : public ScGroupImpl {
 public:
+  // ** TODO member functions, vtbl
+
   static MineGroupImpl* GetInstance(int index) { return static_cast<MineGroupImpl*>(ScBase::GetInstance(index)); }
 
 public:
@@ -307,6 +327,17 @@ public:
   MapID mineType_;
   MapID smelterType_;
   RECT  mineGroupPixelRect_;
+};
+
+
+/// Internal implementation for Pinwheel.
+class ScStrategyImpl : public ScBase {
+public:
+  static ScStrategyImpl* GetInstance(int index) { return static_cast<ScStrategyImpl*>(ScBase::GetInstance(index)); }
+
+  static ScStrategyImpl* GetScStrategyList() { return OP2Mem<0x4E413C, ScStrategyImpl*&>(); }
+
+  // ** TODO
 };
 
 } // Tethys

@@ -152,8 +152,8 @@ enum MapID : int {
 };
 } // MapIDImpl
 
-                using MapID = Tethys::MapIDImpl::MapID;
-namespace API { using MapID = Tethys::MapIDImpl::MapID; }
+                      using MapID = Tethys::MapIDImpl::MapID;
+namespace TethysAPI { using MapID = Tethys::MapIDImpl::MapID; }
 
 /// Vehicle track types.
 enum class TrackType : uint32 {

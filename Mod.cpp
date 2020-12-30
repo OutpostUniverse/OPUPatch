@@ -34,6 +34,7 @@ DLLAPI void InitMod(
   success &= SetDwmFix(true);
   success &= SetDpiFix(true);
   success &= SetAlphaBlendPatch(true);
+  success &= SetMineVariantVisibilityPatch(true);
 
   // Stream
   success &= SetFileSearchPathPatch(true);  // NOTE: This must handle loading patched DLLs like OP2Shell, odasl, etc.
@@ -69,6 +70,9 @@ DLLAPI void InitMod(
   success &= SetLargeMapPatch(true);
   success &= SetCustomMapFlagsPatch(true);
 
+  // Mission
+  success &= SetMissionCallbackPatch(true);
+
   // Units
   success &= SetUnitLimitPatch(true);
   success &= SetDrawLightningFix(true);
@@ -84,5 +88,4 @@ DLLAPI void InitMod(
   success &= SetOreRoutePatch(true);
   success &= SetTurretAnimationPatch(true);
   success &= SetTruckLoadPartialCargoPatch(true);
-  success &= SetMineVariantVisibilityPatch(true);
 }

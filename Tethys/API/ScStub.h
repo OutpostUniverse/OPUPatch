@@ -3,15 +3,15 @@
 
 #include "Tethys/Game/ScBase.h"
 
-namespace Tethys::API {
+namespace Tethys::TethysAPI {
 
 /// Exported interface wrapping ScBase.  Represents mission objects such as AI unit groups, Triggers, etc.
 class ScStub : public OP2Class<ScStub> {
 public:
   static constexpr int NilIndex = ScStubList::NilIndex;
 
-   ScStub()                    : id_(NilIndex) { }
-   explicit ScStub(int stubID) : id_(stubID)   { }
+   constexpr ScStub()           : id_(NilIndex) { }
+   explicit  ScStub(int stubID) : id_(stubID)   { }
   ~ScStub() { Thunk<0x478C50>(); }
 
   ///@{ Allow conversion from ScBase pointers/references.
@@ -42,4 +42,4 @@ public:
   int id_;
 };
 
-} // Tethys::API
+} // Tethys::TethysAPI
