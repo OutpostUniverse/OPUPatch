@@ -453,7 +453,6 @@ bool SetUiResourceReplacePatch(
       "OpenSans-Bold.ttf", "OpenSans-BoldItalic.ttf", "OpenSans-Italic.ttf", "OpenSans-Regular.ttf", "Roboto-Bold.ttf",
       "Roboto-BoldItalic.ttf", "Roboto-Italic.ttf", "Roboto-Regular.ttf"
     };
-
     for (const char* pFilename : FontFilenames) {
       if (auto path = GetFilePath(pFilename).string();  (path.empty() == false) && (loadedFonts.count(path) == 0)) {
         if (int count = AddFontResourceExA(path.data(), FR_PRIVATE, nullptr);  count > 0) {

@@ -359,16 +359,16 @@ public:
   int id_;
 };
 
-/// Info passed to OnCreateUnit() user callback.
+/// Info passed to OnCreateUnit() user callback.  (1.4.0)
 struct OnCreateUnitArgs {
-  size_t structSize;
-  Unit   unit;
+  size_t structSize;  ///< Size of this structure.
+  Unit   unit;        ///< Unit that was created.
 };
 
-/// Info passed to OnDestroyUnit() user callback.
+/// Info passed to OnDestroyUnit() user callback.  (1.4.0)
 struct OnDestroyUnitArgs {
-  size_t structSize;
-  Unit   unit;
+  size_t structSize;  ///< Size of this structure.
+  Unit   unit;        ///< Unit that was destroyed.
 };
 
 

@@ -52,8 +52,8 @@ public:
 
 /// Info passed to trigger callbacks.  (1.4.0)
 struct OnTriggerArgs {
-  size_t  structSize;
-  Trigger trigger;
+  size_t  structSize;  ///< Size of this structure.
+  Trigger trigger;     ///< Trigger that was fired.
 };
 
 

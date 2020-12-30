@@ -119,26 +119,26 @@ struct SaveRegion {
 
 /// Info passed to OnLoad() user callback.
 struct OnLoadArgs {
-  size_t structSize;
+  size_t structSize;  ///< Size of this structure.
 };
 
 /// Info passed to OnUnload() user callback.
 struct OnUnloadArgs {
-  size_t structSize;
+  size_t structSize;  ///< Size of this structure.
 };
 
 /// Info passed to OnEnd() user callback.
 struct OnEndArgs {
-  size_t          structSize;
-  MissionResults* pMissionResults;
+  size_t          structSize;       ///< Size of this structure.
+  MissionResults* pMissionResults;  ///< Mission results info.
 };
 
 /// Info passed to OnChat() user callback.
 struct OnChatArgs {
-  size_t structSize;
-  char*  pText;
-  size_t bufferSize;
-  int    playerNum;
+  size_t structSize;  ///< Size of this structures.
+  char*  pText;       ///< Chat message (writable).
+  size_t bufferSize;  ///< Size of chat message buffer.
+  int    playerNum;   ///< Source player number.
 };
 
 /// Info passed to OnCreateUnit() user callback.  @see Unit.h.
