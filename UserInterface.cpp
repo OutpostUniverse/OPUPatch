@@ -25,6 +25,7 @@
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/Resource/StreamIO.h"
 #include "Tethys/Resource/ResManager.h"
+#include "Tethys/Resource/MemoryMappedFile.h"
 #include "Tethys/Resource/Font.h"
 #include "Tethys/Resource/Odasl.h"
 #include "Tethys/Resource/SoundManager.h"
@@ -395,6 +396,8 @@ bool SetUiResourceReplacePatch(
   static Patcher::PatchContext odaslPatcher("odasl.dll", true);
   static Patcher::PatchContext sysPatcher(&LoadStringA);
 
+  static std::set<std::string> loadedFonts;
+
   bool success = true;
 
   if (enable) {
@@ -444,6 +447,21 @@ bool SetUiResourceReplacePatch(
         return F(hMod, id, pBuffer, size);
       }));
 
+    // Load Open Sans and Roboto fonts found in search paths.
+    // ** TODO Load any *.ttf/*.ttc/*.otf font files found
+    static constexpr const char* FontFilenames[] = {
+      "OpenSans-Bold.ttf", "OpenSans-BoldItalic.ttf", "OpenSans-Italic.ttf", "OpenSans-Regular.ttf", "Roboto-Bold.ttf",
+      "Roboto-BoldItalic.ttf", "Roboto-Italic.ttf", "Roboto-Regular.ttf"
+    };
+
+    for (const char* pFilename : FontFilenames) {
+      if (auto path = GetFilePath(pFilename).string();  (path.empty() == false) && (loadedFonts.count(path) == 0)) {
+        if (int count = AddFontResourceExA(path.data(), FR_PRIVATE, nullptr);  count > 0) {
+          loadedFonts.insert(path);
+        }
+      }
+    }
+
     success = (op2Patcher.GetStatus()   == PatcherStatus::Ok) &&
               (odaslPatcher.GetStatus() == PatcherStatus::Ok) &&
               (sysPatcher.GetStatus()   == PatcherStatus::Ok) &&
@@ -455,6 +473,11 @@ bool SetUiResourceReplacePatch(
   }
 
   if ((enable == false) || (success == false)) {
+    for (const std::string& font : loadedFonts) {
+      RemoveFontResourceExA(font.data(), FR_PRIVATE, nullptr);
+    }
+    loadedFonts.clear();
+
     success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
     success &= (odaslPatcher.RevertAll() == PatcherStatus::Ok);
     success &= (sysPatcher.RevertAll()   == PatcherStatus::Ok);
