@@ -28,13 +28,13 @@ bool SetMissionCallbackPatch(
 
   if (enable) {
     static struct {
-      PfnOnLoad        pfnOnLoad        = nullptr;
-      PfnOnUnload      pfnOnUnload      = nullptr;
-      PfnOnEnd         pfnOnEnd         = nullptr;
-      PfnOnChat        pfnOnChat        = nullptr;
-      PfnOnCreateUnit  pfnOnCreateUnit  = nullptr;
-      PfnOnDestroyUnit pfnOnDestroyUnit = nullptr;
-    } callbacks{};
+      ibool (__cdecl*  pfnOnLoad)(OnLoadArgs&&);
+      ibool (__cdecl*  pfnOnUnload)(OnUnloadArgs&&);
+      void  (__cdecl*  pfnOnEnd)(OnEndArgs&&);
+      void  (__cdecl*  pfnOnChat)(OnChatArgs&&);
+      void  (__cdecl*  pfnOnCreateUnit)(OnCreateUnitArgs&&);
+      void  (__cdecl*  pfnOnDestroyUnit)(OnDestroyUnitArgs&&);
+    } callbacks = { };
 
     // In MissionManager::LoadScript()
     patcher.LowLevelHook(0x402C0B, [](Esi<MissionManager*> pThis) {
@@ -83,12 +83,13 @@ bool SetMissionCallbackPatch(
     // Because trigger callbacks always used cdecl, this is ABI-compatible with existing callbacks (caller cleanup).
     // In MissionManager::ProcessScStubs()
     patcher.LowLevelHook(0x403251, [] {
-      std::deque<std::pair<TriggerImpl*, PfnOnTrigger>> pFiredTriggers;
+      using PfnTrigger = void(__cdecl*)(OnTriggerArgs&&);
+      std::deque<std::pair<TriggerImpl*, PfnTrigger>> pFiredTriggers;
 
       for (TriggerImpl* pTrig = TriggerImpl::GetTriggerList(); pTrig != nullptr; pTrig = pTrig->pNext_) {
         if (pTrig->isEnabled_ && pTrig->HasFired()) {
           if (auto* pfn = pTrig->GetCallbackFunction();  pfn != nullptr) {
-            pFiredTriggers.emplace_back(pTrig, pfn);
+            pFiredTriggers.emplace_back(pTrig, reinterpret_cast<PfnTrigger>(pfn));
           }
         }
       }

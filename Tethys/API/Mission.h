@@ -158,14 +158,14 @@ using PfnGetSaveRegions  = void(CDECL*)(SaveRegion* pSave);
 using PfnLegacyOnTrigger = void(CDECL*)();
 
 // The following require OPU mod 1.4.0+.
-using PfnOnLoad        = ibool(CDECL*)(const OnLoadArgs&);
-using PfnOnUnload      = ibool(CDECL*)(const OnUnloadArgs&);
-using PfnOnEnd         =  void(CDECL*)(const OnEndArgs&);
-using PfnOnChat        =  void(CDECL*)(const OnChatArgs&);
-using PfnOnCreateUnit  =  void(CDECL*)(const OnCreateUnitArgs&);
-using PfnOnDestroyUnit =  void(CDECL*)(const OnDestroyUnitArgs&);
+using PfnOnLoad        = ibool(CDECL*)(OnLoadArgs*);
+using PfnOnUnload      = ibool(CDECL*)(OnUnloadArgs*);
+using PfnOnEnd         =  void(CDECL*)(OnEndArgs*);
+using PfnOnChat        =  void(CDECL*)(OnChatArgs*);
+using PfnOnCreateUnit  =  void(CDECL*)(OnCreateUnitArgs*);
+using PfnOnDestroyUnit =  void(CDECL*)(OnDestroyUnitArgs*);
 
-using PfnOnTrigger = void(CDECL*)(const OnTriggerArgs&);
+using PfnOnTrigger = void(CDECL*)(OnTriggerArgs*);
 ///@}
 
 } // TethysAPI
