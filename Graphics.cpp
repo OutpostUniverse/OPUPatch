@@ -320,7 +320,6 @@ bool SetAlphaBlendPatch(
 bool SetMineVariantVisibilityPatch(
   bool enable)
 {
-
   static Patcher::PatchContext patcher;
   bool success = true;
 
