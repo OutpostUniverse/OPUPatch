@@ -210,7 +210,6 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClInclude Include="Tethys\Resource\LocalizedStrings.h" />
     <ClInclude Include="Tethys\Resource\CodecStream.h" />
     <ClInclude Include="Tethys\Resource\MemoryMappedFile.h" />
-    <ClInclude Include="Tethys\Resource\Odasl.h" />
     <ClInclude Include="Tethys\Resource\ResManager.h" />
     <ClInclude Include="Tethys\Resource\SoundID.h" />
     <ClInclude Include="Tethys\Resource\SoundManager.h" />
@@ -227,6 +226,7 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClInclude Include="Tethys\UI\MsgBoxDialog.h" />
     <ClInclude Include="Tethys\UI\MultiplayerDialogs.h" />
     <ClInclude Include="Tethys\UI\FileDialog.h" />
+    <ClInclude Include="Tethys\UI\Odasl.h" />
     <ClInclude Include="Tethys\UI\UICommand.h" />
     <ClInclude Include="Tethys\UI\UICommandID.h" />
     <ClInclude Include="Tethys\UI\UIElement.h" />

@@ -19,15 +19,14 @@
 #include "Tethys/Game/TApp.h"
 #include "Tethys/Game/MapObject.h"
 
-#include "Tethys/UI/IWnd.h"
 #include "Tethys/UI/GameFrame.h"
+#include "Tethys/UI/Odasl.h"
 
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/Resource/StreamIO.h"
 #include "Tethys/Resource/ResManager.h"
 #include "Tethys/Resource/MemoryMappedFile.h"
 #include "Tethys/Resource/Font.h"
-#include "Tethys/Resource/Odasl.h"
 #include "Tethys/Resource/SoundManager.h"
 #include "Tethys/Resource/LocalizedStrings.h"
 

@@ -296,11 +296,11 @@
     <ClInclude Include="Tethys\Game\MineManager.h">
       <Filter>Tethys\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Tethys\Resource\Odasl.h">
-      <Filter>Tethys\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="Tethys\Common\Library.h">
       <Filter>Tethys\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\UI\Odasl.h">
+      <Filter>Tethys\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

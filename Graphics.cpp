@@ -351,6 +351,7 @@ bool SetMineVariantVisibilityPatch(
         pixelX = pThis->pixelX_;
         return 0x4054B6;
       });
+
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 
