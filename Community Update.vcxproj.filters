@@ -339,27 +339,27 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="AboutDialog.rc">
+    <ResourceCompile Include="UI\UI.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="Icon.rc">
+    <ResourceCompile Include="UI\AboutDialog.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="MultiplayerIpDropdown.rc">
+    <ResourceCompile Include="UI\Icon.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="MultiplayerLobby.rc">
+    <ResourceCompile Include="UI\MultiplayerIpDropdown.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="MultiplayerMethodMenu.rc">
+    <ResourceCompile Include="UI\MultiplayerLobby.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="UI.rc">
+    <ResourceCompile Include="UI\MultiplayerMethodMenu.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="OP2Icon.ico">
+    <Image Include="UI\OP2Icon.ico">
       <Filter>Resources</Filter>
     </Image>
   </ItemGroup>

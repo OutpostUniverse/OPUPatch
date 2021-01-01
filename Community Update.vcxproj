@@ -248,15 +248,15 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
     <ClCompile Include="Units.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="AboutDialog.rc" />
-    <ResourceCompile Include="Icon.rc" />
-    <ResourceCompile Include="MultiplayerIpDropdown.rc" />
-    <ResourceCompile Include="MultiplayerLobby.rc" />
-    <ResourceCompile Include="MultiplayerMethodMenu.rc" />
-    <ResourceCompile Include="UI.rc" />
+    <ResourceCompile Include="UI\AboutDialog.rc" />
+    <ResourceCompile Include="UI\Icon.rc" />
+    <ResourceCompile Include="UI\MultiplayerIpDropdown.rc" />
+    <ResourceCompile Include="UI\MultiplayerLobby.rc" />
+    <ResourceCompile Include="UI\MultiplayerMethodMenu.rc" />
+    <ResourceCompile Include="UI\UI.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="OP2Icon.ico" />
+    <Image Include="UI\OP2Icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
