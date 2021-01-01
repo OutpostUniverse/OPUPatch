@@ -1,0 +1,3 @@
+[submodule "Tethys"]
+	path = Tethys
+	url = https://gitlab.com/Arklon/tethysapi.git
