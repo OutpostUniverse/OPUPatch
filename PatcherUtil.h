@@ -177,10 +177,10 @@ template <Call C>  struct AsCall{};
 
 ///@{ Pointer arithmetic helpers.
 template <typename T = void*>       T PtrInc(void*       p, size_t offset) { return T((uint8*)(p)       + offset); }
-template <typename T = void*> const T PtrInc(const void* p, size_t offset) { return T((const uint8*)(p) + offset); }
+template <typename T = const void*> T PtrInc(const void* p, size_t offset) { return T((const uint8*)(p) + offset); }
 
 template <typename T = void*>       T PtrDec(void*       p, size_t offset) { return T((uint8*)(p)       - offset); }
-template <typename T = void*> const T PtrDec(const void* p, size_t offset) { return T((const uint8*)(p) - offset); }
+template <typename T = const void*> T PtrDec(const void* p, size_t offset) { return T((const uint8*)(p) - offset); }
 
 inline size_t PtrDelta(const void* pHigh, const void* pLow)
   { return static_cast<size_t>(static_cast<const uint8*>(pHigh) - static_cast<const uint8*>(pLow)); }
