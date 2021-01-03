@@ -56,6 +56,7 @@ bool SetCustomMapFlagsPatch(bool enable);
 
 // Mission
 bool SetMissionCallbackPatch(bool enable);
+bool SetMissionDebugNoInstantWin(bool enable);
 
 // Units
 bool SetUnitLimitPatch(bool enable);

@@ -72,6 +72,7 @@ DLLAPI void InitMod(
 
   // Mission
   success &= SetMissionCallbackPatch(true);
+  success &= SetMissionDebugNoInstantWin(true);
 
   // Units
   success &= SetUnitLimitPatch(true);

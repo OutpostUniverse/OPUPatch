@@ -6,7 +6,9 @@
 #include "Util.h"
 
 #include "Tethys/API/Unit.h"
+#include "Tethys/API/TethysGame.h"
 #include "Tethys/API/Trigger.h"
+#include "Tethys/API/Enumerators.h"
 #include "Tethys/Game/MissionManager.h"
 #include "Tethys/Game/GameStartInfo.h"
 
@@ -101,6 +103,41 @@ bool SetMissionCallbackPatch(
 
       return 0x40329C;
     });
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// When running multiplayer missions from the debug "run script" dialog, don't automatically trigger victory when the
+// mission loads.
+bool SetMissionDebugNoInstantWin(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  static const auto& flags   = g_gameImpl.gameStartInfo_.startupFlags;
+  static const auto& mission = *MissionManager::GetInstance();
+
+  if (enable) {
+    // In MissionManager::ProcessScStubs()
+    patcher.LowLevelHook(0x4033AA, [] { return flags.isMultiplayer ? 0 : 0x4033B9; });
+
+    // In LastOneStandingTriggerImpl::HasFired()
+    patcher.LowLevelHook(0x492A61, [](Ebp<ibool*> pIsHuman) {
+      Unit u;
+      auto*const p = PtrDec<PlayerImpl*>(pIsHuman, offsetof(PlayerImpl, isHuman_));
+      return flags.isMultiplayer ? 0 : PlayerBuildingEnum(p->playerNum_, MapID::CommandCenter).GetNext(u) ? 0x492A72: 0;
+    });
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 
   if ((enable == false) || (success == false)) {
