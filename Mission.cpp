@@ -56,7 +56,7 @@ bool SetMissionCallbackPatch(
       { if (callbacks.pfnOnUnload != nullptr) { callbacks.pfnOnUnload({ sizeof(OnUnloadArgs) }); }  callbacks = { }; });
 
     // In GameFrame::EndMission()
-    patcher.LowLevelHook(0x49CB3E, [](Eax <MissionResults*> pMissionResults)
+    patcher.LowLevelHook(0x49CB3E, [](Eax<MissionResults*> pMissionResults)
       { if (callbacks.pfnOnEnd != nullptr) { callbacks.pfnOnEnd({ sizeof(OnEndArgs), pMissionResults }); } });
 
     // Hook call to CheckChatForCheatCode() in PlayerImpl::ProcessCommandPacket()
@@ -123,8 +123,7 @@ bool SetMissionDebugNoInstantWin(
   static Patcher::PatchContext patcher;
   bool success = true;
 
-  static const auto& flags   = g_gameImpl.gameStartInfo_.startupFlags;
-  static const auto& mission = *MissionManager::GetInstance();
+  static const auto& flags = g_gameImpl.gameStartInfo_.startupFlags;
 
   if (enable) {
     // In MissionManager::ProcessScStubs()
