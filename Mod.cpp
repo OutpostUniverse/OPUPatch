@@ -47,6 +47,7 @@ DLLAPI void InitMod(
   success &= SetBindAnyNetAdapterFix(true);
   success &= SetNoCheatsPatch(true);
   success &= SetNetProtocolEnabledPatch(true);
+  success &= SetGameLobbyDefaultsPatch(true);
 
   // UI
   success &= SetUiResourceReplacePatch(true);
@@ -62,6 +63,7 @@ DLLAPI void InitMod(
   success &= SetControlGroupHotkeyPatch(true);
   success &= SetDefaultIniSettingsPatch(true);
   success &= SetDebugRestartGamePatch(true);
+  success &= SetUnitHpBarVisibilityPatch(true);
 
   // ScStub
   success &= SetScStubPatch(true);

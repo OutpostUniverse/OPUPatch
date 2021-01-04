@@ -1134,7 +1134,7 @@ static void CopyInstructions(
     const auto& insn  = pInsns[i];
     const auto& bytes = insn.bytes;
 
-    uintptr pcRelTarget = 0;
+    ptrdiff_t pcRelTarget = 0;
 
     // Store mapping of the original instruction to the offset of the new instruction we're writing.
     offsetLut[curOldOffset] = static_cast<uint8>(PtrDelta(*ppWriter, pBegin));
@@ -1155,7 +1155,7 @@ static void CopyInstructions(
     }
     else if (bytes[0] == 0xEB) {
       CatByte(ppWriter, 0xE9);
-      pcRelTarget = bytes[1];
+      pcRelTarget = static_cast<int8>(bytes[1]);
     }
     // Conditional jump
     else if ((bytes[0] == 0x0F) && (bytes[1] >= 0x80) && (bytes[1] <= 0x8F)) {
@@ -1165,7 +1165,7 @@ static void CopyInstructions(
     }
     else if ((bytes[0] >= 0x70) && (bytes[0] <= 0x7F)) {
       CatBytes(ppWriter, { 0x0F, static_cast<uint8>(bytes[0] + 0x10) });
-      pcRelTarget = bytes[1];
+      pcRelTarget = static_cast<int8>(bytes[1]);
     }
     // Loop, jump if ECX == 0
     else if ((bytes[0] >= 0xE0) && (bytes[0] <= 0xE3)) {

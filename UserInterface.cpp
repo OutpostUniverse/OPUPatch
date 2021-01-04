@@ -1007,9 +1007,10 @@ bool SetVehicleCargoDisplayPatch(
 
       switch (pVec->GetTypeID()) {
       case MapID::CargoTruck: {
-        const auto        cargoType  = CargoType(max(pVec->truckCargoType_, 0));
-        const char*const  pCargoName =
-           (cargoType == CargoType::Spacecraft) ? &MapObjectType::GetInstance(pVec->truckCargoAmount_)->unitName_[0]  :
+        const auto        cargoType   = CargoType(max(pVec->truckCargoType_, 0));
+        auto*const        pSpacecraft = MapObjectType::GetInstance(pVec->truckCargoAmount_);
+        const char*const  pCargoName  =
+           (cargoType == CargoType::Spacecraft) ? ((pSpacecraft != nullptr) ? &pSpacecraft->unitName_[0] : nullptr)   :
           ((cargoType <  CargoType::Count) && (cargoType > CargoType::Empty)) ? pTruckCargoStrings[size_t(cargoType)] :
           nullptr;
         const std::string quantity = ((pVec->truckCargoAmount_ > 1) && (cargoType <= CargoType::RareRubble)) ?
@@ -1018,9 +1019,12 @@ bool SetVehicleCargoDisplayPatch(
         return (pCargoName != nullptr) ? (quantity + ((quantity[0] != '\0') ? " " : "") + pCargoName) : "empty";
       }
       case MapID::ConVec: {
-        auto*const pCargoName  = &MapObjectType::GetInstance(pVec->cargo_)->unitName_[0];
-        auto*const pWeaponName =
-          (pVec->weaponOfCargo_ != MapID::None) ? &MapObjectType::GetInstance(pVec->weaponOfCargo_)->unitName_[0] : "";
+        auto*const pCargo  = MapObjectType::GetInstance(pVec->cargo_);
+        auto*const pWeapon =
+          (pVec->weaponOfCargo_ != MapID::None) ? MapObjectType::GetInstance(pVec->weaponOfCargo_) : nullptr;
+
+        auto*const pCargoName  = pCargo  ? &pCargo->unitName_[0]  : "";
+        auto*const pWeaponName = pWeapon ? &pWeapon->unitName_[0] : "";
 
         return std::string(pWeaponName) + ((pWeaponName[0] != '\0') ? " " : "") + pCargoName;
       }
@@ -1353,6 +1357,55 @@ bool SetDebugRestartGamePatch(
   if (enable) {
     // In GameOptionsPane::AddControls()
     patcher.HookCall(0x465B6D, []() -> ibool { return g_gameImpl.gameStartInfo_.startupFlags.isMultiplayer; });
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Makes unit HP bars always visible if they're damaged.
+bool SetUnitHpBarVisibilityPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  // 0 = Selected and mouseover only (original behavior), 1 = Always show damaged units' HP bars
+  static int showHPBarsMode = g_configFile.GetInt("Game", "ShowUnitHPBars", -1);
+  if (showHPBarsMode == -1) {
+    showHPBarsMode = 1;
+    g_configFile.SetInt("Game", "ShowUnitHPBars", showHPBarsMode);
+  }
+
+  enable &= (showHPBarsMode != 0);
+  if (enable) {
+    static constexpr uint32 DrawHPBar = 1u << 31;
+
+    // In MapUnit::DrawUIOverlay()
+    // Change the meaning of the drawFlags function param to add a flag for draw HP bars.
+    patcher.LowLevelHook(0x43EB3A, [](Eax<uint32> flags) { return BitFlagTest(flags, DrawHPBar) ? 0x43EB42 : 0; });
+    patcher.LowLevelHook(0x43EC1F, [](Esp<void*> pEsp)
+      { return BitFlagTest(*PtrInc<uint32*>(pEsp, 0x1E0), DrawHPBar) ? 0x43ED79 : 0; });
+    patcher.LowLevelHook(0x43ED79, [](Esp<void*> pEsp)
+      { return BitFlagTest(*PtrInc<uint32*>(pEsp, 0x1E0), DrawHPBar) ? 0 : 0x43EF12; });
+
+    // In MapObjDrawList::DrawUnits()
+    patcher.LowLevelHook(0x49EA1C, [](Esi<MapObjDrawList*> pThis, Ebx<MapUnit**> ppDrawList) {
+      auto*const pViewport = pThis->pViewport_;
+      for (int i = 0, count = pThis->numUnits_; i < count; ppDrawList[i++]->Draw(pViewport));
+      for (int i = 0, count = pThis->numUnits_; i < count; ++i) {
+        if (auto*const pUnit = ppDrawList[i];  pUnit->damage_ > 0) {
+          pUnit->DrawUIOverlay(DrawHPBar, pViewport);
+        }
+      }
+      return 0x49EA2F;
+    });
+
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 

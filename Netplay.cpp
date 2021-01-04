@@ -9,6 +9,7 @@
 #include "Tethys/API/TethysGame.h"
 #include "Tethys/Game/TApp.h"
 #include "Tethys/UI/IWnd.h"
+#include "Tethys/UI/MultiplayerDialogs.h"
 #include "Tethys/Resource/ResManager.h"
 #include "Tethys/Network/NetGameSession.h"
 #include "Tethys/Network/NetGameProtocol.h"
@@ -137,6 +138,40 @@ bool SetNetProtocolEnabledPatch(
         [] { return g_resManager.FileExists("SNWValid.dll") && g_resManager.FileExists("SierraNW.dll"); }();
       return result;
     }));
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Changes some multiplayer game lobby default settings.
+bool SetGameLobbyDefaultsPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // Change default resources setting to high instead of medium.
+    // In MultiplayerLobbyDialog::AddNewPlayer()
+    patcher.WriteNop(0x45F17C);
+
+    // In MultiplayerLobbyDialog::ShowHostGame()
+    patcher.WriteNop(0x45F81E);
+    // Change morale steady to default on.
+    patcher.LowLevelHook(0x45F13E, [](Eax<StartupFlags>& flags) { flags->moraleEnabled = 1; });
+    // Change disasters to default off for Last One Standing and Land Rush, keep at default on otherwise.
+    patcher.LowLevelHook(0x45F28B, [](Ebx<MultiplayerLobbyDialog*> pThis, Eax<MissionType> missionType) {
+      if ((missionType == MissionType::LastOneStanding) || (missionType == MissionType::LandRush)) {
+        pThis->gameStartInfo_.startupFlags.disastersEnabled = 0;
+      }
+    });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

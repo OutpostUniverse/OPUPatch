@@ -21,6 +21,7 @@ bool SetNetGameSpeedPatch(bool enable);
 bool SetBindAnyNetAdapterFix(bool enable);
 bool SetNoCheatsPatch(bool enable);
 bool SetNetProtocolEnabledPatch(bool enable);
+bool SetGameLobbyDefaultsPatch(bool enable);
 bool SetQuickJoinPatch(bool enable);  // ** WIP
 
 // UI
@@ -38,6 +39,7 @@ bool SetSavantNotificationPatch(bool enable);
 bool SetControlGroupHotkeyPatch(bool enable);
 bool SetDefaultIniSettingsPatch(bool enable);
 bool SetDebugRestartGamePatch(bool enable);
+bool SetUnitHpBarVisibilityPatch(bool enable);
 
 // Graphics
 bool SetWindowFix(bool enable);
