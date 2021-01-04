@@ -1405,11 +1405,11 @@ bool SetUnitHpBarVisibilityPatch(
         static constexpr uint32 Blight = MoFlagBuilding | MoFlagBldInfected;
         if (auto*const pUnit = ppDrawList[i];  (pUnit->damage_ > 0) && (BitFlagsTest(pUnit->flags_, Blight) == false)) {
           // Don't draw HP bars for hidden enemy vehicles at night, unless they are too close to units hostile to them.
-          if ((TethysGame::UsesDayNight() == false)                             ||
-              (BitFlagTest(pUnit->flags_, MoFlagVehicle) == false)              ||
-              BitFlagTest(pUnit->flags_, MoFlagVecHeadlights)                   ||
-              Player[TethysGame::LocalPlayer()].IsAlliedBy(pUnit->ownerNum_)    ||
-              (GameMap::GetLightLevel(pUnit->GetTile()) < (NumLightLevels / 2)) ||
+          if ((TethysGame::UsesDayNight() == false)                                     ||
+              (BitFlagTest(pUnit->flags_, MoFlagVehicle) == false)                      ||
+              BitFlagTest(pUnit->flags_, MoFlagVecHeadlights | MoFlagForceFullLighting) ||
+              Player[TethysGame::LocalPlayer()].IsAlliedBy(pUnit->ownerNum_)            ||
+              (GameMap::GetLightLevel(pUnit->GetTile()) < (NumLightLevels / 2))         ||
               pUnit->IsEnemyUnitSighted())
           {
             pUnit->DrawUIOverlay(DrawHPBar, pViewport);
