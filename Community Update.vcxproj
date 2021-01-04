@@ -136,7 +136,8 @@ copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2-GOG-RtPatch\OPU\
       <BaseAddress>0x16000000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(TargetPath)" "Y:\Program Files (x86)\Sierra\Outpost2\$(TargetFileName)"

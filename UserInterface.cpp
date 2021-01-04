@@ -29,6 +29,7 @@
 #include "Tethys/Resource/Font.h"
 #include "Tethys/Resource/SoundManager.h"
 #include "Tethys/Resource/LocalizedStrings.h"
+#include "Tethys/Resource/GFXBitmap.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -1393,14 +1394,26 @@ bool SetUnitHpBarVisibilityPatch(
       { return BitFlagTest(*PtrInc<uint32*>(pEsp, 0x1E0), DrawHPBar) ? 0x43ED79 : 0; });
     patcher.LowLevelHook(0x43ED79, [](Esp<void*> pEsp)
       { return BitFlagTest(*PtrInc<uint32*>(pEsp, 0x1E0), DrawHPBar) ? 0 : 0x43EF12; });
+    // Disable red HP bar flashing.
+    patcher.LowLevelHook(0x43EE62, [](Ecx<uint32>& color) { color = ~0u; });
 
     // In MapObjDrawList::DrawUnits()
     patcher.LowLevelHook(0x49EA1C, [](Esi<MapObjDrawList*> pThis, Ebx<MapUnit**> ppDrawList) {
       auto*const pViewport = pThis->pViewport_;
       for (int i = 0, count = pThis->numUnits_; i < count; ppDrawList[i++]->Draw(pViewport));
       for (int i = 0, count = pThis->numUnits_; i < count; ++i) {
-        if (auto*const pUnit = ppDrawList[i];  pUnit->damage_ > 0) {
-          pUnit->DrawUIOverlay(DrawHPBar, pViewport);
+        static constexpr uint32 Blight = MoFlagBuilding | MoFlagBldInfected;
+        if (auto*const pUnit = ppDrawList[i];  (pUnit->damage_ > 0) && (BitFlagsTest(pUnit->flags_, Blight) == false)) {
+          // Don't draw HP bars for hidden enemy vehicles at night, unless they are too close to units hostile to them.
+          if ((TethysGame::UsesDayNight() == false)                             ||
+              (BitFlagTest(pUnit->flags_, MoFlagVehicle) == false)              ||
+              BitFlagTest(pUnit->flags_, MoFlagVecHeadlights)                   ||
+              Player[TethysGame::LocalPlayer()].IsAlliedBy(pUnit->ownerNum_)    ||
+              (GameMap::GetLightLevel(pUnit->GetTile()) < (NumLightLevels / 2)) ||
+              pUnit->IsEnemyUnitSighted())
+          {
+            pUnit->DrawUIOverlay(DrawHPBar, pViewport);
+          }
         }
       }
       return 0x49EA2F;
