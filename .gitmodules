@@ -1,3 +1,7 @@
 [submodule "Tethys"]
 	path = Tethys
 	url = https://gitlab.com/Arklon/tethysapi.git
+[submodule "Patcher"]
+	path = Patcher
+	url = https://github.com/BradDorney/Patcher.git
+	branch = dev

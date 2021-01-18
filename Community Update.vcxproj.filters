@@ -1,19 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Patcher">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Patcher\Imported">
-      <UniqueIdentifier>{cafdd63e-77e8-4be4-a2a9-9fe3262aabb7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Patcher\Imported\Capstone">
-      <UniqueIdentifier>{2868049f-67c6-4651-b88a-cef8f728c02b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Patcher\Imported\Capstone\include">
-      <UniqueIdentifier>{b6d93a21-25ef-4685-8b86-d1ff4ade4e6c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Patches">
       <UniqueIdentifier>{6720a07c-80e4-4b86-99e0-fca9de91f587}</UniqueIdentifier>
     </Filter>
@@ -47,36 +34,20 @@
     <Filter Include="Tethys\API">
       <UniqueIdentifier>{86e6d8a8-df83-4381-92b2-fd791654d195}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Patcher">
+      <UniqueIdentifier>{0b2928f4-872d-4536-bf4f-525090408fe7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Patcher\imported">
+      <UniqueIdentifier>{bf5df3d7-7db2-4244-895c-0725ce4a23d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Patcher\imported\capstone">
+      <UniqueIdentifier>{3c166ed2-7a6e-48ac-aad7-47126dfda618}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Patcher\imported\capstone\include">
+      <UniqueIdentifier>{08239115-374b-4ef9-a271-f3c8b7fbf7ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="imported\capstone\capstone.lib">
-      <Filter>Patcher\Imported\Capstone</Filter>
-    </Library>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="imported\capstone\LICENSE.TXT">
-      <Filter>Patcher\Imported\Capstone</Filter>
-    </Text>
-    <Text Include="imported\capstone\LICENSE_LLVM.TXT">
-      <Filter>Patcher\Imported\Capstone</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="imported\capstone\include\capstone.h">
-      <Filter>Patcher\Imported\Capstone\include</Filter>
-    </ClInclude>
-    <ClInclude Include="imported\capstone\include\platform.h">
-      <Filter>Patcher\Imported\Capstone\include</Filter>
-    </ClInclude>
-    <ClInclude Include="imported\capstone\include\x86.h">
-      <Filter>Patcher\Imported\Capstone\include</Filter>
-    </ClInclude>
-    <ClInclude Include="Patcher.h">
-      <Filter>Patcher</Filter>
-    </ClInclude>
-    <ClInclude Include="PatcherUtil.h">
-      <Filter>Patcher</Filter>
-    </ClInclude>
     <ClInclude Include="Patches.h">
       <Filter>Patches</Filter>
     </ClInclude>
@@ -302,11 +273,23 @@
     <ClInclude Include="Tethys\UI\Odasl.h">
       <Filter>Tethys\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Patcher\Patcher.h">
+      <Filter>Patcher</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\PatcherUtil.h">
+      <Filter>Patcher</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\imported\capstone\include\platform.h">
+      <Filter>Patcher\imported\capstone\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\imported\capstone\include\x86.h">
+      <Filter>Patcher\imported\capstone\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\imported\capstone\include\capstone.h">
+      <Filter>Patcher\imported\capstone\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Patcher.cpp">
-      <Filter>Patcher</Filter>
-    </ClCompile>
     <ClCompile Include="Mod.cpp">
       <Filter>Mod</Filter>
     </ClCompile>
@@ -337,6 +320,9 @@
     <ClCompile Include="Mission.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
+    <ClCompile Include="Patcher\Patcher.cpp">
+      <Filter>Patcher</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="UI\UI.rc">
@@ -362,5 +348,23 @@
     <Image Include="UI\OP2Icon.ico">
       <Filter>Resources</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Patcher\LICENSE">
+      <Filter>Patcher</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Patcher\imported\capstone\LICENSE.TXT">
+      <Filter>Patcher\imported\capstone</Filter>
+    </Text>
+    <Text Include="Patcher\imported\capstone\LICENSE_LLVM.TXT">
+      <Filter>Patcher\imported\capstone</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Patcher\imported\capstone\capstone.lib">
+      <Filter>Patcher\imported\capstone</Filter>
+    </Library>
   </ItemGroup>
 </Project>
