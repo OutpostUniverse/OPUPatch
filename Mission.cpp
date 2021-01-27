@@ -104,6 +104,12 @@ bool SetMissionCallbackPatch(
       return 0x40329C;
     });
 
+    // Hook FuncReference::SetData() to allow trigger callback function of nullptr.
+    patcher.Hook(0x4757D0, SetCapturedTrampoline, ThiscallFunctor(
+      [F = (ibool(__thiscall*)(ScBase*, char*, ibool))0](ScBase* pThis, char* pFuncName, ibool useLevelDLL) -> ibool {
+        return ((pFuncName == nullptr) || F(pThis, pFuncName, useLevelDLL));
+      }));
+
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 

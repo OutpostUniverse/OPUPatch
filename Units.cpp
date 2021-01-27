@@ -760,20 +760,26 @@ bool SetTruckLoadPartialCargoPatch(
     static int defaultTruckCapacity = 1000;
     patcher.LowLevelHook(0x446042, []
       { defaultTruckCapacity = MapObjType::CargoTruck::GetInstance()->playerStats_[0].vehicle.cargoCapacity; });
-
+      
     // In CountTrigger::HasFired()
     patcher.LowLevelHook(0x493D5C, [](Eax<int> unitID, Esi<CargoType> cargo, Ebx<int>& counter) {
       if (auto* pTruck = MapObject::GetInstance(unitID);  CargoType(pTruck->truckCargoType_) == cargo) {
-        counter += ((cargo > CargoType::Empty) || (cargo < CargoType::Spacecraft)) ? pTruck->truckCargoAmount_ : 1;
+        counter += ((cargo > CargoType::Empty) && (cargo < CargoType::Spacecraft)) ? pTruck->truckCargoAmount_ : 1;
       }
       return 0x493D87;
     });
     patcher.LowLevelHook(0x493E14, [](Edi<MapObject*> pTruckInGarage, Ecx<CargoType> cargo, Ebx<int>& counter) {
       if (CargoType(pTruckInGarage->truckCargoType_) == cargo) {
         counter +=
-          ((cargo > CargoType::Empty) || (cargo < CargoType::Spacecraft)) ? pTruckInGarage->truckCargoAmount_ : 1;
+          ((cargo > CargoType::Empty) && (cargo < CargoType::Spacecraft)) ? pTruckInGarage->truckCargoAmount_ : 1;
       }
       return 0x493E2A;
+    });
+    patcher.LowLevelHook(0x493FA3, [](Eax<int> unitID, Edi<CargoType> cargo, Ebx<int>& counter) {
+      if (auto* pTruck = MapObject::GetInstance(unitID);  CargoType(pTruck->truckCargoType_) == cargo) {
+        counter += ((cargo > CargoType::Empty) && (cargo < CargoType::Spacecraft)) ? pTruck->truckCargoAmount_ : 1;
+      }
+      return 0x493FCE;
     });
     for (uintptr loc : { 0x493E50, 0x493FE5 }) {
       patcher.LowLevelHook(loc, [](Ebp<TriggerImpl*> pThis, Ebx<int>& counter) {

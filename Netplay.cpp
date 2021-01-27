@@ -35,7 +35,7 @@ bool SetNatFix(
     // In Network::ProcessProtocolControlPacket()
     // ** TODO Come up with a definition for NetTransportLayer::playerNetAddrList_ instead of using [8345]
     patcher.LowLevelHook(0x4972C3, [](Ebp<uint32*> pNetTransportLayer, Esp<void*> pEsp)
-      { pNetTransportLayer[8345] = (*static_cast<sockaddr_in**>(PtrInc(pEsp, 20)))->sin_addr.s_addr; });
+      { pNetTransportLayer[8345] = (*PtrInc<sockaddr_in**>(pEsp, 20))->sin_addr.s_addr; });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 
@@ -104,8 +104,6 @@ bool SetNoCheatsPatch(
     static const auto& flags = g_gameImpl.gameStartInfo_.startupFlags;
 
     // In CheckChatForCheatCode()
-    // NOTE: This hook location was chosen so as to not conflict with the common ChatMessageHook implementation, which
-    //       hooks at 0x58642A.
     patcher.LowLevelHook(0x586430, [] { (flags.isMultiplayer && (flags.cheatsEnabled == false)) ? 0x5864A6 : 0; });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -209,7 +207,7 @@ bool SetQuickJoinPatch(
         pSearchProtocol->hBroadcastThread_ = NULL;
 
         auto*const pSession = new(OP2Heap) TCPGameSession;
-        *static_cast<NetGameSession**>(PtrInc(pFindSessionDlg, 40)) = pSearchProtocol->pSession_ = pSession;
+        *PtrInc<NetGameSession**>(pFindSessionDlg, 40) = pSearchProtocol->pSession_ = pSession;
         if (pSession != nullptr) {
           pSession->hostAddress_       = pSearchProtocol->specifiedIP_;
           pSession->sessionIdentifier_ = *TApp::GetGameIdentifier();
