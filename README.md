@@ -97,7 +97,7 @@ Changes specific to the CD or GOG releases are annotated with `(CD)` or `(GOG)` 
   * Other OPU game files such as `op2ext.dll` and `OPUPatch.dll` now also get checksummed.
 * Disable all "Dan's" cheats in multiplayer.  They are allowed in single player.
 * Increase maximum chat message length.
-* Allow players to ping locations on the map by sending chat messages of the form "\@X,Y" (can be followed by other text).  Receipients can double-click on the message log entry to jump to the pinged location.
+* Allow players to ping locations on the map by sending chat messages of the form "`@X,Y`" (can be followed by other text).  Receipients can double-click on the message log entry to jump to the pinged location.
 
 ### Mapmaking/modding and developer-related changes
 
