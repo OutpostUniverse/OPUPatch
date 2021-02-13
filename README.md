@@ -88,8 +88,6 @@ Changes specific to the CD or GOG releases are annotated with `(CD)` or `(GOG)` 
 
 ### Network and multiplayer-related changes
 
-* Install `NetHelper` by default, a module that uses UPnP/NAT-PMP to forward ports if you are behind a router that supports either of these standards.
-* Removed `NetFix` as it is no longer functional.  A new SIGS/WON replacement will be coming in a future update.
 * Fix "replicating players list failed" error that occurs with TCP/IP mode when behind a NAT, as is the case with most home networks.
 * Bind to all network adapters instead of the highest priority one, which improves behavior with virtual network adapters such as Hamachi and other VPNs and doesn't require manually configuring network adapter priority in Windows.
 * Disabled IPX, modem, and serial netplay protocols as they are no longer practical on modern systems (DirectPlay is no longer supported).  Opening the "Multiplayer" menu no longer stalls for several seconds.
