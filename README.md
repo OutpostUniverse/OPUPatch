@@ -5,6 +5,7 @@ OPUPatch is a collection of patches to Outpost 2 for the Outpost Universe commun
 Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements bugfixes and new features for the game, and increments the game version. It will not, however, contain direct game balance changes; those would (eventually) be put within their own mod.
 
 # Requirements
+
 * Outpost 2 v1.2.7 or newer with op2ext
 * TethysAPI
 * Patcher v4
@@ -98,7 +99,7 @@ Changes specific to the CD or GOG releases are annotated with `(CD)` or `(GOG)` 
   * Other OPU game files such as `op2ext.dll` and `OPUPatch.dll` now also get checksummed.
 * Disable all "Dan's" cheats in multiplayer.  They are allowed in single player.
 * Increase maximum chat message length.
-* Allow players to ping locations on the map by sending chat messages of the form "@X,Y" (can be followed by other text).  Receipients can double-click on the message log entry to jump to the pinged location.
+* Allow players to ping locations on the map by sending chat messages of the form "\@X,Y" (can be followed by other text).  Receipients can double-click on the message log entry to jump to the pinged location.
 
 ### Mapmaking/modding and developer-related changes
 
@@ -138,6 +139,7 @@ Changes specific to the CD or GOG releases are annotated with `(CD)` or `(GOG)` 
 ### Miscellaneous changes
 
 * OP2 internal version number is incremented to `1.4.0` (to ensure modded games cannot join multiplayer matches with the unmodded game by mistake).
+* Game files can now (preferably) be loaded from a `OPU` subfolder under the game folder, and from asset-specific subfolders under `OPU`.  Missions can have their own subfolders that contain all their own assets (and override base assets).
 * (CD) The CD is no longer required to be inserted to play the game.
 * (CD) Configure the Indeo video codec to be used if the codec isn't installed or is disabled system-wide (as is the case in most modern Windows versions for security reasons), allowing game cutscenes to play.
 * Fix a float conversion issue with the `sprintf` family of functions.
