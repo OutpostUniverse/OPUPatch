@@ -103,8 +103,8 @@ Changes specific to the CD or GOG releases are annotated with `(CD)` or `(GOG)` 
 
 ### Mapmaking/modding and developer-related changes
 
-* The original game data files (such as the `.vol` files among others) are now all extracted to folders underneath the mod subfolder for easier viewing and modding purposes, avoiding the need for additional tools to manipulate the `.vol` files and helping reduce clutter in the main folder.
-* To run the OPU-modded version of the game in a debugger, you may run `Outpost2.exe /OPU` instead of `OPULauncher.exe` to sidestep child process debugging issues.
+* Sound files can now be loaded from loose files instead of requiring them to be in VOL files.
+* Game files can now (preferably) be loaded from a `OPU` subfolder under the game folder, and from asset-specific subfolders under `OPU`.
 * Allow DLLs to be placed in this folder hierarchy or within a `libs` subfolder, to avoid cluttering up the main directory.
 * Mods and maps now live in their own subfolders, and the search path logic has received an overhaul to prefer these first over looking at other folders:
   * For example, all of the mod-installed content that overrides the base game files lives under `OPU\base`, and custom maps (under `OPU\maps`) are free to replace files as well.
@@ -139,7 +139,6 @@ Changes specific to the CD or GOG releases are annotated with `(CD)` or `(GOG)` 
 ### Miscellaneous changes
 
 * OP2 internal version number is incremented to `1.4.0` (to ensure modded games cannot join multiplayer matches with the unmodded game by mistake).
-* Game files can now (preferably) be loaded from a `OPU` subfolder under the game folder, and from asset-specific subfolders under `OPU`.  Missions can have their own subfolders that contain all their own assets (and override base assets).
 * (CD) The CD is no longer required to be inserted to play the game.
 * (CD) Configure the Indeo video codec to be used if the codec isn't installed or is disabled system-wide (as is the case in most modern Windows versions for security reasons), allowing game cutscenes to play.
 * Fix a float conversion issue with the `sprintf` family of functions.
