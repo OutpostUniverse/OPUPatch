@@ -6,7 +6,8 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
 
 # Requirements
 
-* Outpost 2 v1.2.7 or newer with op2ext
+* Outpost 2 v1.2.7 or newer
+* op2ext v3.1.0 or newer
 * TethysAPI
 * Patcher v4
 * Capstone
