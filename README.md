@@ -128,7 +128,6 @@ Changes specific to the CD or GOG releases are annotated with `(CD)` or `(GOG)` 
   * Known issues: forcing wraparound on < 512-width maps causes the pathfinder to hang, the minimap is offset incorrectly on 128-width wraparound maps, and there are major rendering issues with 64-width wraparound maps.
 * Force old dock vehicle damage mechanic that allows damaging allied vehicles for buildings that are set as special targets using `CreateSpecialTarget()`.
 * Correctly draw single or dual turret sprites for Lynx, Panthers, and Tigers based whether the double-fire-rate flag is set.
-* Convert the `well*.bmp` tileset files from the custom `PBMP` format originally used to standard BMP files, allowing these to be opened in normal image editors while still being in a format the game can use.
 * Fixed `Unit::DoInfect()` to work on maps with more than 1 player (human or AI).
 * A debug "Run Script" dialog where arbitrary missions can be loaded may now be accessed by pressing the `D` key on the menu menu.
   * Known issue: game settings in this dialog are non-functional.
