@@ -85,7 +85,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>if defined Outpost2Path (xcopy /y /d "$(TargetPath)" "$(Outpost2Path)\OPU\") else (echo Outpost2Path environment variable not defined. Skipping Post Build Copy.)</Command>
+      <Command>if defined Outpost2Path (xcopy /y /d "$(TargetPath)" "$(Outpost2Path)\OPU\" &amp;&amp; xcopy /y /d "$(TargetDir)$(TargetName).pdb" "$(Outpost2Path)\OPU\") else (echo Outpost2Path environment variable not defined. Skipping Post Build Copy.)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Analyze|Win32'">
@@ -109,7 +109,7 @@
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>if defined Outpost2Path (xcopy /y /d "$(TargetPath)" "$(Outpost2Path)\OPU\") else (echo Outpost2Path environment variable not defined. Skipping Post Build Copy.)</Command>
+      <Command>if defined Outpost2Path (xcopy /y /d "$(TargetPath)" "$(Outpost2Path)\OPU\" &amp;&amp; xcopy /y /d "$(TargetDir)$(TargetName).pdb" "$(Outpost2Path)\OPU\") else (echo Outpost2Path environment variable not defined. Skipping Post Build Copy.)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -136,7 +136,7 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>if defined Outpost2Path (xcopy /y /d "$(TargetPath)" "$(Outpost2Path)\OPU\") else (echo Outpost2Path environment variable not defined. Skipping Post Build Copy.)</Command>
+      <Command>if defined Outpost2Path (xcopy /y /d "$(TargetPath)" "$(Outpost2Path)\OPU\" &amp;&amp; xcopy /y /d "$(TargetDir)$(TargetName).pdb" "$(Outpost2Path)\OPU\") else (echo Outpost2Path environment variable not defined. Skipping Post Build Copy.)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -230,7 +230,6 @@
     <ClCompile Include="Patcher\Patcher.cpp" />
     <ClCompile Include="Stream.cpp" />
     <ClCompile Include="UserInterface.cpp" />
-    <ClCompile Include="ScStub.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="Units.cpp" />
   </ItemGroup>

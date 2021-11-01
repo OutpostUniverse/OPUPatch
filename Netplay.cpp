@@ -14,6 +14,7 @@
 #include "Tethys/Network/NetGameSession.h"
 #include "Tethys/Network/NetGameProtocol.h"
 #include "Tethys/Network/NetTransportLayer.h"
+#include "Tethys/Common/Library.h"
 
 #include <string>
 
@@ -75,12 +76,60 @@ bool SetBindAnyNetAdapterFix(
   bool success = true;
 
   if (enable) {
+    // Patch all calls to bind().
     for (uintptr loc : { 0x48C0FE, 0x48C12B, 0x48C700, 0x49165C, 0x495F69, 0x4960F5, 0x4964DA }) {
       patcher.HookCall(loc, StdcallLambdaPtr([](SOCKET s, sockaddr_in* pName, int nameLen) {
         pName->sin_addr.s_addr = INADDR_ANY;
         return OP2Thunk<0x4C0E40, int __stdcall(SOCKET, void*, int)>(s, pName, nameLen);
       }));
     }
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Bypass the IPX emulator in the GOG distro of the game to work around its potential crash bugs.
+bool SetBypassIpxEmulatorPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  // Load the real wsock32.dll.
+  HMODULE hWinSock = NULL;
+  if (static bool inited = false;  inited == false) {
+    wchar_t dllPath[MAX_PATH] = L"";
+    GetSystemDirectoryW(&dllPath[0], MAX_PATH);
+    wcsncat_s(&dllPath[0], MAX_PATH, L"\\wsock32.dll", _TRUNCATE);
+
+    hWinSock = LoadLibraryW(&dllPath[0]);
+    inited   = true;
+  }
+
+  static TethysUtil::Library winSockLib(hWinSock, true);
+  enable &= winSockLib.IsLoaded();
+
+  if (enable) {
+    patcher.Hook(0x4C0E22, winSockLib.Get("WSACleanup"));
+    patcher.Hook(0x4C0E28, winSockLib.Get("WSAStartup"));
+    patcher.Hook(0x4C0E2E, winSockLib.Get("gethostbyname"));
+    patcher.Hook(0x4C0E34, winSockLib.Get("inet_addr"));
+    patcher.Hook(0x4C0E3A, winSockLib.Get("closesocket"));
+    patcher.Hook(0x4C0E40, winSockLib.Get("bind"));
+    patcher.Hook(0x4C0E46, winSockLib.Get("htons"));
+    patcher.Hook(0x4C0E4C, winSockLib.Get("socket"));
+    patcher.Hook(0x4C0E52, winSockLib.Get("sendto"));
+    patcher.Hook(0x4C0E58, winSockLib.Get("recvfrom"));
+    patcher.Hook(0x4C0E5E, winSockLib.Get("select"));
+    patcher.Hook(0x4C0E64, winSockLib.Get("setsockopt"));
+    patcher.Hook(0x4C0E6A, winSockLib.Get("ntohs"));
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

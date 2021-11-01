@@ -296,9 +296,6 @@
     <ClCompile Include="Map.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
-    <ClCompile Include="ScStub.cpp">
-      <Filter>Patches</Filter>
-    </ClCompile>
     <ClCompile Include="Netplay.cpp">
       <Filter>Patches</Filter>
     </ClCompile>

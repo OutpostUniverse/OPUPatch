@@ -5,10 +5,16 @@
 #include <dsound.h>
 
 #include "Tethys/API/TethysGame.h"
+#include "Tethys/API/GameMap.h"
+#include "Tethys/Resource/CConfig.h"
+#include "Tethys/Resource/StreamIO.h"
+#include "Tethys/Game/PathFinder.h"
 
 #include "Patcher.h"
 #include "Util.h"
 #include "Resources.h"
+
+#include <algorithm>
 
 using namespace Tethys;
 using namespace TethysAPI;
@@ -19,7 +25,6 @@ using namespace Patcher::Registers;
 // Sets the game version per OP2_MAJOR_VERSION, OP2_MINOR_VERSION, OP2_STEPPING_VERSION defined in Version.h.
 // This affects the version used for netplay compatibility checks, saved games, and a couple places in the UI not
 // covered by resource replacements.
-// ** TODO Hook saved game loading code to allow backward compatibility with older saved game files
 bool SetGameVersion(
   bool enable)
 {
@@ -30,13 +35,26 @@ bool SetGameVersion(
     // For netplay, TApp::Version()
     patcher.ReplaceReferencesToGlobal(0x4E973C, 1, OP2_VERSION_QUAD_STR);
 
-    // For saved games
-    // ** TODO Until back compat code is written, freeze this at the last version affecting the saved game format
-    patcher.ReplaceReferencesToGlobal(0x4D6380, 1, "OUTPOST2 1.4.0-OPU SAVE");
-
     // For UI display
     patcher.ReplaceReferencesToGlobal(0x4E3200, 1, OP2_VERSION_TRIPLE_STR "-OPU");
     patcher.Write(0x566708 + 596,       "Version " OP2_VERSION_TRIPLE_STR "-OPU");
+
+    // For saved games
+    patcher.ReplaceReferencesToGlobal(0x4D6380, 1, "OUTPOST2 " OP2_VERSION_TRIPLE_STR "-OPU SAVE\034");
+
+    static constexpr int GameVersion = (OP2_MAJOR_VERSION * 100) + (OP2_MINOR_VERSION * 10) + OP2_STEPPING_VERSION;
+
+    // In GameImpl::LoadGame()
+    patcher.LowLevelHook(0x48A413, [](Edi<StreamIO*> pStream) {
+      const int saveVersion = GetSavedGameVersion(pStream);
+      return ((saveVersion >= 127) && (saveVersion <= GameVersion)) ? 0x48A451 : 0x48A445;
+    });
+
+    // Replace GameImpl::VerifySavedGameFileTag()
+    patcher.Hook(0x48A190, ThiscallLambdaPtr([](void* pThis, StreamIO* pStream) -> ibool {
+      const int saveVersion = GetSavedGameVersion(pStream, false);
+      return (saveVersion >= 127) && (saveVersion <= GameVersion);
+    }));
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -142,4 +160,67 @@ bool SetPrintfFloatFix(
   }
 
   return success;
+}
+
+// =====================================================================================================================
+// Forces the game loop to run at full speed for debugging purposes.  Not recommended for use in multiplayer.
+bool SetSuperSpeedPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  // 0 = Normal speed, 1 = super speed
+  static int superSpeedMode = g_configFile.GetInt("Game", "SuperSpeed", -1);
+  if (superSpeedMode == -1) {
+    superSpeedMode = 0;
+    g_configFile.SetInt("Game", "SuperSpeed", superSpeedMode);
+  }
+
+  enable &= (superSpeedMode != 0);
+  if (enable) {
+    patcher.Write(&g_gameFrame.iniSettings_.frameSkip, 2); // Skip rendering every other frame to further improve speed
+    success = (patcher.Write<uint8>(0x49C374, 0xEB) == PatcherStatus::Ok); // 0x73
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == PatcherStatus::Ok));
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Returns the version of an Outpost 2 saved game file.
+int GetSavedGameVersion(
+  StreamIO* pSavedGame,
+  bool      seekBack)
+{
+  static const StreamIO* pPrevious = nullptr;
+  static int previousVersion       = 0;
+
+  int version = 0;
+
+  if (pSavedGame == pPrevious) {
+    version = previousVersion;
+  }
+  else if (const size_t oldPos = pSavedGame->Tell();  pSavedGame->Seek(0)) {
+    if (char tag[25] = "";  pSavedGame->Read(sizeof(tag), &tag[0])) {
+      if (strcmp("OUTPOST 2.00 SAVED GAME\032", &tag[0]) == 0) {
+        version = 127;
+      }
+      else if ((strncmp("OUTPOST2 ", &tag[0], 9) == 0) && (strncmp("-OPU SAVE", &tag[14], 9) == 0)) {
+        version = ((tag[9] - '0') * 100) + ((tag[11] - '0') * 10) + (tag[13] - '0');
+      }
+    }
+
+    if (seekBack) {
+      pSavedGame->Seek(oldPos);
+    }
+
+    pPrevious       = pSavedGame;
+    previousVersion = version;
+  }
+
+  return version;
 }

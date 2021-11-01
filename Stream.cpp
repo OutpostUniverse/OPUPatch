@@ -132,6 +132,7 @@ std::vector<std::filesystem::path> GetSearchPaths(
       { ".ax",    "libs"     },
       { ".dll",   "libs"     },
       { ".dll",   "maps"     },
+      { ".py",    "maps"     },
       { ".map",   "maps"     },
       { ".txt",   "sheets"   },
       { ".txt",   "techs"    },
@@ -163,8 +164,8 @@ std::vector<std::filesystem::path> GetSearchPaths(
       const auto assetDir = base/it->second;
 
       if (std::filesystem::exists(assetDir)) {
-        if (searchForMission && (it->first == ".dll") && (it->second == "maps")) {
-          // Search a) top level of [base]/maps/* subdirectories iff we are searching for mission DLLs.
+        if (searchForMission && ((it->first == ".dll") || (it->first == ".py")) && (it->second == "maps")) {
+          // Search a) top level of [base]/maps/* subdirectories iff we are searching for mission scripts.
           // This lets e.g. OPU/base/maps/AxensHome/ml6_21.dll be found.
           for (auto& p : std::filesystem::directory_iterator(assetDir, SearchOptions)) {
             if (p.is_directory()) {
@@ -270,35 +271,37 @@ static MissionList GetMissionList(
 
   std::unordered_set<std::string> tested;
   MissionList                     missions;
+  
+  for (const char* pExtension : { ".dll", ".py" }) {
+    for (const auto& searchPath : GetSearchPaths(pExtension, true)) {
+      if (std::filesystem::exists(searchPath)) {
+        for (auto& p : std::filesystem::directory_iterator(searchPath, SearchOptions)) {
+          const auto& path = p.path();
 
-  for (const auto& searchPath : GetSearchPaths(".dll", true)) {
-    if (std::filesystem::exists(searchPath)) {
-      for (auto& p : std::filesystem::directory_iterator(searchPath, SearchOptions)) {
-        const auto& path = p.path();
+          if (path.has_extension() && (path.extension() == pExtension)) {
+            std::string filename = path.filename().string();
+            std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
 
-        if (path.has_extension() && (path.extension() == ".dll")) {
-          std::string filename = path.filename().string();
-          std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
+            if (tested.count(filename) == 0) {
+              AIModDesc*const pAIModDesc = MissionManager::GetModuleDesc(path.string().data());
 
-          if (tested.count(filename) == 0) {
-            AIModDesc*const pAIModDesc = MissionManager::GetModuleDesc(path.string().data());
-
-            if (pAIModDesc != nullptr) {
-              if ((pAIModDesc->descBlock.missionType >= minMissionType) &&
-                  (pAIModDesc->descBlock.missionType <= maxMissionType) &&
-                  (pAIModDesc->descBlock.numPlayers  >= maxPlayers))
-              {
-                missions.emplace_back(
-                  std::piecewise_construct,
-                  std::forward_as_tuple(path.filename().string()),
-                  std::forward_as_tuple(pAIModDesc, [](AIModDesc* p) { MissionManager::FreeModuleDesc(p); }));
+              if (pAIModDesc != nullptr) {
+                if ((pAIModDesc->descBlock.missionType >= minMissionType) &&
+                    (pAIModDesc->descBlock.missionType <= maxMissionType) &&
+                    (pAIModDesc->descBlock.numPlayers  >= maxPlayers))
+                {
+                  missions.emplace_back(
+                    std::piecewise_construct,
+                    std::forward_as_tuple(path.filename().string()),
+                    std::forward_as_tuple(pAIModDesc, [](AIModDesc* p) { MissionManager::FreeModuleDesc(p); }));
+                }
+                else {
+                  MissionManager::FreeModuleDesc(pAIModDesc);
+                }
               }
-              else {
-                MissionManager::FreeModuleDesc(pAIModDesc);
-              }
+
+              tested.emplace(filename);
             }
-
-            tested.emplace(filename);
           }
         }
       }
@@ -825,7 +828,6 @@ bool SetChecksumPatch(
 
   return success;
 }
-
 
 // =====================================================================================================================
 // Locally injects the Indeo 4.1 codec needed for game cutscenes if it is not registered in the OS.

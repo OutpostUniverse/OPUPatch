@@ -28,6 +28,7 @@ DLLAPI void InitMod(
   success &= SetForceMoraleFix(true);
   success &= SetPrintfFloatFix(true);
   success &= SetGlobalMusicFix(true);
+  success &= SetSuperSpeedPatch(true);
 
   // Graphics
   success &= SetWindowFix(true);
@@ -45,6 +46,7 @@ DLLAPI void InitMod(
   success &= SetNatFix(true);
   success &= SetNetGameSpeedPatch(true);
   success &= SetBindAnyNetAdapterFix(true);
+  success &= SetBypassIpxEmulatorPatch(true);
   success &= SetNoCheatsPatch(true);
   success &= SetNetProtocolEnabledPatch(true);
   success &= SetGameLobbyDefaultsPatch(true);
@@ -65,16 +67,15 @@ DLLAPI void InitMod(
   success &= SetDebugRestartGamePatch(true);
   success &= SetUnitHpBarVisibilityPatch(true);
 
-  // ScStub
-  success &= SetScStubPatch(true);
-
   // Map
   success &= SetLargeMapPatch(true);
   success &= SetCustomMapFlagsPatch(true);
 
   // Mission
   success &= SetMissionCallbackPatch(true);
-  success &= SetMissionDebugNoInstantWin(true);
+  success &= SetVictoryConditionTextPatch(true);
+  success &= SetMissionDebugNoInstantWinPatch(true);
+  success &= SetScStubPatch(true);
 
   // Units
   success &= SetUnitLimitPatch(true);

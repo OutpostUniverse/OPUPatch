@@ -9,6 +9,7 @@ bool SetNoCdPatch(bool enable);
 bool SetForceMoraleFix(bool enable);
 bool SetPrintfFloatFix(bool enable);
 bool SetGlobalMusicFix(bool enable);
+bool SetSuperSpeedPatch(bool enable);
 
 // Stream
 bool SetFileSearchPathPatch(bool enable);
@@ -19,6 +20,7 @@ bool SetCodecFix(bool enable);
 bool SetNatFix(bool enable);
 bool SetNetGameSpeedPatch(bool enable);
 bool SetBindAnyNetAdapterFix(bool enable);
+bool SetBypassIpxEmulatorPatch(bool enable);
 bool SetNoCheatsPatch(bool enable);
 bool SetNetProtocolEnabledPatch(bool enable);
 bool SetGameLobbyDefaultsPatch(bool enable);
@@ -49,16 +51,15 @@ bool SetFpsPatch(bool enable);  // ** WIP
 bool SetAlphaBlendPatch(bool enable);
 bool SetMineVariantVisibilityPatch(bool enable);
 
-// ScStub
-bool SetScStubPatch(bool enable);  // ** WIP
-
 // Map
 bool SetLargeMapPatch(bool enable);
 bool SetCustomMapFlagsPatch(bool enable);
 
 // Mission
 bool SetMissionCallbackPatch(bool enable);
-bool SetMissionDebugNoInstantWin(bool enable);
+bool SetVictoryConditionTextPatch(bool enable);
+bool SetMissionDebugNoInstantWinPatch(bool enable);
+bool SetScStubPatch(bool enable);  // ** WIP
 
 // Units
 bool SetUnitLimitPatch(bool enable);

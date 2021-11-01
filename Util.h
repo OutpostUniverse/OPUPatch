@@ -10,8 +10,13 @@
 # include <cpuid.h>
 #endif
 
+namespace Tethys { class StreamIO; }
 
-inline HINSTANCE g_hInst = nullptr;  // HINSTANCE of this DLL.  DllMain must set this during DLL_PROCESS_ATTACH!
+
+inline HINSTANCE g_hInst = nullptr;  ///< HINSTANCE of this DLL.  DllMain must set this during DLL_PROCESS_ATTACH!
+
+
+int GetSavedGameVersion(Tethys::StreamIO* pStream, bool seekBack = true);  ///< Gets the version of a saved game file.
 
 
 /// Returns true if the virtual machine hypervisor bit of cpuid is set.
@@ -26,12 +31,12 @@ inline bool IsVirtualMachine() {
 }
 
 
-// Printfs a debug message.  You need to include stdio.h and windows.h to use this.
+/// Printfs a debug message.  You need to include stdio.h and windows.h to use this.
 #define DEBUG_MSG(format, ...)  \
   { char dbgStr[1024]; snprintf(dbgStr, sizeof(dbgStr), format "\n", __VA_ARGS__); OutputDebugStringA(dbgStr); } (void)0
 
 #if _DEBUG || ENABLE_DEBUG_MSG
-# define DEBUG_ONLY_MSG(format, ...) DEBUG_MSG(format, ...)
+# define DEBUG_ONLY_MSG(format, ...)  DEBUG_MSG(format, __VA_ARGS__)
 #else
 # define DEBUG_ONLY_MSG(format, ...)
 #endif

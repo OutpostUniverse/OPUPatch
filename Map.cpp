@@ -24,7 +24,7 @@ union MapFlags {
   struct {
     uint32 isSavedGame      :  1;  // 0 for map file, 1 for saved game file.
     uint32 forceWorldMapOn  :  1;  // Force world map (X wrap-around).  Warning: this is currently buggy and unstable!
-    uint32 forceWorldMapOff :  1;  // Force non-world map.  Only meaningful for 512xY maps;  ignored for 1024xY.
+    uint32 forceWorldMapOff :  1;  // Force non-world map.  Only meaningful for 512xY maps; ignored for 1024xY.
     uint32 reserved         : 29;  // Reserved for future use.
   };
   uint32 u32All;
@@ -34,6 +34,7 @@ union MapFlags {
 // Double the max map size to 1024x512 by fixing a crash with loading maps of width > 512, caused by fixed-size light
 // level adjust table not being large enough.
 // NOTE: This patch breaks compatibility with old versions of the CCF2 blight mod.  Maps using it need to be updated.
+// ** TODO Fix crash bug at 4413DE, when AI units/groups attempt to pathfind to an unreachable destination
 bool SetLargeMapPatch(
   bool enable)
 {
@@ -92,6 +93,7 @@ bool SetLargeMapPatch(
     // In MineBuilding::Draw()
     patcher.LowLevelHook(0x44B2F2, [](Esi<int>& lightPos) {   SetLightMax(lightPos);  return 0x44B349; });
 
+    // Disable globe minimap view for 1024xY maps due to crash issues.
     // In Minimap::InitButtons()
     patcher.LowLevelHook(0x458B96, [](Eax<bool>& disableGlobeView)
       { disableGlobeView = (g_mapImpl.tileWidth_ != 512) || (g_mapImpl.paddingOffsetTileX_ != 0); });
@@ -123,8 +125,7 @@ bool SetCustomMapFlagsPatch(
     // In MapImpl::LoadMapData()
     patcher.WriteNop(0x435E1C);
     patcher.LowLevelHook(0x435E22, [](Eax<MapFlags> flags, Esp<void*> pEsp) {
-      mapFlags.u32All = flags->u32All;
-      return (flags->isSavedGame == *static_cast<bool*>(PtrInc(pEsp, 44))) ? 0x435E2A : 0x435FB1;
+      mapFlags.u32All = flags->u32All;  return (flags->isSavedGame == *PtrInc<bool*>(pEsp, 44)) ? 0x435E2A : 0x435FB1;
     });
 
     // In MapImpl::Save()

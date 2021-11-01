@@ -15,6 +15,30 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
 
 # Change log
 
+## 1.4.2
+
+* (GOG) Fix crash bugs caused by the IPX emulator `winsock32.dll` wrapper.
+* Saved games from older versions of Outpost 2 can now be loaded.
+* Add an exclusive fullscreen mode.  This may be useful to people with high DPI displays whose game window appears too small.
+  * Fullscreen mode can be configured by the `GAME_WINDOW.FULLSCREEN`, `GAME_WINDOW.H_SIZE`, and `GAME_WINDOW.V_SIZE` INI settings.
+* Fix an issue where the detail pane wouldn't display more than a 64x64 tile area at once when playing on world maps (512+ tiles wide) at 1440p and greater resolutions, or when loading a saved game from the main menu immediately after launching the game.
+* Fix a minor bug with the double unit limit patch.
+
+### Developer-related changes
+
+* Changes to facilitate future Python support.
+* Added fields to `OnTriggerArgs`: `triggeredBy` and `prevTriggeredBy`.
+* Added some new mission user callbacks:
+  * `OnSaveGame` - Called when the game is saved; passed a file write stream positioned at the end of normal data. Return 1 = success, 0 = failure.
+  * `OnLoadSavedGame` - Called when a saved game is loaded; passed a file read stream positioned at the end of normal data. Return 1 = success, 0 = failure.
+  * `OnDamageUnit` - Called when a unit is damaged by a weapon or disaster (or Tokamak self-damage).
+* Renamed some of the new mission user callbacks:
+  * `OnLoad`   => `OnLoadMission`
+  * `OnUnload` => `OnUnloadMission`
+  * `OnEnd`    => `OnEndMission`
+  * This is a breaking API change.  No backwards compatiblity is provided for the old names, as there haven't yet been any maps making use of these callbacks.
+* Fix the `OnDestroyUnit` user callback to be triggered when units self-destruct, when weapons fire expires, and when units are poofed.
+
 ## 1.4.1
 
 * Fix an issue where mission objectives of having empty Cargo Trucks could not be completed.

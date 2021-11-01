@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <dwmapi.h>
+#include <ddraw.h>
 #include <versionhelpers.h>
 
 #include "Patcher.h"
@@ -26,8 +27,8 @@ using namespace Patcher::Util;
 using namespace Patcher::Registers;
 
 // =====================================================================================================================
-// Disable DirectDraw mode, always forcing windowed mode (pure GDI mode).  Also fixes crash bugs with 4k resolutions and
-// when the game window is bigger than the current map.
+// Bypass or force DirectDraw mode based on fullscreen setting, instead of whether the display mode is 16 bpp.
+// Also fixes crash bugs with 4k resolutions and when the game window is bigger than the current map.
 bool SetWindowFix(
   bool enable)
 {
@@ -35,10 +36,29 @@ bool SetWindowFix(
   bool success = true;
 
   if (enable) {
-    // Bypass 16-bit color check and DirectDraw::SetDisplayMode()
+    static int fullscreen = g_configFile.GetInt("GAME_WINDOW", "FULLSCREEN", -1);
+    if (fullscreen == -1) {
+      fullscreen = 0;
+      g_configFile.SetInt("GAME_WINDOW", "FULLSCREEN", fullscreen);
+    }
+
+    // Use ini settings for windowed vs. fullscreen mode, and for fullscreen resolution instead of hardcoding 640x480.
     // In TApp::Init()
-    patcher.WriteBytes(0x485C06, { 0xEB, 0x21 });  // je => jmp 0x23
-    patcher.WriteBytes(0x486072, { 0xEB, 0x7E });  // je => jmp 0x80
+    patcher.LowLevelHook(0x485BFA, [] { return fullscreen ? 0x485C08 : 0x485C29; });
+    // In TApp::ModeSwitch()
+    patcher.LowLevelHook(0x486066, [] { return fullscreen ? 0x486074 : 0x4860F2; });
+    patcher.LowLevelHook(0x486089, [](Edi<IDirectDraw**> ppDirectDraw, Esi<HDC> hDC, Eax<HRESULT>& result) {
+      const int desktopWidth  = g_configFile.GetInt("DESKTOP",     "H_SIZE", 1024);
+      const int desktopHeight = g_configFile.GetInt("DESKTOP",     "V_SIZE", 768);
+      const int width         = g_configFile.GetInt("GAME_WINDOW", "H_SIZE", desktopWidth);
+      const int height        = g_configFile.GetInt("GAME_WINDOW", "V_SIZE", desktopHeight);
+      const int bpp           = (std::max)(GetDeviceCaps(hDC, BITSPIXEL), 16);
+      
+      if (result = (*ppDirectDraw)->SetDisplayMode(width, height, bpp);  result != DD_OK) {
+        result = (*ppDirectDraw)->SetDisplayMode(desktopWidth, desktopHeight, bpp);  // Fall back to desktop resolution.
+      }
+      return 0x48609D;
+    });
 
     // Dynamically allocate bit vectors that store what parts of the screen to redraw to avoid crashes on 4k displays.
     // In Viewport::Init()
@@ -69,14 +89,14 @@ bool SetWindowFix(
     static bool isDetailPaneSmall = false;
 
     // Prevent detail pane from getting larger than the map size by hooking the DeferWindowPos call that sets its size.
+    // ** TODO This doesn't get the right size when loading from save from main menu without previously starting a game
     // In GameFrame::RepositionWindowOnResize()
     patcher.HookCall(0x4999FC, StdcallLambdaPtr(
       [](HDWP hWinPosInfo, HWND hWnd, HWND hWndInsertAfter, int x, int y, int cx, int cy, UINT uFlags) -> HDWP {
-        const MapRect clipRect = GameMap::GetClipRect();
-        const int maxDisplayableMapWidth  = 32 * (std::max)(64, clipRect.x2 - clipRect.x1 + 1);
+        const int maxDisplayableMapWidth  = 32 * (std::max)(64, GameMap::GetWidth());
         // ** TODO Displaying the last row of the map causes severe glitches similar to the window being too tall, so we
         // subtract one tile.  We assume the map is 64x64 minimum.
-        const int maxDisplayableMapHeight = 32 * (std::max)(63, clipRect.y2 - clipRect.y1 + 1);
+        const int maxDisplayableMapHeight = 32 * (std::max)(63, GameMap::GetHeight());
         const int origCx = cx;
         const int origCy = cy;
         cx = (std::min)(cx, maxDisplayableMapWidth);
@@ -94,17 +114,19 @@ bool SetWindowFix(
 
     // Repaint the background with a black color to handle when the detail pane is smaller than the actual window.
     // In GameFrame::OnPaint()
-    patcher.LowLevelHook(0x499CA8, [](Esi<GameFrame*> pThis, Eax<HDC> hDc) {
+    patcher.LowLevelHook(0x499CA8, [](Esi<GameFrame*> pThis, Eax<HDC> hDC) {
       if (isDetailPaneSmall) {
         RECT frameRect;
         ::GetClientRect(pThis->hWnd_, &frameRect);
-        ::PatBlt(hDc, 0, 0, frameRect.right, frameRect.bottom, BLACKNESS);
+        ::PatBlt(hDC, 0, 0, frameRect.right, frameRect.bottom, BLACKNESS);
       }
     });
 
     // Force a window resize on game load.
-    // In GameImpl::PrepareGame()
-    patcher.LowLevelHook(0x48990D, [] { ::SendMessage(g_gameFrame.hWnd_, WM_SIZE, 0, 0); });
+    // In GameImpl::PrepareGame(), GameImpl::LoadGame()
+    for (uintptr loc : { 0x48990D, 0x48A489 }) {
+      patcher.LowLevelHook(loc, [] { ::SendMessage(g_gameFrame.hWnd_, WM_SIZE, 0, 0); });
+    }
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

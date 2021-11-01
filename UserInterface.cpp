@@ -14,7 +14,6 @@
 #include "Tethys/API/Mission.h"
 #include "Tethys/API/TethysGame.h"
 #include "Tethys/API/GameMap.h"
-#include "Tethys/API/Enumerators.h"
 
 #include "Tethys/Game/TApp.h"
 #include "Tethys/Game/MapObject.h"
@@ -432,7 +431,7 @@ bool SetUiResourceReplacePatch(
     // Hook LoadStringA() to replace string table resources (which are used by odasl for fonts and element colors).
     sysPatcher.Hook(&LoadStringA, SetCapturedTrampoline, StdcallFunctor(
       [F = decltype(&LoadStringA){}](HMODULE hMod, UINT id, char* pBuffer, int size) -> int {
-        if (auto name = FindResourceReplacement(RT_STRING, MAKEINTRESOURCE(id), &hMod);  name.empty() == false) {
+        if (auto name = FindResourceReplacement(RT_STRING, MAKEINTRESOURCEA(id), &hMod);  name.empty() == false) {
           if (HRSRC hRsrc = FindResourceA(hMod, name.data(), RT_STRING);  hRsrc != NULL) {
             if (size == 0) {
               return SizeofResource(hMod, hRsrc);
@@ -666,9 +665,10 @@ bool SetChatLengthPatch(
     patcher.LowLevelHook(0x439350, [](Eax<int> index, Edi<StreamIO*> pStream)
       { return (pStream->Write(sizeof(g_messageLogRb[0]), &g_messageLogRb[index]) != 0) ? 0x439367 : 0x43937E; });
     // In MessageLog::Load()
-    // ** TODO See if this can be made backwards compatible with older saves
-    patcher.LowLevelHook(0x43941D, [](Eax<int> index, Esi<StreamIO*> pStream)
-      { return (pStream->Read(sizeof(g_messageLogRb[0]), &g_messageLogRb[index])  != 0) ? 0x439434 : 0x43944B; });
+    patcher.LowLevelHook(0x43941D, [](Eax<int> index, Esi<StreamIO*> pStream) {
+      const size_t size = (GetSavedGameVersion(pStream) >= 140) ? sizeof(g_messageLogRb[0]) : sizeof(MessageLogEntry<>);
+      return (pStream->Read(size, &g_messageLogRb[index]) != 0) ? 0x439434 : 0x43944B;
+    });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -1395,7 +1395,7 @@ bool SetUnitHpBarVisibilityPatch(
     patcher.LowLevelHook(0x43ED79, [](Esp<void*> pEsp)
       { return BitFlagTest(*PtrInc<uint32*>(pEsp, 0x1E0), DrawHPBar) ? 0 : 0x43EF12; });
     // Disable red HP bar flashing.
-    patcher.LowLevelHook(0x43EE62, [](Ecx<uint32>& color) { color = ~0u; });
+    patcher.LowLevelHook(0x43EE5C, [](Ecx<uint32>& color) { color = ~0u; });
 
     // In MapObjDrawList::DrawUnits()
     patcher.LowLevelHook(0x49EA1C, [](Esi<MapObjDrawList*> pThis, Ebx<MapUnit**> ppDrawList) {

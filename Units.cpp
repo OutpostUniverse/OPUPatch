@@ -12,10 +12,13 @@
 #include "Tethys/Resource/GFXBitmap.h"
 #include "Tethys/Resource/GFXSurface.h"
 #include "Tethys/Resource/SpriteManager.h"
+#include "Tethys/Resource/StreamIO.h"
 #include "Tethys/Resource/SoundID.h"
 
 #include "Patcher.h"
 #include "Util.h"
+
+#include <algorithm>
 
 using namespace Tethys;
 using namespace TethysAPI;
@@ -58,6 +61,7 @@ bool SetUnitLimitPatch(
 
       return 0x4356BE;
     });
+    patcher.Write<uint32>(0x43571A, MaxUnits); // mov dword ptr [ecx+10h], 1024 => 2048 (map.pMapObjListEnd->index)
 
     // In MapObjectType::AllocateMapObj()
     patcher.Write<uint32>(0x439A3F, (MaxUnits - 1));  // cmp eax, 1023 => 2047 (numUnits != 2047)
@@ -65,7 +69,7 @@ bool SetUnitLimitPatch(
     patcher.Write<uint32>(0x439ABF, (MaxUnits - 1));  // and edx, 1023 => 2047 ((curFreeUnitIndex - 1) % 2048)
     patcher.Write<uint32>(0x439B13, (MaxUnits - 1));  // cmp eax, 1023 => 2047 (map.lastUsedUnitIndex != 2047)
     patcher.LowLevelHook(0x439ADF, [](Eax<int> firstFreeUnitIndex, Edx<int>& wrappedIndex)  // Replace buggy code
-                                     { wrappedIndex = ((firstFreeUnitIndex + 1) % MaxUnits);  return 0x439AE8; });
+      { wrappedIndex = ((firstFreeUnitIndex + 1) % MaxUnits);  return 0x439AE8; });
     patcher.WriteNop(0x439A4E);                       // inc map.numUnits => nop
     patcher.LowLevelHook(0x439B89, [](Esi<MapObject*> pMo)
       { ++(g_mapImpl.numUnits_);  pMo->command_ = 0;  pMo->action_ = pMo->executingAction_ = {};  return 0x439B92; });
@@ -76,7 +80,7 @@ bool SetUnitLimitPatch(
     patcher.Write<uint32>(0x439CBA, (MaxUnits - 1));  // and eax, 1023 => 2047 (numFreeUnits % 2048)
 
     static uint32 miniMapUnitCache[MaxUnits] = { };
-    memcpy(&miniMapUnitCache[0], OP2Mem(0x574484), (4 * 1024));
+    memcpy(&miniMapUnitCache[0], OP2Mem<0x574484>(), (4 * 1024));
 
     // In MiniMap::DrawBackground()
     patcher.LowLevelHook(0x48CCB0, [](Edx<void*>& pCache) { pCache = &miniMapUnitCache[0]; });
@@ -85,8 +89,8 @@ bool SetUnitLimitPatch(
 
     static MapObject* unitDrawList[MaxUnits]   = { };
     static MapObject* entityDrawList[MaxUnits] = { };
-    memcpy(&unitDrawList[0],   OP2Mem(0x57C000), sizeof(MapObjDrawList::pUnitDrawList_));
-    memcpy(&entityDrawList[0], OP2Mem(0x57C7FC), sizeof(MapObjDrawList::pEntityDrawList_));
+    memcpy(&unitDrawList[0],   OP2Mem<0x57C000>(), sizeof(MapObjDrawList::pUnitDrawList_));
+    memcpy(&entityDrawList[0], OP2Mem<0x57C7FC>(), sizeof(MapObjDrawList::pEntityDrawList_));
 
     // In MapObjDrawList::DrawUnits()
     patcher.LowLevelHook(0x49E9BF, [](Ebx<void*>& pList) { pList = &unitDrawList[0];   });
@@ -133,21 +137,47 @@ bool SetUnitLimitPatch(
     }));
 
     // In MapImpl::Save()
-    patcher.Write<uint32>(0x435A7E, MaxUnits);        // mov  ecx, 1024 => 2048 (freeUnitListNumElements)
-    patcher.Write<uint32>(0x435AA4, (MaxUnits * 4));  // push 4096      => 8192 (freeUnitListSizeInBytes)
-    patcher.Write<uint32>(0x435AAE, MaxUnits);        // mov  eax, 1024 => 2048 (freeUnitListNumElements)
+    patcher.Write<uint32>(0x435A7E,   MaxUnits);       // mov  ecx, 1024 => 2048 (freeUnitListNumElements)
+    patcher.Write<uint32>(0x435AA4,  (MaxUnits * 4));  // push 4096      => 8192 (freeUnitListSizeInBytes)
+    patcher.Write<uint32>(0x435AAE,   MaxUnits);       // mov  eax, 1024 => 2048 (freeUnitListNumElements)
     // In MapImpl::SaveUnits() and related functions
-    patcher.Write<uint32>(0x435BDA, (MaxUnits       * MapObjectSize));  // cmp  ebx, (1024 * 120) => (2048 * 120)
+    patcher.Write<uint32>(0x435BDA,  (MaxUnits      * MapObjectSize));  // cmp  ebx, (1024 * 120) => (2048 * 120)
     patcher.Write<uint32>(0x435BEC, ((MaxUnits - 1) * MapObjectSize));  // push      (1023 * 120) => (2047 * 120)
     patcher.Write<uint32>(0x435C75, ((MaxUnits - 1) * MapObjectSize));  // push      (1023 * 120) => (2047 * 120)
-    patcher.Write<uint32>(0x435D52, (MaxUnits       * MapObjectSize));  // cmp  edi, (1024 * 120) => (2048 * 120)
-    patcher.Write<uint32>(0x435D64, MaxUnits);                          // mov  esi, 1024         => 2048
-    patcher.Write<uint32>(0x435D96, MaxUnits);                          // mov  edx, 1024         => 2048
+    patcher.Write<uint32>(0x435D52,  (MaxUnits      * MapObjectSize));  // cmp  edi, (1024 * 120) => (2048 * 120)
+    patcher.Write<uint32>(0x435D64,   MaxUnits);                        // mov  esi, 1024         => 2048
+    patcher.Write<uint32>(0x435D96,   MaxUnits);                        // mov  edx, 1024         => 2048
+
+    static int numSavedUnits = 0;
 
     // In MapImpl::Load()
-    patcher.Write<uint32>(0x436206, ((MaxUnits - 1) * MapObjectSize));  // push (1023 * 120) => (2047 * 120)
-    patcher.Write<uint32>(0x43626C, (MaxUnits * 4));                    // push 4096         => 8192
-    patcher.Write<uint32>(0x436278, MaxUnits);                          // mov  eax, 1024    => 2048
+    patcher.LowLevelHook(0x436204, [](Ecx<StreamIO*> pSavedGame, Eax<AnyMapObj*> pMoArray, Esp<void*> pEsp) {
+      // Find the size of the map object array contained in the save file.  Note that pMoArray starts at [1].
+      numSavedUnits      = *PtrInc<int*>(pEsp, 16);  // pMapObjListBegin->pNext->index (headUnit)
+      const int tailUnit = *PtrInc<int*>(pEsp, 24);  // pMapObjListEnd->pPrev->index
+      bool success       = true;
+
+      if (tailUnit != 0) {
+        const size_t oldPos = pSavedGame->Tell();
+        if (success = pSavedGame->Seek(oldPos + ((tailUnit - 1) * MapObjectSize));  success) {
+          AnyMapObj mo{};
+          success       = pSavedGame->Read(MapObjectSize, &mo) && pSavedGame->Seek(oldPos);
+          numSavedUnits = int(mo.object_.pNext_);  // Note that in save files, pNext/pPrev are replaced with indexes.
+        }
+      }
+
+      success =
+        success && (numSavedUnits <= MaxUnits) && pSavedGame->Read(((numSavedUnits - 1) * MapObjectSize), pMoArray);
+
+      if (tailUnit != 0) {
+        (int&)(pMoArray[tailUnit - 1].object_.pNext_) = MaxUnits;
+      }
+
+      return success ? 0x43620E : 0x436253;
+    });
+    patcher.LowLevelHook(0x43626A, [](Ecx<StreamIO*> pSavedGame, Eax<void*> pMoFreeList)
+      { pSavedGame->Read((sizeof(MapObject*) * numSavedUnits), pMoFreeList);  return 0x436274; });
+    patcher.Write<uint32>(0x436278, MaxUnits);  // mov eax, 1024 => 2048
 
     // Replace per-player count unit limit tables
     patcher.Write(0x4E9908, VehicleLimits);
@@ -165,7 +195,7 @@ bool SetUnitLimitPatch(
 
 // =====================================================================================================================
 // Extends the size of the unit type array from 115 to 255.
-// ** TODO also extend factory build lists, etc?
+// ** TODO also extend factory build lists, etc?  Also need to figure out save file compatibility
 bool SetUnitTypeLimitPatch(
   bool enable)
 {
@@ -205,13 +235,14 @@ bool SetUnitTypeLimitPatch(
 
 // =====================================================================================================================
 // Prevent recursion depth crashes from Thor's Hammer rendering.
+// ** TODO remove the debug prints
 bool SetDrawLightningFix(
   bool enable)
 {
   static Patcher::PatchContext patcher;
   bool success = true;
 
-  static uint32 numLightningCalls = 0;
+  static int numLightningCalls = 0;
 
   if (enable) {
     // In ThorsHammer::DrawUnit() (calls DrawLightning())
@@ -224,13 +255,32 @@ bool SetDrawLightningFix(
       const int  player = (pSrc != nullptr) ? pSrc->creatorNum_ : 6;
       auto*const pType  = pThis->GetType();
       // Recursion depth is 1 call per tile, which should never exceed weapon target range + scatter range.
-      numLightningCalls = pType->playerStats_[player].sightRange + (pType->stats_.weapon.pixelsSkipped / 32) + 1;
+      numLightningCalls = pType->playerStats_[player].sightRange + ((pType->stats_.weapon.pixelsSkipped + 31) / 32) + 1;
+
+      if (numLightningCalls > 1145 /* hypotenuse of 512x1024 */) {
+        DEBUG_MSG("Too many numLightningCalls. Clipping from %i to 1145.", numLightningCalls);
+        numLightningCalls = 1145;
+      }
+      else if (numLightningCalls <= 0) {
+        DEBUG_MSG("Too few numLightningCalls. Clipping from %i to 1.", numLightningCalls);
+        numLightningCalls = 1;
+      }
     });
 
     // In ThorsHammer::DrawLightning() (recursive function)
     // ** TODO debug the case where infinite recursion happens more closely, possibly similar to issue where lasers
     // draw across the map
-    patcher.LowLevelHook(0x48ACEB, [] { return (--numLightningCalls > 0) ? 0 : 0x48ACF8; });
+    patcher.LowLevelHook(0x48ACEB, [] {
+      if (numLightningCalls > 1145 /* hypotenuse of 512x1024 */) {
+        DEBUG_MSG("Too many numLightningCalls (inside recursion). Clipping from %i to 1145.", numLightningCalls);
+        numLightningCalls = 1145;
+      }
+      else if (numLightningCalls <= 0) {
+        DEBUG_MSG("Too few numLightningCalls (inside recursion). Clipping from %i to 1.", numLightningCalls);
+        numLightningCalls = 1;
+      }
+      return (--numLightningCalls > 0) ? 0 : 0x48ACF8;
+    });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -335,7 +385,7 @@ bool SetBuildWallFix(
     patcher.WriteNop(0x438E07);
 
     // Don't set the tile.isWall flag until the Earthworker has finished building the wall.
-    // In Unit::ProcessForGameCycle()
+    // In Unit::ProcessCommands()
     patcher.WriteNop(0x43BD2F);
 
     // If a unit is on top of the wall tile when it's supposed to finish, cancel and refund (similar to tube behavior).
@@ -366,7 +416,7 @@ bool SetWreckageFix(
   bool success = true;
 
   if (enable) {
-    // In Unit::ProcessForGameCycle()
+    // In Unit::ProcessCommands()
     patcher.Write<uint8>(0x43C4F9, 0x36);  // 0x4C
     patcher.Write<uint8>(0x43C531, 0x72);  // 0x14
     patcher.Write<uint8>(0x43C545, 0x10);  // 0x08
@@ -583,7 +633,7 @@ bool SetOreRoutePatch(
     // In UICmd::CommandSetOreRoute::GetMouseCursor()
     patcher.LowLevelHook(0x4544B6, [](Edi<MapID> mine, Esp<void*> pEsp) {
       CargoType cargo  = CargoType::Empty;
-      bool       result = (mine == MapID::CommonOreMine) || (mine == MapID::RareOreMine) || (mine == MapID::MagmaWell);
+      bool      result = (mine == MapID::CommonOreMine) || (mine == MapID::RareOreMine) || (mine == MapID::MagmaWell);
 
       if (result) {
         auto*const pSelection = UnitGroup::GetSelectedUnitGroup();
@@ -696,18 +746,18 @@ bool SetTruckLoadPartialCargoPatch(
         switch (pThis->GetTypeID()) {
         case MapID::CommonStorage:
         case MapID::CommonOreSmelter:
-          amount = min(capacity, Player[truck.GetOwner()].GetCommonOre());
+          amount = (std::min)(capacity, Player[truck.GetOwner()].GetCommonOre());
           type   = CargoType::CommonMetal;
           break;
 
         case MapID::RareStorage:
         case MapID::RareOreSmelter:
-          amount = min(capacity, Player[truck.GetOwner()].GetRareOre());
+          amount = (std::min)(capacity, Player[truck.GetOwner()].GetRareOre());
           type   = CargoType::RareMetal;
           break;
 
         case MapID::Agridome:
-          amount = min(capacity, Player[truck.GetOwner()].GetFoodStored());
+          amount = (std::min)(capacity, Player[truck.GetOwner()].GetFoodStored());
           type   = CargoType::Food;
           break;
 
@@ -750,8 +800,8 @@ bool SetTruckLoadPartialCargoPatch(
     });
     // Agridome
     patcher.LowLevelHook(0x4069DC, [](Esi<MapObj::CargoTruck*> pThis, Eax<int>& amount) {
-      amount = min(pThis->GetType()->playerStats_[pThis->creatorNum_].vehicle.cargoCapacity,
-                   Player[pThis->ownerNum_].GetFoodStored());
+      amount = (std::min)(pThis->GetType()->playerStats_[pThis->creatorNum_].vehicle.cargoCapacity,
+                          Player[pThis->ownerNum_].GetFoodStored());
       return (amount != 0) ? 0x4069FA : 0x406A24;
     });
 
@@ -783,8 +833,8 @@ bool SetTruckLoadPartialCargoPatch(
     });
     for (uintptr loc : { 0x493E50, 0x493FE5 }) {
       patcher.LowLevelHook(loc, [](Ebp<TriggerImpl*> pThis, Ebx<int>& counter) {
-        const auto type      = *static_cast<MapID*>(PtrInc(pThis, 0x30));       // ** TODO Define CountTrigger
-        const auto cargoType = *static_cast<CargoType*>(PtrInc(pThis, 0x34));
+        const auto type      = *PtrInc<MapID*>(pThis, 0x30);      // ** TODO Define CountTrigger
+        const auto cargoType = *PtrInc<CargoType*>(pThis, 0x34);
         if ((type == MapID::CargoTruck) && (cargoType > CargoType::Empty) && (cargoType < CargoType::Spacecraft)) {
           counter /= defaultTruckCapacity;
         }
