@@ -27,12 +27,13 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
 ### Developer-related changes
 
 * Changes to facilitate future Python support.
-* Added fields to `OnTriggerArgs`: `triggeredBy` and `prevTriggeredBy`.
-* Added some new mission user callbacks:
+* Add super speed testing mode, configured by the `Game.SuperSpeed` INI setting.
+* Add fields to `OnTriggerArgs`: `triggeredBy` and `prevTriggeredBy`.
+* Add some new mission user callbacks:
   * `OnSaveGame` - Called when the game is saved; passed a file write stream positioned at the end of normal data. Return 1 = success, 0 = failure.
   * `OnLoadSavedGame` - Called when a saved game is loaded; passed a file read stream positioned at the end of normal data. Return 1 = success, 0 = failure.
   * `OnDamageUnit` - Called when a unit is damaged by a weapon or disaster (or Tokamak self-damage).
-* Renamed some of the new mission user callbacks:
+* Rename some of the new mission user callbacks:
   * `OnLoad`   => `OnLoadMission`
   * `OnUnload` => `OnUnloadMission`
   * `OnEnd`    => `OnEndMission`
