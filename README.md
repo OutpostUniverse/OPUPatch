@@ -33,7 +33,9 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
   * `OnSaveGame` - Called when the game is saved; passed a file write stream positioned at the end of normal data. Return 1 = success, 0 = failure.
   * `OnLoadSavedGame` - Called when a saved game is loaded; passed a file read stream positioned at the end of normal data. Return 1 = success, 0 = failure.
   * `OnDamageUnit` - Called when a unit is damaged by a weapon or disaster (or Tokamak self-damage).
-* Rename some of the new mission user callbacks:
+  * `OnTransferUnit` - Called when a unit is transferred from one player to another.
+  * `OnProcessCommand` - Called whenever a command packet is processed (excluding `CommandType::Nop` and `CommandType::InvalidCommand`).
+* Rename some of the 1.4.0 mission user callbacks:
   * `OnLoad`   => `OnLoadMission`
   * `OnUnload` => `OnUnloadMission`
   * `OnEnd`    => `OnEndMission`
