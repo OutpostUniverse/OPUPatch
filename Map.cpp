@@ -124,8 +124,8 @@ bool SetCustomMapFlagsPatch(
   
     // In MapImpl::LoadMapData()
     patcher.WriteNop(0x435E1C);
-    patcher.LowLevelHook(0x435E22, [](Eax<MapFlags> flags, Esp<void*> pEsp) {
-      mapFlags.u32All = flags->u32All;  return (flags->isSavedGame == *PtrInc<bool*>(pEsp, 44)) ? 0x435E2A : 0x435FB1;
+    patcher.LowLevelHook(0x435E22, [](Eax<MapFlags> flags, Esp<bool&, 44> isSavedGame) {
+      mapFlags.u32All = flags->u32All;  return (flags->isSavedGame == isSavedGame) ? 0x435E2A : 0x435FB1;
     });
 
     // In MapImpl::Save()

@@ -144,6 +144,7 @@
     <ClInclude Include="Patcher\imported\capstone\include\platform.h" />
     <ClInclude Include="Patcher\imported\capstone\include\x86.h" />
     <ClInclude Include="Patcher\Patcher.h" />
+    <ClInclude Include="Patcher\PatcherImpl.h" />
     <ClInclude Include="Patcher\PatcherUtil.h" />
     <ClInclude Include="Patches.h" />
     <ClInclude Include="Resources.h" />

@@ -12,6 +12,7 @@
 
 #include "Patcher.h"
 #include "Util.h"
+#include "Stream.h"
 #include "Resources.h"
 
 #include <algorithm>
@@ -42,18 +43,16 @@ bool SetGameVersion(
     // For saved games
     patcher.ReplaceReferencesToGlobal(0x4D6380, 1, "OUTPOST2 " OP2_VERSION_TRIPLE_STR "-OPU SAVE\034");
 
-    static constexpr int GameVersion = (OP2_MAJOR_VERSION * 100) + (OP2_MINOR_VERSION * 10) + OP2_STEPPING_VERSION;
-
     // In GameImpl::LoadGame()
     patcher.LowLevelHook(0x48A413, [](Edi<StreamIO*> pStream) {
       const int saveVersion = GetSavedGameVersion(pStream);
-      return ((saveVersion >= 127) && (saveVersion <= GameVersion)) ? 0x48A451 : 0x48A445;
+      return ((saveVersion >= GameVersion{1, 2, 7}) && (saveVersion <= OP2Version)) ? 0x48A451 : 0x48A445;
     });
 
     // Replace GameImpl::VerifySavedGameFileTag()
     patcher.Hook(0x48A190, ThiscallLambdaPtr([](void* pThis, StreamIO* pStream) -> ibool {
       const int saveVersion = GetSavedGameVersion(pStream, false);
-      return (saveVersion >= 127) && (saveVersion <= GameVersion);
+      return (saveVersion >= GameVersion{1, 2, 7}) && (saveVersion <= OP2Version);
     }));
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
@@ -188,39 +187,4 @@ bool SetSuperSpeedPatch(
   }
 
   return success;
-}
-
-// =====================================================================================================================
-// Returns the version of an Outpost 2 saved game file.
-int GetSavedGameVersion(
-  StreamIO* pSavedGame,
-  bool      seekBack)
-{
-  static const StreamIO* pPrevious = nullptr;
-  static int previousVersion       = 0;
-
-  int version = 0;
-
-  if (pSavedGame == pPrevious) {
-    version = previousVersion;
-  }
-  else if (const size_t oldPos = pSavedGame->Tell();  pSavedGame->Seek(0)) {
-    if (char tag[25] = "";  pSavedGame->Read(sizeof(tag), &tag[0])) {
-      if (strcmp("OUTPOST 2.00 SAVED GAME\032", &tag[0]) == 0) {
-        version = 127;
-      }
-      else if ((strncmp("OUTPOST2 ", &tag[0], 9) == 0) && (strncmp("-OPU SAVE", &tag[14], 9) == 0)) {
-        version = ((tag[9] - '0') * 100) + ((tag[11] - '0') * 10) + (tag[13] - '0');
-      }
-    }
-
-    if (seekBack) {
-      pSavedGame->Seek(oldPos);
-    }
-
-    pPrevious       = pSavedGame;
-    previousVersion = version;
-  }
-
-  return version;
 }

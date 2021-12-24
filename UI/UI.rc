@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "Resources.h"
+#include "../Resources.h"
 
 // Dialog borders and title bar
 RESOURCE_REPLACE(OP2SHRES.DLL, 201) BITMAP "UI/op2shres_201.bmp"  // Top corner

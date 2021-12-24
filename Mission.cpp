@@ -3,7 +3,7 @@
 #include <windows.h>
 
 #include "Patcher.h"
-#include "Util.h"
+#include "Stream.h"
 
 #include "Tethys/API/Unit.h"
 #include "Tethys/API/TethysGame.h"
@@ -43,7 +43,6 @@ static ScStubListEx g_scStubListEx;
 
 // =====================================================================================================================
 // Adds new callback entry points for mission DLLs.
-// ** TODO Add OnTransferUnit and OnProcessCommandPacket
 bool SetMissionCallbackPatch(
   bool enable)
 {
@@ -62,22 +61,22 @@ bool SetMissionCallbackPatch(
       void  (__cdecl*  pfnOnDestroyUnit)(OnDestroyUnitArgs&&);
       void  (__cdecl*  pfnOnDamageUnit)(OnDamageUnitArgs&&);
       void  (__cdecl*  pfnOnTransferUnit)(OnTransferUnitArgs&&);
-      void  (__cdecl*  pfnOnProcessCommand)(OnProcessCommandArgs&&);
+      void  (__cdecl*  pfnOnGameCommand)(OnGameCommandArgs&&);
     } callbacks = { };
 
     // Insert OnLoadMission() hook and initialize callbacks In MissionManager::LoadScript()
     patcher.LowLevelHook(0x402C0B, [](Esi<MissionManager*> pThis) {
-      (FARPROC&)(callbacks.pfnOnLoad)           = GetProcAddress(pThis->hModule_, "OnLoadMission");
-      (FARPROC&)(callbacks.pfnOnUnload)         = GetProcAddress(pThis->hModule_, "OnUnloadMission");
-      (FARPROC&)(callbacks.pfnOnEnd)            = GetProcAddress(pThis->hModule_, "OnEndMission");
-      (FARPROC&)(callbacks.pfnOnSave)           = GetProcAddress(pThis->hModule_, "OnSaveGame");
-      (FARPROC&)(callbacks.pfnOnLoadSave)       = GetProcAddress(pThis->hModule_, "OnLoadSavedGame");
-      (FARPROC&)(callbacks.pfnOnChat)           = GetProcAddress(pThis->hModule_, "OnChat");
-      (FARPROC&)(callbacks.pfnOnCreateUnit)     = GetProcAddress(pThis->hModule_, "OnCreateUnit");
-      (FARPROC&)(callbacks.pfnOnDestroyUnit)    = GetProcAddress(pThis->hModule_, "OnDestroyUnit");
-      (FARPROC&)(callbacks.pfnOnDamageUnit)     = GetProcAddress(pThis->hModule_, "OnDamageUnit");
-      (FARPROC&)(callbacks.pfnOnTransferUnit)   = GetProcAddress(pThis->hModule_, "OnTransferUnit");
-      (FARPROC&)(callbacks.pfnOnProcessCommand) = GetProcAddress(pThis->hModule_, "OnProcessCommand");
+      (FARPROC&)(callbacks.pfnOnLoad)         = GetProcAddress(pThis->hModule_, "OnLoadMission");
+      (FARPROC&)(callbacks.pfnOnUnload)       = GetProcAddress(pThis->hModule_, "OnUnloadMission");
+      (FARPROC&)(callbacks.pfnOnEnd)          = GetProcAddress(pThis->hModule_, "OnEndMission");
+      (FARPROC&)(callbacks.pfnOnSave)         = GetProcAddress(pThis->hModule_, "OnSaveGame");
+      (FARPROC&)(callbacks.pfnOnLoadSave)     = GetProcAddress(pThis->hModule_, "OnLoadSavedGame");
+      (FARPROC&)(callbacks.pfnOnChat)         = GetProcAddress(pThis->hModule_, "OnChat");
+      (FARPROC&)(callbacks.pfnOnCreateUnit)   = GetProcAddress(pThis->hModule_, "OnCreateUnit");
+      (FARPROC&)(callbacks.pfnOnDestroyUnit)  = GetProcAddress(pThis->hModule_, "OnDestroyUnit");
+      (FARPROC&)(callbacks.pfnOnDamageUnit)   = GetProcAddress(pThis->hModule_, "OnDamageUnit");
+      (FARPROC&)(callbacks.pfnOnTransferUnit) = GetProcAddress(pThis->hModule_, "OnTransferUnit");
+      (FARPROC&)(callbacks.pfnOnGameCommand)  = GetProcAddress(pThis->hModule_, "OnGameCommand");
 
       return ((callbacks.pfnOnLoad == nullptr) || callbacks.pfnOnLoad({ sizeof(OnLoadMissionArgs) })) ? 0 : 0x402B65;
     });
@@ -164,28 +163,28 @@ bool SetMissionCallbackPatch(
       return 0x413BD1;
     });
     // In Lightning::DoEvent()
-    patcher.LowLevelHook(0x4336B1, [](Esp<void*> pEsp, Ebx<MapObject*> pTarget, Eax<int16> damage)
-      { OnDamageUnit(PtrInc<MapObj::Lightning*>(pEsp, 16), pTarget, damage); });
+    patcher.LowLevelHook(0x4336B1, [](Esp<MapObj::Lightning*, 16> pThis, Ebx<MapObject*> pTarget, Eax<int16> damage)
+      { OnDamageUnit(pThis, pTarget, damage); });
     // In Meteor::DoEvent()
     patcher.LowLevelHook(0x44A8DC, [](Ebp<MapObj::Meteor*> pThis, Esi<MapObject*> pTarget, Ebx<int16> damage)
       { OnDamageUnit(pThis, pTarget, damage); });
     // In Vortex::DoEvent()
-    patcher.LowLevelHook(0x48F9C7, [](Esp<void*> pEsp, Ebx<MapObject*> pTarget, Esi<int16> damage)
-      { OnDamageUnit(PtrInc<MapObj::Vortex*>(pEsp, 16), pTarget, damage); });
+    patcher.LowLevelHook(0x48F9C7, [](Esp<MapObj::Vortex*, 16> pThis, Ebx<MapObject*> pTarget, Esi<int16> damage)
+      { OnDamageUnit(pThis, pTarget, damage); });
 
     // Insert OnTransferUnit() hook in MissionManager::OnTransferUnit()
-    patcher.LowLevelHook(0x4031F2, [](Esi<MapObject*> pMo, Esp<void*> pEsp) {
+    // ** TODO test if this works with reprogram, quit transfer
+    patcher.LowLevelHook(0x4031F2, [](Esi<MapObject*> pMo, Esp<int&, 24> from, Esp<int&, 28> to) {
       if (callbacks.pfnOnTransferUnit != nullptr) {
-        callbacks.pfnOnTransferUnit(
-          { sizeof(OnTransferUnitArgs), Unit(pMo), *PtrInc<int*>(pEsp, 24), *PtrInc<int*>(pEsp, 28) });
+        callbacks.pfnOnTransferUnit({ sizeof(OnTransferUnitArgs), Unit(pMo), from, to });
       }
     });
 
-    // Insert OnProcessCommand() hook in PlayerImpl::ProcessCommandPacket()
+    // Insert OnGameCommand() hook in PlayerImpl::ProcessCommandPacket()
     patcher.LowLevelHook(0x40E313, [](Ecx<PlayerImpl*> pThis, Edi<CommandPacket*> pPacket) {
       const CommandType type = pPacket->type;
-      if ((callbacks.pfnOnProcessCommand) && (type != CommandType::Nop) && (type != CommandType::InvalidCommand)) {
-        callbacks.pfnOnProcessCommand({ sizeof(OnProcessCommandArgs), pPacket, pThis->playerNum_});
+      if (callbacks.pfnOnGameCommand && (type != CommandType::Nop) && (type != CommandType::InvalidCommand)) {
+        callbacks.pfnOnGameCommand({ sizeof(OnGameCommandArgs), pPacket, pThis->playerNum_ });
       }
     });
 
@@ -213,10 +212,10 @@ bool SetMissionCallbackPatch(
       return 0x40329C;
     });
 
-    // Hook FuncReference::SetData() to allow trigger callback function of nullptr.
+    // Hook FuncReference::SetData() to allow trigger callback function of nullptr or "".
     patcher.Hook(0x4757D0, SetCapturedTrampoline, ThiscallFunctor(
       [F = (ibool(__thiscall*)(ScBase*, char*, ibool))0](ScBase* pThis, char* pFuncName, ibool useLevelDLL) -> ibool {
-        return ((pFuncName == nullptr) || F(pThis, pFuncName, useLevelDLL));
+        return ((pFuncName == nullptr) || (pFuncName[0] == '\0') || F(pThis, pFuncName, useLevelDLL));
       }));
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
@@ -262,7 +261,7 @@ bool SetVictoryConditionTextPatch(
 
     // Hook VictoryConditionImpl::Load()
     patcher.LowLevelHook(0x4959CF, [](Edi<VictoryConditionImpl*> pThis, Esi<StreamIO*> pStream) {
-      if (GetSavedGameVersion(pStream) >= 142) {
+      if (GetSavedGameVersion(pStream) >= GameVersion{1, 4, 2}) {
         pThis->pObjectiveText_ = pStream->ReadString();
       }
       else {

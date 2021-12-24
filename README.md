@@ -17,32 +17,40 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
 
 ## 1.4.2
 
-* (GOG) Fix crash bugs caused by the IPX emulator `winsock32.dll` wrapper.
+### General changes
+
 * Saved games from older versions of Outpost 2 can now be loaded.
 * Add an exclusive fullscreen mode.  This may be useful to people with high DPI displays whose game window appears too small.
   * Fullscreen mode can be configured by the `GAME_WINDOW.FULLSCREEN`, `GAME_WINDOW.H_SIZE`, and `GAME_WINDOW.V_SIZE` INI settings.
+
+### Bug fixes
+
+* (GOG) Fix crash bugs caused by the IPX emulator `winsock32.dll` wrapper.
 * Fix an issue where the detail pane wouldn't display more than a 64x64 tile area at once when playing on world maps (512+ tiles wide) at 1440p and greater resolutions, or when loading a saved game from the main menu immediately after launching the game.
-* Fix a minor bug with the double unit limit patch.
+* Fix a minor bug with the double unit limit patch where the last unit's ID was set to 1024 instead of 2048.
+* Fix the campaign mission menu dialog's width being too short and cutting off the title text.
 
 ### Developer-related changes
 
 * Changes to facilitate future Python support.
 * Add super speed testing mode, configured by the `Game.SuperSpeed` INI setting.
 * Add fields to `OnTriggerArgs`: `triggeredBy` and `prevTriggeredBy`.
-* Add some new mission user callbacks:
-  * `OnSaveGame` - Called when the game is saved; passed a file write stream positioned at the end of normal data. Return 1 = success, 0 = failure.
-  * `OnLoadSavedGame` - Called when a saved game is loaded; passed a file read stream positioned at the end of normal data. Return 1 = success, 0 = failure.
-  * `OnDamageUnit` - Called when a unit is damaged by a weapon or disaster (or Tokamak self-damage).
-  * `OnTransferUnit` - Called when a unit is transferred from one player to another.
-  * `OnProcessCommand` - Called whenever a command packet is processed (excluding `CommandType::Nop` and `CommandType::InvalidCommand`).
-* Rename some of the 1.4.0 mission user callbacks:
+* Add some new mission API callbacks:
+  * `void OnSaveGame(OnSaveGameArgs*)` - Called when the game is saved; passed a file write stream positioned at the end of normal data. Return 1 = success, 0 = failure.
+  * `void OnLoadSavedGame(OnLoadSavedGameArgs*)` - Called when a saved game is loaded; passed a file read stream positioned at the end of normal data. Return 1 = success, 0 = failure.
+  * `void OnDamageUnit(OnDamageUnitArgs*)` - Called when a unit is damaged by a weapon or disaster (or Tokamak self-damage).
+  * `void OnTransferUnit(OnTransferUnitArgs*)` - Called when a unit is transferred from one player to another.
+  * `void OnGameCommand(OnGameCommandArgs*)` - Called whenever a command packet is processed (excluding `CommandType::Nop` and `CommandType::InvalidCommand`).
+* Rename some of the 1.4.0 mission API callbacks:
   * `OnLoad`   => `OnLoadMission`
   * `OnUnload` => `OnUnloadMission`
   * `OnEnd`    => `OnEndMission`
-  * This is a breaking API change.  No backwards compatiblity is provided for the old names, as there haven't yet been any maps making use of these callbacks.
-* Fix the `OnDestroyUnit` user callback to be triggered when units self-destruct, when weapons fire expires, and when units are poofed.
+  * This is a breaking API change.  No backwards compatiblity is provided for the old names.
+* Fix the `OnDestroyUnit` mission API callback to be triggered when units self-destruct, when weapons fire expires, and when units are poofed.
 
 ## 1.4.1
+
+### Bug fixes
 
 * Fix an issue where mission objectives of having empty Cargo Trucks could not be completed.
 * Mission DLLs can now specify trigger functions of `nullptr` instead of having to define a dummy function.

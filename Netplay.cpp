@@ -35,8 +35,8 @@ bool SetNatFix(
   if (enable) {
     // In Network::ProcessProtocolControlPacket()
     // ** TODO Come up with a definition for NetTransportLayer::playerNetAddrList_ instead of using [8345]
-    patcher.LowLevelHook(0x4972C3, [](Ebp<uint32*> pNetTransportLayer, Esp<void*> pEsp)
-      { pNetTransportLayer[8345] = (*PtrInc<sockaddr_in**>(pEsp, 20))->sin_addr.s_addr; });
+    patcher.LowLevelHook(0x4972C3, [](Ebp<uint32*> pNetTransportLayer, Esp<sockaddr_in*&, 20> pSockInfo)
+      { pNetTransportLayer[8345] = pSockInfo->sin_addr.s_addr; });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 

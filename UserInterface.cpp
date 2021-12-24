@@ -255,7 +255,7 @@ static bool SetMainMenuPatch(
     static HFONT  hVersionFont = NULL;
 
     // In OP2Shell::Init()
-    patcher.LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmapBg, Esp<void*> pEsp) {
+    patcher.LowLevelHook(0x13007EB9, [](Eax<HBITMAP>& hBitmapBg, Esp<RECT*, 0xC> pRect) {
       // If files of the form "MainMenuBackground{00-99}.png" (continuous) exist, pick one at random.
       std::filesystem::path              bgPath;
       std::vector<std::filesystem::path> bgFilePaths;
@@ -303,7 +303,6 @@ static bool SetMainMenuPatch(
         hVersionFont = CreateFontIndirectA(&createInfo);
       }
 
-      auto*const pRect = static_cast<RECT*>(PtrInc(pEsp, 0xC));
       hBitmapBg =
         bgPath.empty() ? NULL : LoadGdiImageFromFile(bgPath, pRect->right, pRect->bottom, PreserveAspect::CropWidth);
       return (hBitmapBg != NULL) ? 0x13007ED3 : 0;  // Use original background image as a fallback.
@@ -312,7 +311,7 @@ static bool SetMainMenuPatch(
     // In OP2Shell::WndProc()
     // ** TODO Should do all blits to a backbuffer, modern Windows DWM presents after every window DC blit
     patcher.LowLevelHook(0x13008012, [](Ebx<void*> pThis, Esi<HDC> hDcWnd, Ebp<int> x, Edi<int> y) {
-      const auto [cx, cy] = std::tie(*PtrInc<int*>(pThis, 0x1C), *PtrInc<int*>(pThis, 0x20));
+      const auto [cx, cy] = std::tie(*PtrInc<int*>(pThis, 0x1C), *PtrInc<int*>(pThis, 0x20)); // ** TODO define OP2Shell
 
       // Draw Outpost 2 logo.
       if ((hDcLogo != NULL) && (hBitmapLogo != NULL) && (hPvLogo.bmWidth != 0) && (hPvLogo.bmHeight != 0)) {
@@ -356,25 +355,44 @@ static bool SetMainMenuPatch(
       { return LoadIconA(g_hInst, &NewIconName[0]); }));
 
     // In AviWnd::RegisterClass()
-    patcher.LowLevelHook(0x1300129E, [](Esp<void*> pEsp)
-      { PtrInc<WNDCLASSA*>(pEsp, 20)->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
+    patcher.LowLevelHook(0x1300129E, [](Esp<WNDCLASSA*, 20> pWndClass)
+      { pWndClass->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
 
     // Enable D keyboard shortcut for the hidden debug menu button on the main menu dialog.
     // Hook MainMenuDialog::DlgProc() (replace vtbl entry)
-    patcher.Write(0x130110A0, ThiscallLambdaPtr([](IDlgWnd* pThis, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-      static auto*const pfnDialogProc =
-        static_cast<INT_PTR(__thiscall*)(IDlgWnd*, UINT, WPARAM, LPARAM)>(patcher.FixPtr(0x13002900));
+    patcher.Write(0x130110A0, ThiscallFunctor([F = decltype(IDlgWnd::VtblType::pfnDlgProc)(patcher.FixPtr(0x13002900))]
+      (IDlgWnd* pThis, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+        const INT_PTR result = F(pThis, uMsg, wParam, lParam);
 
-      const INT_PTR result = pfnDialogProc(pThis, uMsg, wParam, lParam);
+        if (uMsg == WM_INITDIALOG) {
+          if (const HWND hDebugButton = GetDlgItem(pThis->hWnd_, 1033);  hDebugButton != NULL) {
+            SendMessageA(hDebugButton, WM_SETTEXT, 0, LPARAM("&DEBUG TEST..."));
+          }
+        }
 
-      if (uMsg == WM_INITDIALOG) {
-        if (const HWND hDebugButton = GetDlgItem(pThis->hWnd_, 1033);  hDebugButton != NULL) {
-          SendMessageA(hDebugButton, WM_SETTEXT, 0, LPARAM("&DEBUG TEST..."));
+        return result;
+      }));
+
+    // Increase width of campaign mission menu dialog so title text doesn't get clipped with alternate font enabled.
+    // In MissionMenuDialog::DlgProc()
+    static constexpr int AddMissionMenuWidth = 24;
+    patcher.LowLevelHook(0x1300599B, [](Esi<IDlgWnd*> pThis) { *PtrInc<int*>(pThis, 0x20) += AddMissionMenuWidth; });
+    patcher.LowLevelHook(0x13005A2D, [](Esi<IDlgWnd*> pThis) {
+      if (RECT dlgRect = {};  GetWindowRect(pThis->hWnd_, &dlgRect)) {
+        if (HDWP hWinPosInfo = BeginDeferWindowPos(5); hWinPosInfo != NULL) {
+          for (int id : { 1091, 1090, 1005, 1095, 1094 }) {
+            if (const HWND hButton = GetDlgItem(pThis->hWnd_, id);  hButton != NULL) {
+              if (RECT rect = {};  GetWindowRect(hButton, &rect)) {
+                const int x = rect.left - dlgRect.left + (AddMissionMenuWidth / 2);
+                const int y = rect.top  - dlgRect.top  - 24;
+                hWinPosInfo = DeferWindowPos(hWinPosInfo, hButton, NULL, x, y, 0, 0, SWP_NOSIZE);
+              }
+            }
+          }
+          EndDeferWindowPos(hWinPosInfo);
         }
       }
-
-      return result;
-    }));
+    });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -418,13 +436,13 @@ bool SetUiResourceReplacePatch(
       { return LoadIconA(g_hInst, &NewIconName[0]); }));
 
     // In IWnd::RegisterClass()
-    op2Patcher.LowLevelHook(0x43151D, [](Esp<void*> pEsp)
-      { PtrInc<WNDCLASSA*>(pEsp, 8)->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
+    op2Patcher.LowLevelHook(0x43151D, [](Esp<WNDCLASSA*, 8> pWndClass)
+      { pWndClass->hIcon = LoadIconA(g_hInst, &NewIconName[0]); });
 
     // In wplLoadResourceBitmap()
     static std::set<std::string> resourceNames;
-    odaslPatcher.LowLevelHook(0x2000B129, [](Eax<const char*>& pName, Esp<void*> pEsp) {
-      auto it = resourceNames.insert(FindResourceReplacement(RT_BITMAP, pName, PtrInc<HMODULE*>(pEsp, 0x10))).first;
+    odaslPatcher.LowLevelHook(0x2000B129, [](Eax<const char*>& pName, Esp<HMODULE*, 0x10> phModule) {
+      auto it = resourceNames.insert(FindResourceReplacement(RT_BITMAP, pName, phModule)).first;
       pName   = ((it == resourceNames.end()) || it->empty()) ? pName : it->data();
     });
 
@@ -666,7 +684,8 @@ bool SetChatLengthPatch(
       { return (pStream->Write(sizeof(g_messageLogRb[0]), &g_messageLogRb[index]) != 0) ? 0x439367 : 0x43937E; });
     // In MessageLog::Load()
     patcher.LowLevelHook(0x43941D, [](Eax<int> index, Esi<StreamIO*> pStream) {
-      const size_t size = (GetSavedGameVersion(pStream) >= 140) ? sizeof(g_messageLogRb[0]) : sizeof(MessageLogEntry<>);
+      const size_t size =
+        (GetSavedGameVersion(pStream) >= GameVersion{1, 4, 0}) ? sizeof(g_messageLogRb[0]) : sizeof(MessageLogEntry<>);
       return (pStream->Read(size, &g_messageLogRb[index]) != 0) ? 0x439434 : 0x43944B;
     });
 
@@ -910,13 +929,17 @@ bool SetUiHighlightFix(
       0x75, 0x03,                                // jne  0x1B (0x20004EAD)
       0xB0, 0x02,                                // mov  al, 0x2
       0xC3,                                      // retn
-      0xB0, 0x04,                                // mov  al, 0x4               
+      0xB0, 0x04,                                // mov  al, 0x4
       0xC3,                                      // retn
       0xF6, 0xC1, 0x01,                          // test cl, 0x1
       0x75, 0x03,                                // jne  0xB (0x20004EB8)
       0xB0, 0x01,                                // mov  al, 0x1
       0xC3,                                      // retn
-      0xF6, 0x05, 0xB9, 0x21, 0x01, 0x20, 0x10,  // test BYTE PTR ds:0x200121B9, 0x10
+      0xF6, 0x05,                                // test BYTE PTR ds:0x200121B9, 0x10
+    });
+    patcher.Write(0x20004EBA, patcher.FixPtr(0x200121B9));
+    patcher.WriteBytes(0x20004EBE, {
+      0x10,
       0x74, 0xE0,                                // je   -0xC (0x20004EA1)
       0xB0, 0x05,                                // mov  al, 0x5
       0xC3,                                      // retn
@@ -1273,31 +1296,30 @@ bool SetMissionListNamePatch(
     };
 
     // In GetModuleDesc()
-    patcher.LowLevelHook(0x402627, [](Esi<const char*> pModuleName, Esp<void*> pEsp, Eax<const ModDesc*>& pModDesc) {
-      std::string moduleName(pModuleName);
+    patcher.LowLevelHook(0x402627,
+      [](Esi<const char*> pModuleName, Esp<const char**, 36> ppLevelDesc, Eax<const ModDesc*>& pModDesc) {
+        std::string moduleName(pModuleName);
 
-      const size_t separatorPos = moduleName.find_last_of("\\/");
-      if (separatorPos != std::string::npos) {
-        moduleName.erase(moduleName.begin(), moduleName.begin() + separatorPos + 1);
-      }
+        const size_t separatorPos = moduleName.find_last_of("\\/");
+        if (separatorPos != std::string::npos) {
+          moduleName.erase(moduleName.begin(), moduleName.begin() + separatorPos + 1);
+        }
 
-      std::transform(moduleName.begin(), moduleName.end(), moduleName.begin(), ::tolower);
+        std::transform(moduleName.begin(), moduleName.end(), moduleName.begin(), ::tolower);
 
-      const auto it = missionNames.find(moduleName);
-      const auto**const ppLevelDesc = static_cast<const char**>(PtrInc(pEsp, 36));
-      *ppLevelDesc = (it != missionNames.end()) ? it->second.data() : nullptr;
+        const auto it = missionNames.find(moduleName);
+        *ppLevelDesc = (it != missionNames.end()) ? it->second.data() : nullptr;
 
-      // us_them is a useless unit reference-type mission where both players are uncontrollable AIs (forced to GoAI())
-      // that is set to MissionType::Colony.  Force its mission type to 0 to hide it from normal mission list UIs.
-      if (moduleName == "us_them.dll") {
-        static const ModDesc desc =
-          { MissionType{0}, pModDesc->numPlayers, pModDesc->maxTechLevel, pModDesc->unitMission };
-        pModDesc = &desc;
-      }
-    });
+        // us_them is a useless unit reference-type mission where both players are uncontrollable AIs (forced to GoAI())
+        // that is set to MissionType::Colony.  Force its mission type to 0 to hide it from normal mission list UIs.
+        if (moduleName == "us_them.dll") {
+          static const ModDesc desc =
+            { MissionType{0}, pModDesc->numPlayers, pModDesc->maxTechLevel, pModDesc->unitMission };
+          pModDesc = &desc;
+        }
+      });
 
-    patcher.LowLevelHook(0x40265E, [](Eax<const char*> pLevelDesc, Esp<void*> pEsp) {
-      auto**const ppLevelDesc = static_cast<const char**>(PtrInc(pEsp, 40));
+    patcher.LowLevelHook(0x40265E, [](Eax<const char*> pLevelDesc, Esp<const char**, 40> ppLevelDesc) {
       if (*ppLevelDesc == nullptr) {
         *ppLevelDesc = pLevelDesc;
       }
@@ -1390,10 +1412,10 @@ bool SetUnitHpBarVisibilityPatch(
     // In MapUnit::DrawUIOverlay()
     // Change the meaning of the drawFlags function param to add a flag for draw HP bars.
     patcher.LowLevelHook(0x43EB3A, [](Eax<uint32> flags) { return BitFlagTest(flags, DrawHPBar) ? 0x43EB42 : 0; });
-    patcher.LowLevelHook(0x43EC1F, [](Esp<void*> pEsp)
-      { return BitFlagTest(*PtrInc<uint32*>(pEsp, 0x1E0), DrawHPBar) ? 0x43ED79 : 0; });
-    patcher.LowLevelHook(0x43ED79, [](Esp<void*> pEsp)
-      { return BitFlagTest(*PtrInc<uint32*>(pEsp, 0x1E0), DrawHPBar) ? 0 : 0x43EF12; });
+    patcher.LowLevelHook(0x43EC1F, [](Esp<uint32&, 0x1E0> flags)
+      { return BitFlagTest(flags, DrawHPBar) ? 0x43ED79 : 0; });
+    patcher.LowLevelHook(0x43ED79, [](Esp<uint32&, 0x1E0> flags)
+      { return BitFlagTest(flags, DrawHPBar) ? 0 : 0x43EF12; });
     // Disable red HP bar flashing.
     patcher.LowLevelHook(0x43EE5C, [](Ecx<uint32>& color) { color = ~0u; });
 

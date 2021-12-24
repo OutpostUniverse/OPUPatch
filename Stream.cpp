@@ -4,6 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <vfw.h>
+#include <intrin.h>
 
 #include "Patcher.h"
 #include "Util.h"
@@ -12,6 +13,7 @@
 #include "Tethys/Common/Library.h"
 #include "Tethys/Game/TApp.h"
 #include "Tethys/Game/MissionManager.h"
+#include "Tethys/Resource/StreamIO.h"
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/Resource/ResManager.h"
 #include "Tethys/Resource/SoundManager.h"
@@ -44,6 +46,7 @@ static constexpr char BaseDir[] = "base";
 static std::filesystem::path g_curMapPath;
 
 static bool g_searchForMission = false;
+static ThreadLocal<bool> g_tlsSkipOsFileRemap;  // ** TODO?
 
 
 // =====================================================================================================================
@@ -217,6 +220,8 @@ std::filesystem::path GetFilePath(
   constexpr auto SearchOptions = std::filesystem::directory_options::follow_directory_symlink |
                                  std::filesystem::directory_options::skip_permission_denied;
 
+  //g_tlsSkipOsFileRemap = true;
+
   static const auto opuPath(std::filesystem::path(g_resManager.installedDir_)/OPUDir);
 
   std::filesystem::path path = filename;
@@ -231,6 +236,8 @@ std::filesystem::path GetFilePath(
       }
     }
   }
+
+  //g_tlsSkipOsFileRemap = false;
 
   return result ? path : std::filesystem::path();
 }
@@ -271,7 +278,7 @@ static MissionList GetMissionList(
 
   std::unordered_set<std::string> tested;
   MissionList                     missions;
-  
+
   for (const char* pExtension : { ".dll", ".py" }) {
     for (const auto& searchPath : GetSearchPaths(pExtension, true)) {
       if (std::filesystem::exists(searchPath)) {
@@ -387,6 +394,41 @@ static void __fastcall PopulateSinglePlayerMissionListHook(
   SendMessageA(hListBoxWnd, WM_SETREDRAW, 1, 0);
 }
 
+// =====================================================================================================================
+// Returns the version of an Outpost 2 saved game file.
+GameVersion GetSavedGameVersion(
+  StreamIO* pSavedGame,
+  bool      seekBack)
+{
+  static const StreamIO* pPrevious = nullptr;
+  static GameVersion previousVersion = { };
+
+  GameVersion version = { };
+
+  if (pSavedGame == pPrevious) {
+    version = previousVersion;
+  }
+  else if (const size_t oldPos = pSavedGame->Tell();  pSavedGame->Seek(0)) {
+    if (char tag[25] = "";  pSavedGame->Read(sizeof(tag), &tag[0])) {
+      if (strcmp("OUTPOST 2.00 SAVED GAME\032", &tag[0]) == 0) {
+        version = {1, 2, 7};
+      }
+      else if ((strncmp("OUTPOST2 ", &tag[0], 9) == 0) && (strncmp("-OPU SAVE", &tag[14], 9) == 0)) {
+        version = { ((tag[9] - '0') * 100), ((tag[11] - '0') * 10), (tag[13] - '0')};
+      }
+    }
+
+    if (seekBack) {
+      pSavedGame->Seek(oldPos);
+    }
+
+    pPrevious       = pSavedGame;
+    previousVersion = version;
+  }
+
+  return version;
+}
+
 
 // =====================================================================================================================
 // Gets PATH environment variable.
@@ -484,7 +526,7 @@ HMODULE WINAPI LoadLibraryAltSearchPath(
 }
 
 // =====================================================================================================================
-void InitModuleSearchPaths() {
+static void InitModuleSearchPaths() {
   static std::vector<HMODULE> hModules;
 
   const std::filesystem::path opuPath(OPUDir);
@@ -528,6 +570,7 @@ bool SetFileSearchPathPatch(
 {
   static Patcher::PatchContext op2Patcher;
   static Patcher::PatchContext shellPatcher;
+  static Patcher::PatchContext sysPatcher(&CreateFileA);
 
   static const std::wstring oldPathEnv(GetPathEnv());
   static const auto oldCwd(std::filesystem::current_path());
@@ -582,11 +625,8 @@ bool SetFileSearchPathPatch(
     op2Patcher.HookCall(0x402B44, StdcallLambdaPtr([](const char* pFilename) {
       std::filesystem::path path(pFilename);
 
-      if (path.is_relative()) {
-        char buf[MAX_PATH] = "";
-        if (g_resManager.GetFilePath(pFilename, &buf[0])) {
-          path = buf;
-        }
+      if (char buf[MAX_PATH] = "";  path.is_relative() && g_resManager.GetFilePath(pFilename, &buf[0])) {
+        path = buf;
       }
 
       path              = std::filesystem::absolute(path);
@@ -660,7 +700,39 @@ bool SetFileSearchPathPatch(
       strncpy_s(pOut, MAX_PATH, savesPath.string().data(), _TRUNCATE);
     }));
 
-    success = (op2Patcher.GetStatus() == PatcherStatus::Ok) && (shellPatcher.GetStatus() == PatcherStatus::Ok);
+#if 0
+    static const auto installPath = std::filesystem::path(g_resManager.installedDir_);
+    static const auto RemapPath   = [](std::filesystem::path path) {
+      const bool skip = ((g_tlsSkipOsFileRemap.IsValid() == false) || g_tlsSkipOsFileRemap);
+      if ((skip == false) && path.has_filename() && path.has_parent_path() &&
+          (path.parent_path()/"" == installPath/"") || (path.parent_path()/"" == installPath/OPUDir/""))
+      {
+        if (std::filesystem::path searchPath = GetFilePath(path.filename());  searchPath.empty() == false) {
+          path = searchPath;
+        }
+      }
+      return path;
+    };
+
+    // Hook Win32 APIs CreateFileA/W, (CreateFile2,) (CreateFileTransactedA/W,) ...?
+    sysPatcher.Hook(&CreateFileA, SetCapturedTrampoline, StdcallFunctor([F = decltype(&CreateFileA){}](
+      const char* pPath, DWORD access, DWORD share, SECURITY_ATTRIBUTES* pAttr, DWORD disp, DWORD flags, HANDLE hTmpl
+      ) -> HANDLE
+    {
+      return F(RemapPath(pPath).string().data(), access, share, pAttr, disp, flags, hTmpl);
+    }));
+
+    sysPatcher.Hook(&CreateFileW, SetCapturedTrampoline, StdcallFunctor([F = decltype(&CreateFileW){}](
+      const wchar_t* pPath, DWORD access, DWORD share, SECURITY_ATTRIBUTES* pAttr, DWORD disp, DWORD flags, HANDLE hTmpl
+      ) -> HANDLE
+    {
+      return F(RemapPath(pPath).wstring().data(), access, share, pAttr, disp, flags, hTmpl);
+    }));
+#endif
+
+    success = (op2Patcher.GetStatus()   == PatcherStatus::Ok) &&
+              (shellPatcher.GetStatus() == PatcherStatus::Ok) &&
+              (sysPatcher.GetStatus()   == PatcherStatus::Ok);
 
     if (success) {
       static const auto cleanup = atexit([] { SetFileSearchPathPatch(false); });
@@ -677,6 +749,7 @@ bool SetFileSearchPathPatch(
 
     success &= (op2Patcher.RevertAll()   == PatcherStatus::Ok);
     success &= (shellPatcher.RevertAll() == PatcherStatus::Ok);
+    success &= (sysPatcher.RevertAll()   == PatcherStatus::Ok);
   }
 
   return success;

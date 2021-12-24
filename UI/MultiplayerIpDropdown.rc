@@ -1,7 +1,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include "Resources.h"
+#include "../Resources.h"
 
 RESOURCE_REPLACE(OUT2RES.DLL, 2010) DIALOG 0, 0, 232, 98
 STYLE DS_CENTER | WS_POPUP | WS_CAPTION

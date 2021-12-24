@@ -1,7 +1,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include "Resources.h"
+#include "../Resources.h"
 
 RESOURCE_REPLACE(OP2SHRES.DLL, 213) DIALOG 0, 0, 258, 205
 STYLE WS_POPUP | WS_CAPTION

@@ -288,6 +288,9 @@
     <ClInclude Include="Patcher\imported\capstone\include\capstone.h">
       <Filter>Patcher\imported\capstone\include</Filter>
     </ClInclude>
+    <ClInclude Include="Patcher\PatcherImpl.h">
+      <Filter>Patcher</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Mod.cpp">

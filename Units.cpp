@@ -151,30 +151,31 @@ bool SetUnitLimitPatch(
     static int numSavedUnits = 0;
 
     // In MapImpl::Load()
-    patcher.LowLevelHook(0x436204, [](Ecx<StreamIO*> pSavedGame, Eax<AnyMapObj*> pMoArray, Esp<void*> pEsp) {
-      // Find the size of the map object array contained in the save file.  Note that pMoArray starts at [1].
-      numSavedUnits      = *PtrInc<int*>(pEsp, 16);  // pMapObjListBegin->pNext->index (headUnit)
-      const int tailUnit = *PtrInc<int*>(pEsp, 24);  // pMapObjListEnd->pPrev->index
-      bool success       = true;
+    patcher.LowLevelHook(0x436204,
+      [](Ecx<StreamIO*> pSavedGame, Eax<AnyMapObj*> pMoArray, Esp<int&, 16> headUnit, Esp<int&, 24> tailUnit) {
+        // Find the size of the map object array contained in the save file.
+        // pMoArray starts at [1];  headUnit = pMapObjListBegin->pNext->index, tailUnit = pMapObjListEnd->pPrev->index
+        numSavedUnits = headUnit;
+        bool success  = true;
 
-      if (tailUnit != 0) {
-        const size_t oldPos = pSavedGame->Tell();
-        if (success = pSavedGame->Seek(oldPos + ((tailUnit - 1) * MapObjectSize));  success) {
-          AnyMapObj mo{};
-          success       = pSavedGame->Read(MapObjectSize, &mo) && pSavedGame->Seek(oldPos);
-          numSavedUnits = int(mo.object_.pNext_);  // Note that in save files, pNext/pPrev are replaced with indexes.
+        if (tailUnit != 0) {
+          const size_t oldPos = pSavedGame->Tell();
+          if (success = pSavedGame->Seek(oldPos + ((tailUnit - 1) * MapObjectSize));  success) {
+            AnyMapObj mo{};
+            success       = pSavedGame->Read(MapObjectSize, &mo) && pSavedGame->Seek(oldPos);
+            numSavedUnits = int(mo.object_.pNext_);  // Note that in save files, pNext/pPrev are replaced with indexes.
+          }
         }
-      }
 
-      success =
-        success && (numSavedUnits <= MaxUnits) && pSavedGame->Read(((numSavedUnits - 1) * MapObjectSize), pMoArray);
+        success =
+          success && (numSavedUnits <= MaxUnits) && pSavedGame->Read(((numSavedUnits - 1) * MapObjectSize), pMoArray);
 
-      if (tailUnit != 0) {
-        (int&)(pMoArray[tailUnit - 1].object_.pNext_) = MaxUnits;
-      }
+        if (tailUnit != 0) {
+          (int&)(pMoArray[tailUnit - 1].object_.pNext_) = MaxUnits;
+        }
 
-      return success ? 0x43620E : 0x436253;
-    });
+        return success ? 0x43620E : 0x436253;
+      });
     patcher.LowLevelHook(0x43626A, [](Ecx<StreamIO*> pSavedGame, Eax<void*> pMoFreeList)
       { pSavedGame->Read((sizeof(MapObject*) * numSavedUnits), pMoFreeList);  return 0x436274; });
     patcher.Write<uint32>(0x436278, MaxUnits);  // mov eax, 1024 => 2048
@@ -208,6 +209,7 @@ bool SetUnitTypeLimitPatch(
   static MapObjectType* pMoTypeArray[MaxUnitTypes + 1] = { };
   auto*const pOldMoTypeArray = OP2Mem<0x4E1348, MapObjectType**>();
 
+  // ** TODO Also need to patch saved game loading to account for unit type array size instead of assuming 115
   class DummyObjectType : public MapObjType::MaxObjectType {
   public:
     ibool Save(StreamIO* pSavedGame) override { return 1; }
@@ -631,7 +633,7 @@ bool SetOreRoutePatch(
     });
 
     // In UICmd::CommandSetOreRoute::GetMouseCursor()
-    patcher.LowLevelHook(0x4544B6, [](Edi<MapID> mine, Esp<void*> pEsp) {
+    patcher.LowLevelHook(0x4544B6, [](Edi<MapID> mine) {
       CargoType cargo  = CargoType::Empty;
       bool      result = (mine == MapID::CommonOreMine) || (mine == MapID::RareOreMine) || (mine == MapID::MagmaWell);
 

@@ -18,6 +18,8 @@
 #include "Tethys/Resource/GFXBitmap.h"
 #include "Tethys/Resource/CConfig.h"
 
+#include "Tethys/Game/TApp.h"
+
 #include <algorithm>
 
 using namespace Tethys;
@@ -53,7 +55,7 @@ bool SetWindowFix(
       const int width         = g_configFile.GetInt("GAME_WINDOW", "H_SIZE", desktopWidth);
       const int height        = g_configFile.GetInt("GAME_WINDOW", "V_SIZE", desktopHeight);
       const int bpp           = (std::max)(GetDeviceCaps(hDC, BITSPIXEL), 16);
-      
+
       if (result = (*ppDirectDraw)->SetDisplayMode(width, height, bpp);  result != DD_OK) {
         result = (*ppDirectDraw)->SetDisplayMode(desktopWidth, desktopHeight, bpp);  // Fall back to desktop resolution.
       }
@@ -68,7 +70,7 @@ bool SetWindowFix(
       // resolutions if the buffers get reallocated mid-game.  Assume there is only one active Viewport (detail pane's).
       static const int    screenX     = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
       static const int    screenY     = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
-      static const size_t bitVecSize  = (((screenX * screenY) + 31) / 32) / 8;  // Round up to nearest tile size (32 px)
+      static const size_t bitVecSize  = ((((screenX * screenY) + 31) / 32) + 7) / 8;  // Round up to nearest tile size
       static auto*const   pBitVectors = static_cast<uint8*>(OP2Alloc(bitVecSize * 5));
       static const auto   cleanup     = atexit([] { OP2Free(pBitVectors); });
 
@@ -89,7 +91,6 @@ bool SetWindowFix(
     static bool isDetailPaneSmall = false;
 
     // Prevent detail pane from getting larger than the map size by hooking the DeferWindowPos call that sets its size.
-    // ** TODO This doesn't get the right size when loading from save from main menu without previously starting a game
     // In GameFrame::RepositionWindowOnResize()
     patcher.HookCall(0x4999FC, StdcallLambdaPtr(
       [](HDWP hWinPosInfo, HWND hWnd, HWND hWndInsertAfter, int x, int y, int cx, int cy, UINT uFlags) -> HDWP {
@@ -310,10 +311,10 @@ bool SetAlphaBlendPatch(
         uint8*  pSrcPaletteIdx = pSrcPaletteIdxOut;
 
         for (uint32 i = width; i > 0; --i, ++pDst, ++pSrcPaletteIdx) {
-          if (*pSrcPaletteIdx != 0) {
+          if (const uint8 srcPaletteIdx = *pSrcPaletteIdx;  srcPaletteIdx != 0) {
             // 50% alpha blend.
-            const auto& src = palette[*pSrcPaletteIdx];
-            auto dst = *pDst;
+            const Rgb555 src = palette[srcPaletteIdx];
+            Rgb555       dst = *pDst;
             dst = {
               uint16((dst.b / 2) + (src.b / 2)),  uint16((dst.g / 2) + (src.g / 2)),  uint16((dst.r / 2) + (src.r / 2))
             };
