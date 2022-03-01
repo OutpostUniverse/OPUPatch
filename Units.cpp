@@ -61,7 +61,7 @@ bool SetUnitLimitPatch(
 
       return 0x4356BE;
     });
-    patcher.Write<uint32>(0x43571A, MaxUnits); // mov dword ptr [ecx+10h], 1024 => 2048 (map.pMapObjListEnd->index)
+    patcher.Write<uint32>(0x43571A, MaxUnits);  // mov dword ptr [ecx+10h], 1024 => 2048 (map.pMapObjListEnd->index)
 
     // In MapObjectType::AllocateMapObj()
     patcher.Write<uint32>(0x439A3F, (MaxUnits - 1));  // cmp eax, 1023 => 2047 (numUnits != 2047)
@@ -222,8 +222,8 @@ bool SetUnitTypeLimitPatch(
     for (size_t i = MapID::MaxObject; i <= MaxUnitTypes; pMoTypeArray[i++] = &dummyMapObjType);
 
     // Replace the map object type array.
-    patcher.ReplaceReferencesToGlobal(&pOldMoTypeArray[0], sizeof(MapObjectType*[MapID::MaxObject]), &pMoTypeArray[0]);
-    patcher.ReplaceReferencesToGlobal(&pOldMoTypeArray[MapID::MaxObject], &pMoTypeArray[MaxUnitTypes + 1]);
+    patcher.ReplaceStaticReferences(&pOldMoTypeArray[0], sizeof(MapObjectType*[MapID::MaxObject]), &pMoTypeArray[0]);
+    patcher.ReplaceStaticReferences(&pOldMoTypeArray[MapID::MaxObject], &pMoTypeArray[MaxUnitTypes + 1]);
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
@@ -843,6 +843,29 @@ bool SetTruckLoadPartialCargoPatch(
       });
     }
 
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Fix the built-in disaster creation functions to check that it was successfully created before writing its fields.
+bool SetCreateDisasterFix(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In TethysGame::SetTornado()
+    patcher.LowLevelHook(0x478370, [](Eax<MapObject*> p) { return (p != nullptr) ? 0 : 0x47839D; });
+    // In TethysGame::SetLightning()
+    patcher.LowLevelHook(0x4783FF, [](Eax<MapObject*> p) { return (p != nullptr) ? 0 : 0x478414; });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 

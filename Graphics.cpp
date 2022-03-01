@@ -304,7 +304,7 @@ bool SetAlphaBlendPatch(
   bool success = true;
 
   if (enable) {
-    // Hook acid cloud drawing code.
+    // Hook acid cloud drawing code.  Note that this is performance-sensitive code.
     patcher.LowLevelHook(*OP2Mem<void**>(0x586521), [](
       Ebp<Rgb555[256]> palette, Ecx<uint32> width, Edi<Rgb555*>& pDstOut, Esi<uint8*>& pSrcPaletteIdxOut) {
         Rgb555* pDst           = pDstOut;
@@ -315,18 +315,14 @@ bool SetAlphaBlendPatch(
             // 50% alpha blend.
             const Rgb555 src = palette[srcPaletteIdx];
             Rgb555       dst = *pDst;
-            dst = {
-              uint16((dst.b / 2) + (src.b / 2)),  uint16((dst.g / 2) + (src.g / 2)),  uint16((dst.r / 2) + (src.r / 2))
-            };
+            dst = { uint16((dst.b + src.b) / 2),  uint16((dst.g + src.g) / 2),  uint16((dst.r + src.r) / 2) };
             pDst->u16All = dst.u16All;
           }
         }
 
         pSrcPaletteIdxOut = pSrcPaletteIdx;
         pDstOut           = pDst;
-
-        return 0x5868B0;
-      });
+      }, { .pDefaultReturnAddr = 0x5868B0, .noRestoreFlagsReg = true });
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

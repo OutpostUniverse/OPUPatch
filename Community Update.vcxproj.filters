@@ -46,6 +46,9 @@
     <Filter Include="Patcher\imported\capstone\include">
       <UniqueIdentifier>{08239115-374b-4ef9-a271-f3c8b7fbf7ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Patcher\imported\xbyak">
+      <UniqueIdentifier>{c3f75e2a-c3be-47b6-a3aa-e45f1b50b318}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patches.h">
@@ -291,6 +294,21 @@
     <ClInclude Include="Patcher\PatcherImpl.h">
       <Filter>Patcher</Filter>
     </ClInclude>
+    <ClInclude Include="Patcher\PatcherMeta.h">
+      <Filter>Patcher</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\imported\xbyak\xbyak_mnemonic.h">
+      <Filter>Patcher\imported\xbyak</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\imported\xbyak\xbyak_util.h">
+      <Filter>Patcher\imported\xbyak</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\imported\xbyak\xbyak.h">
+      <Filter>Patcher\imported\xbyak</Filter>
+    </ClInclude>
+    <ClInclude Include="Patcher\imported\xbyak\xbyak_bin2hex.h">
+      <Filter>Patcher\imported\xbyak</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Mod.cpp">
@@ -352,6 +370,9 @@
   <ItemGroup>
     <None Include="Patcher\LICENSE">
       <Filter>Patcher</Filter>
+    </None>
+    <None Include="Patcher\imported\xbyak\COPYRIGHT">
+      <Filter>Patcher\imported\xbyak</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

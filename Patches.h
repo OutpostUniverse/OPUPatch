@@ -77,3 +77,4 @@ bool SetMultipleRepairPatch(bool enable);
 bool SetOreRoutePatch(bool enable);
 bool SetTurretAnimationPatch(bool enable);
 bool SetTruckLoadPartialCargoPatch(bool enable);
+bool SetCreateDisasterFix(bool enable);

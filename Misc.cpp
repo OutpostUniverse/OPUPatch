@@ -34,14 +34,14 @@ bool SetGameVersion(
 
   if (enable) {
     // For netplay, TApp::Version()
-    patcher.ReplaceReferencesToGlobal(0x4E973C, 1, OP2_VERSION_QUAD_STR);
+    patcher.ReplaceStaticReferences(0x4E973C, 1, OP2_VERSION_QUAD_STR);
 
     // For UI display
-    patcher.ReplaceReferencesToGlobal(0x4E3200, 1, OP2_VERSION_TRIPLE_STR "-OPU");
-    patcher.Write(0x566708 + 596,       "Version " OP2_VERSION_TRIPLE_STR "-OPU");
+    patcher.ReplaceStaticReferences(0x4E3200, 1, OP2_VERSION_TRIPLE_STR "-OPU");
+    patcher.Write(0x566708 + 596,     "Version " OP2_VERSION_TRIPLE_STR "-OPU");
 
     // For saved games
-    patcher.ReplaceReferencesToGlobal(0x4D6380, 1, "OUTPOST2 " OP2_VERSION_TRIPLE_STR "-OPU SAVE\034");
+    patcher.ReplaceStaticReferences(0x4D6380, 1, "OUTPOST2 " OP2_VERSION_TRIPLE_STR "-OPU SAVE\034");
 
     // In GameImpl::LoadGame()
     patcher.LowLevelHook(0x48A413, [](Edi<StreamIO*> pStream) {

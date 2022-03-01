@@ -48,6 +48,42 @@ static std::filesystem::path g_curMapPath;
 static bool g_searchForMission = false;
 static ThreadLocal<bool> g_tlsSkipOsFileRemap;  // ** TODO?
 
+// =====================================================================================================================
+// Gets file type-specific subdirectories.
+static std::multimap<std::string, std::string>& GetAssetDirs() {
+  static std::multimap<std::string, std::string> assetDirs = {
+    { ".ax",    "libs"     },
+    { ".dll",   "libs"     },
+    { ".dll",   "maps"     },
+    { ".py",    "maps"     },
+    { ".map",   "maps"     },
+    { ".txt",   "sheets"   },
+    { ".txt",   "techs"    },
+    { ".txt",   "story"    },
+    { ".rtf",   "story"    },
+    { ".ttf",   "ui"       },
+    { ".ttc",   "ui"       },
+    { ".otf",   "ui"       },
+    { ".png",   "ui"       },
+    { ".bmp",   "ui"       },
+    { ".bmp",   "tilesets" },
+    { ".bmp",   "sprites"  },
+    { ".prt",   "sprites"  },
+    { ".raw",   "sprites"  },
+    { ".ani",   "cursors"  },
+    { ".wav",   "sounds"   },
+    { ".wav",   "voices"   },
+    { ".wav",   "music"    },
+    { ".mp3",   "music"    },
+    { ".ogg",   "music"    },
+    { ".flac",  "music"    },
+    { ".avi",   "movies"   },
+    { ".mp4",   "movies"   },
+    { ".op2",   "saves"    }
+  };
+
+  return assetDirs;
+}
 
 // =====================================================================================================================
 // Gets op2ext mod directories.
@@ -131,38 +167,7 @@ std::vector<std::filesystem::path> GetSearchPaths(
   // ** TODO For now mod dirs also get checked with highest priority by op2ext's hook
   const auto& bases = GetBasePaths();
   for (const auto& base : bases) {
-    static const std::multimap<std::string, std::string> assetDirs = {
-      { ".ax",    "libs"     },
-      { ".dll",   "libs"     },
-      { ".dll",   "maps"     },
-      { ".py",    "maps"     },
-      { ".map",   "maps"     },
-      { ".txt",   "sheets"   },
-      { ".txt",   "techs"    },
-      { ".txt",   "story"    },
-      { ".rtf",   "story"    },
-      { ".ttf",   "ui"       },
-      { ".ttc",   "ui"       },
-      { ".otf",   "ui"       },
-      { ".png",   "ui"       },
-      { ".bmp",   "ui"       },
-      { ".bmp",   "tilesets" },
-      { ".bmp",   "sprites"  },
-      { ".prt",   "sprites"  },
-      { ".raw",   "sprites"  },
-      { ".ani",   "cursors"  },
-      { ".wav",   "sounds"   },
-      { ".wav",   "voices"   },
-      { ".wav",   "music"    },
-      { ".mp3",   "music"    },
-      { ".ogg",   "music"    },
-      { ".flac",  "music"    },
-      { ".avi",   "movies"   },
-      { ".mp4",   "movies"   },
-      { ".op2",   "saves"    }
-    };
-
-    const auto range = assetDirs.equal_range(extension);
+    const auto range = GetAssetDirs().equal_range(extension);
     for (auto it = range.first; it != range.second; ++it) {
       const auto assetDir = base/it->second;
 
@@ -840,7 +845,7 @@ bool SetChecksumPatch(
     // Reimplement ChecksumScript()
     patcher.Hook(0x44FFE0, FastcallLambdaPtr([](int pOut[14], const char* pFilename) -> ibool {
       static const uint32 op2ExtChecksum   = g_resManager.ChecksumStream("op2ext.dll");
-      static const uint32 opuPatchChecksum = g_resManager.ChecksumStream("OPUPatch.dll");
+      static const uint32 opuPatchChecksum = 0xBABEFACE;  // ** TODO g_resManager.ChecksumStream("OPUPatch.dll");
 
       AIModDesc* pAIModDesc = nullptr;
       if (const std::filesystem::path scriptPath = GetFilePath(pFilename, true);  scriptPath.empty() == false) {

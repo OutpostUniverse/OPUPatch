@@ -143,8 +143,13 @@
     <ClInclude Include="Patcher\imported\capstone\include\capstone.h" />
     <ClInclude Include="Patcher\imported\capstone\include\platform.h" />
     <ClInclude Include="Patcher\imported\capstone\include\x86.h" />
+    <ClInclude Include="Patcher\imported\xbyak\xbyak.h" />
+    <ClInclude Include="Patcher\imported\xbyak\xbyak_bin2hex.h" />
+    <ClInclude Include="Patcher\imported\xbyak\xbyak_mnemonic.h" />
+    <ClInclude Include="Patcher\imported\xbyak\xbyak_util.h" />
     <ClInclude Include="Patcher\Patcher.h" />
     <ClInclude Include="Patcher\PatcherImpl.h" />
+    <ClInclude Include="Patcher\PatcherMeta.h" />
     <ClInclude Include="Patcher\PatcherUtil.h" />
     <ClInclude Include="Patches.h" />
     <ClInclude Include="Resources.h" />
@@ -246,6 +251,7 @@
     <Image Include="UI\OP2Icon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Patcher\imported\xbyak\COPYRIGHT" />
     <None Include="Patcher\LICENSE" />
   </ItemGroup>
   <ItemGroup>

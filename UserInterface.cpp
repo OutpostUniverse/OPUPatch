@@ -322,7 +322,7 @@ static bool SetMainMenuPatch(
 
       // Draw OPU mod version number.
       if (hVersionFont != NULL) {
-        static constexpr char Version[] = "OPU Mod v" OP2_VERSION_TRIPLE_STR;
+        static constexpr char Version[] = "OPU Mod v" OP2_VERSION_TRIPLE_STR "\n" __DATE__ " " __TIME__;
 
         RECT textRect = { 10, 10, 0, 0 };
         SetTextColor(hDcWnd, 0x606060);
@@ -864,7 +864,7 @@ bool SetFontPatch(
     createInfo.lfHeight = 48;
     patcher.Write(&g_gameFrame.detailPane_.hLargeMessageFont_, CreateFontIndirectA(&createInfo));
 
-    patcher.ReplaceReferencesToGlobal(0x4DEB40, 1, fontStr.data());  // Replace "Arial"
+    patcher.ReplaceStaticReferences(0x4DEB40, 1, fontStr.data());  // Replace "Arial"
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

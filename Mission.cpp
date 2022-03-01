@@ -64,7 +64,7 @@ bool SetMissionCallbackPatch(
       void  (__cdecl*  pfnOnGameCommand)(OnGameCommandArgs&&);
     } callbacks = { };
 
-    // Insert OnLoadMission() hook and initialize callbacks In MissionManager::LoadScript()
+    // Insert OnLoadMission() hook and initialize callbacks in MissionManager::LoadScript()
     patcher.LowLevelHook(0x402C0B, [](Esi<MissionManager*> pThis) {
       (FARPROC&)(callbacks.pfnOnLoad)         = GetProcAddress(pThis->hModule_, "OnLoadMission");
       (FARPROC&)(callbacks.pfnOnUnload)       = GetProcAddress(pThis->hModule_, "OnUnloadMission");
@@ -386,7 +386,7 @@ bool SetScStubPatch(
 #if SCSTUB_USE_EXTENDED_ARRAY
     // Replace the ScStub array with a larger one.
     memcpy(&g_scStubListEx, pOldScStubArray, sizeof(*pOldScStubArray));
-    patcher.ReplaceReferencesToGlobal(pOldScStubArray, &g_scStubListEx);
+    patcher.ReplaceStaticReferences(pOldScStubArray, &g_scStubListEx);
 
     // In ScStubList::Init()
     patcher.LowLevelHook(0x47AAC3, [](Ecx<ScStubListEx*> pThis) {

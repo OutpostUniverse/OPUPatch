@@ -46,7 +46,7 @@ bool SetLargeMapPatch(
   if (enable && (patcher.NumPatches() == 0)) {
     static constexpr uint32 SizeOfOldTable = 1024;
     memcpy(&lightAdjustTable[0], OP2Mem(0x54F854), SizeOfOldTable);
-    patcher.ReplaceReferencesToGlobal(0x54F854, SizeOfOldTable, &lightAdjustTable[0]);
+    patcher.ReplaceStaticReferences(0x54F854, SizeOfOldTable, &lightAdjustTable[0]);
 
     // In MapImpl::AllocateSpaceForMap()
     patcher.LowLevelHook(0x435748, [](Esi<int> curX) {
@@ -130,7 +130,7 @@ bool SetCustomMapFlagsPatch(
 
     // In MapImpl::Save()
     patcher.LowLevelHook(0x43581F, [](Eax<MapFlags>& flags)
-      { const bool isSave = flags->isSavedGame;  flags = mapFlags;  flags->isSavedGame = isSave; });
+      { const bool isSave = flags->isSavedGame;  flags->u32All = mapFlags.u32All;  flags->isSavedGame = isSave; });
 
     // In MapImpl::AllocateMap()
     patcher.LowLevelHook(0x43552D, [] { return mapFlags.forceWorldMapOn  ? 0x435550 :
