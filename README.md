@@ -29,6 +29,7 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
 * Fix an issue where the detail pane wouldn't display more than a 64x64 tile area at once when playing on world maps (512+ tiles wide) at 1440p and greater resolutions, or when loading a saved game from the main menu immediately after launching the game.
 * Fix a minor bug with the double unit limit patch where the last unit's ID was set to 1024 instead of 2048.
 * Fix the campaign mission menu dialog's width being too short and cutting off the title text.
+* Fix Vortex and Electrical Storm spawns crashing the game when the unit limit is exceeded.
 
 ### Developer-related changes
 
