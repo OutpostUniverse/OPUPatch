@@ -9,7 +9,7 @@
 #include "Util.h"
 
 #include "Tethys/Common/Library.h"
-#include "Tethys/API/TethysGame.h"
+#include "Tethys/API/Game.h"
 #include "Tethys/API/GameMap.h"
 #include "Tethys/Game/MineManager.h"
 #include "Tethys/UI/GameFrame.h"
@@ -348,7 +348,7 @@ bool SetMineVariantVisibilityPatch(
       [](Esi<MapObj::MiningBeacon*> pThis, Edi<int> animIndex, Eax<int> numFrames, Edx<int>& frame, Ebp<int>& pixelX) {
         int curFrame = -1;
 
-        if (pThis->IsSurveyed(TethysGame::LocalPlayer())) {
+        if (pThis->IsSurveyed(Game::LocalPlayer())) {
           switch (MineManager::GetInstance()->GetOreVariant(pThis->mineYield_, pThis->mineVariant_)) {
             case OreVariant::Low:
               // Low variant (no animation)
@@ -356,7 +356,7 @@ bool SetMineVariantVisibilityPatch(
               break;
             case OreVariant::Mid:
               // Mid variant (slower animation)
-              curFrame = (TethysGame::Tick() % (numFrames * 4)) / 2;
+              curFrame = (Game::Tick() % (numFrames * 4)) / 2;
               if (curFrame >= numFrames) {
                 curFrame = 0;
               }
@@ -366,7 +366,7 @@ bool SetMineVariantVisibilityPatch(
           }
         }
 
-        frame  = (curFrame != -1) ? curFrame : (TethysGame::Tick() % numFrames);
+        frame  = (curFrame != -1) ? curFrame : (Game::Tick() % numFrames);
         pixelX = pThis->pixelX_;
         return 0x4054B6;
       });

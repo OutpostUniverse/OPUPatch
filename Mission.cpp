@@ -6,7 +6,7 @@
 #include "Stream.h"
 
 #include "Tethys/API/Unit.h"
-#include "Tethys/API/TethysGame.h"
+#include "Tethys/API/Game.h"
 #include "Tethys/API/Trigger.h"
 #include "Tethys/Game/MissionManager.h"
 #include "Tethys/Game/CommandPacket.h"

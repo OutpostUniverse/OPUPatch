@@ -4,7 +4,7 @@
 #include <mmeapi.h>
 #include <dsound.h>
 
-#include "Tethys/API/TethysGame.h"
+#include "Tethys/API/Game.h"
 #include "Tethys/API/GameMap.h"
 #include "Tethys/Resource/CConfig.h"
 #include "Tethys/Resource/StreamIO.h"
@@ -54,32 +54,6 @@ bool SetGameVersion(
       const int saveVersion = GetSavedGameVersion(pStream, false);
       return (saveVersion >= GameVersion{1, 2, 7}) && (saveVersion <= OP2Version);
     }));
-
-    success = (patcher.GetStatus() == PatcherStatus::Ok);
-  }
-
-  if ((enable == false) || (success == false)) {
-    success &= (patcher.RevertAll() == PatcherStatus::Ok);
-  }
-
-  return success;
-}
-
-// =====================================================================================================================
-// Disables checking for the Outpost 2 CD being inserted.
-bool SetNoCdPatch(
-  bool enable)
-{
-  static Patcher::PatchContext patcher;
-  bool success = true;
-
-  if (enable) {
-    // In ResManager::VerifyCD()
-    patcher.Write<uint8>(0x471900, 0xC3);  // 0x81
-    // In ResManager::Init()
-    patcher.Write<uint8>(0x47104D, 0xEB);  // 0x75
-    // In ResManager::InitCDDir()
-    patcher.Write<uint8>(0x471A17, 0xEB);  // 0x75
 
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }

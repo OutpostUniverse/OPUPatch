@@ -49,6 +49,33 @@ static bool g_searchForMission = false;
 static ThreadLocal<bool> g_tlsSkipOsFileRemap;  // ** TODO?
 
 // =====================================================================================================================
+// Disables checking for the Outpost 2 CD being inserted.
+bool SetNoCdPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In ResManager::VerifyCD()
+    patcher.Write<uint8>(0x471900, 0xC3);  // 0x81
+    // In ResManager::Init()
+    patcher.Write<uint8>(0x47104D, 0xEB);  // 0x75
+    // In ResManager::InitCDDir()
+    patcher.Write<uint8>(0x471A17, 0xEB);  // 0x75
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+
+// =====================================================================================================================
 // Gets file type-specific subdirectories.
 static std::multimap<std::string, std::string>& GetAssetDirs() {
   static std::multimap<std::string, std::string> assetDirs = {
@@ -906,6 +933,7 @@ bool SetChecksumPatch(
 
   return success;
 }
+
 
 // =====================================================================================================================
 // Locally injects the Indeo 4.1 codec needed for game cutscenes if it is not registered in the OS.

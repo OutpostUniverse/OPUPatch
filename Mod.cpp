@@ -23,12 +23,12 @@ DLLAPI void InitMod(
 {
   bool success = SetGameVersion(true);
 
-  // Misc
+  // Stream
   success &= SetNoCdPatch(true);
-  success &= SetForceMoraleFix(true);
-  success &= SetPrintfFloatFix(true);
-  success &= SetGlobalMusicFix(true);
-  success &= SetSuperSpeedPatch(true);
+  // NOTE: File path patch must handle loading patched DLLs like OP2Shell, odasl, etc., and must come after no CD patch.
+  success &= SetFileSearchPathPatch(true);
+  success &= SetChecksumPatch(true);
+  success &= SetCodecFix(true);
 
   // Graphics
   success &= SetWindowFix(true);
@@ -36,11 +36,6 @@ DLLAPI void InitMod(
   success &= SetDpiFix(true);
   success &= SetAlphaBlendPatch(true);
   success &= SetMineVariantVisibilityPatch(true);
-
-  // Stream
-  success &= SetFileSearchPathPatch(true);  // NOTE: This must handle loading patched DLLs like OP2Shell, odasl, etc.
-  success &= SetChecksumPatch(true);
-  success &= SetCodecFix(true);
 
   // Netplay
   success &= SetNatFix(true);
@@ -93,4 +88,10 @@ DLLAPI void InitMod(
   success &= SetTurretAnimationPatch(true);
   success &= SetTruckLoadPartialCargoPatch(true);
   success &= SetCreateDisasterFix(true);
+
+  // Misc
+  success &= SetForceMoraleFix(true);
+  success &= SetPrintfFloatFix(true);
+  success &= SetGlobalMusicFix(true);
+  success &= SetSuperSpeedPatch(true);
 }

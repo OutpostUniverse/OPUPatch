@@ -156,13 +156,13 @@
     <ClInclude Include="Stream.h" />
     <ClInclude Include="Tethys\API\API.h" />
     <ClInclude Include="Tethys\API\Enumerators.h" />
+    <ClInclude Include="Tethys\API\Game.h" />
     <ClInclude Include="Tethys\API\GameMap.h" />
     <ClInclude Include="Tethys\API\Location.h" />
     <ClInclude Include="Tethys\API\Mission.h" />
     <ClInclude Include="Tethys\API\Player.h" />
     <ClInclude Include="Tethys\API\ScGroup.h" />
     <ClInclude Include="Tethys\API\ScStub.h" />
-    <ClInclude Include="Tethys\API\TethysGame.h" />
     <ClInclude Include="Tethys\API\Trigger.h" />
     <ClInclude Include="Tethys\API\Unit.h" />
     <ClInclude Include="Tethys\API\UnitBlock.h" />

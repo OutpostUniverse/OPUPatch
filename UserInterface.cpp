@@ -12,7 +12,7 @@
 #include "Tethys/Common/Library.h"
 
 #include "Tethys/API/Mission.h"
-#include "Tethys/API/TethysGame.h"
+#include "Tethys/API/Game.h"
 #include "Tethys/API/GameMap.h"
 
 #include "Tethys/Game/TApp.h"
@@ -549,7 +549,7 @@ static int __fastcall MessageLog_AddMessage(
     entry.pixelX = pixelX;
     entry.pixelY = pixelY;
     g_gameFrame.SetChatBarText(pText, 0xFFFFFF);
-    result = snprintf(&entry.message[0], MaxChatMessageLen, "<N>%i: %s", TethysGame::Mark(), pText);
+    result = snprintf(&entry.message[0], MaxChatMessageLen, "<N>%i: %s", Game::Mark(), pText);
   }
 
   return result;
@@ -1066,7 +1066,7 @@ bool SetVehicleCargoDisplayPatch(
         &pVtbl->pfnGetMouseOverStr,
         ThiscallLambdaPtr([](Vehicle* pThis, char* pDst, int size) {
           auto*const pUnitTypeName = &pThis->GetType()->unitName_[0];
-          return ((pThis->cargo_ != 0) && Player[pThis->ownerNum_].IsAlliedTo(TethysGame::LocalPlayer()))   ?
+          return ((pThis->cargo_ != 0) && Player[pThis->ownerNum_].IsAlliedTo(Game::LocalPlayer()))   ?
             _snprintf_s(pDst, size_t(size), _TRUNCATE, "%s (%s)", pUnitTypeName, GetCargoStr(pThis).data()) :
             _snprintf_s(pDst, size_t(size), _TRUNCATE, "%s",      pUnitTypeName);
         }));
@@ -1124,7 +1124,7 @@ bool SetSavantNotificationPatch(
     // In Player::ProcessCommandPacket()
     for (uintptr loc : { 0x40FFC5, 0x410051 }) {
       patcher.LowLevelHook(loc, [](Ecx<int> p1, Esi<int> p2) {
-        return ((p1 >= 6) || (p2 >= 6) || Player[p1].IsAI() || Player[p2].IsAI() || (TethysGame::Tick() == 0)) ?
+        return ((p1 >= 6) || (p2 >= 6) || Player[p1].IsAI() || Player[p2].IsAI() || (Game::Tick() == 0)) ?
                0x4100C8 : 0;
       });
     }
@@ -1153,7 +1153,7 @@ bool SetSavantNotificationPatch(
       0x47275B,
       ThiscallLambdaPtr([](MessageLog* pThis, int pixelX, int pixelY, char* pMsg, SoundID soundID) -> int {
         const bool skip = ((soundID == SoundID::Savant27) && (prevPowerSound == soundID)) ||
-                          (g_gameImpl.GetPlayer(TethysGame::LocalPlayer())->amountPowerConsumed_ == 0);
+                          (g_gameImpl.GetPlayer(Game::LocalPlayer())->amountPowerConsumed_ == 0);
         prevPowerSound  = (skip || pThis->AddMessage(pixelX, pixelY, pMsg, soundID)) ? soundID : SoundID{};
         return (prevPowerSound != SoundID{});
       }));
@@ -1192,7 +1192,7 @@ bool SetSavantNotificationPatch(
       ThiscallLambdaPtr([](MessageLog* pThis, int pixelX, int pixelY, char* pMsg, SoundID soundID) -> int {
         const bool skip =
           (((soundID == SoundID::Savant24) || (soundID == SoundID::Savnt226)) && (prevFoodSound == soundID)) ||
-          (g_gameImpl.GetPlayer(TethysGame::LocalPlayer())->totalFoodConsumption_ == 0);
+          (g_gameImpl.GetPlayer(Game::LocalPlayer())->totalFoodConsumption_ == 0);
         prevFoodSound   = (skip || pThis->AddMessage(pixelX, pixelY, pMsg, soundID)) ? soundID : SoundID{};
         return (prevFoodSound != SoundID{});
       }));
@@ -1231,7 +1231,7 @@ bool SetSavantNotificationPatch(
       if (pThis->IsEnemyUnitSighted()) {
         if (hasSighted == 0) {
           hasSighted = 1;
-          if (pThis->ownerNum_ == TethysGame::LocalPlayer()) {
+          if (pThis->ownerNum_ == Game::LocalPlayer()) {
             g_messageLog.AddMessage(
               pThis->pixelX_, pThis->pixelY_, GetLocalizedString(LocalizedString::EnemySighted), SoundID::Savant14);
           }
@@ -1427,13 +1427,11 @@ bool SetUnitHpBarVisibilityPatch(
         static constexpr uint32 Blight = MoFlagBuilding | MoFlagBldInfected;
         if (auto*const pUnit = ppDrawList[i];  (pUnit->damage_ > 0) && (BitFlagsTest(pUnit->flags_, Blight) == false)) {
           // Don't draw HP bars for hidden enemy vehicles at night, unless they are too close to units hostile to them.
-          if ((TethysGame::UsesDayNight() == false)                                     ||
-              (BitFlagTest(pUnit->flags_, MoFlagVehicle) == false)                      ||
-              BitFlagTest(pUnit->flags_, MoFlagVecHeadlights | MoFlagForceFullLighting) ||
-              Player[TethysGame::LocalPlayer()].IsAlliedBy(pUnit->ownerNum_)            ||
-              (GameMap::GetLightLevel(pUnit->GetTile()) < (NumLightLevels / 2))         ||
-              pUnit->IsEnemyUnitSighted())
-          {
+          const bool isNotVec    = (BitFlagTest(pUnit->flags_, MoFlagVehicle) == false);
+          const bool isFriendly  = Player[Game::LocalPlayer()].IsAlliedBy(pUnit->ownerNum_);
+          const bool hasLighting = (GameMap::GetLightLevel(pUnit->GetTile()) < (NumLightLevels / 2)) ||
+                                   BitFlagTest(pUnit->flags_, MoFlagVecHeadlights | MoFlagForceFullLighting);
+          if ((Game::UsesDayNight() == false) || hasLighting || isNotVec || isFriendly || pUnit->IsEnemyUnitSighted()) {
             pUnit->DrawUIOverlay(DrawHPBar, pViewport);
           }
         }

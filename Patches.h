@@ -5,13 +5,13 @@
 
 // Misc
 bool SetGameVersion(bool enable);
-bool SetNoCdPatch(bool enable);
 bool SetForceMoraleFix(bool enable);
 bool SetPrintfFloatFix(bool enable);
 bool SetGlobalMusicFix(bool enable);
 bool SetSuperSpeedPatch(bool enable);
 
 // Stream
+bool SetNoCdPatch(bool enable);
 bool SetFileSearchPathPatch(bool enable);
 bool SetChecksumPatch(bool enable);
 bool SetCodecFix(bool enable);

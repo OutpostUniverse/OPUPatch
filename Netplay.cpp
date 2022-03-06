@@ -6,7 +6,7 @@
 #include "Util.h"
 #include "Resources.h"
 
-#include "Tethys/API/TethysGame.h"
+#include "Tethys/API/Game.h"
 #include "Tethys/Game/TApp.h"
 #include "Tethys/UI/IWnd.h"
 #include "Tethys/UI/MultiplayerDialogs.h"

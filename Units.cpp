@@ -1,5 +1,5 @@
 
-#include "Tethys/API/TethysGame.h"
+#include "Tethys/API/Game.h"
 #include "Tethys/API/GameMap.h"
 #include "Tethys/API/Player.h"
 
@@ -669,7 +669,7 @@ bool SetOreRoutePatch(
           Unit truck(pUnitIDs[i]);
           if ((truck.GetType() == MapID::CargoTruck) && (truck.GetTruckCargo() != CargoType::Empty)) {
             truck.SetCargo(CargoType::Empty, 0);
-            TethysGame::AddMapSound(SoundID::Dump, truck.GetLocation());
+            Game::AddMapSound(SoundID::Dump, truck.GetLocation());
           }
         }
       }
@@ -812,7 +812,7 @@ bool SetTruckLoadPartialCargoPatch(
     static int defaultTruckCapacity = 1000;
     patcher.LowLevelHook(0x446042, []
       { defaultTruckCapacity = MapObjType::CargoTruck::GetInstance()->playerStats_[0].vehicle.cargoCapacity; });
-      
+
     // In CountTrigger::HasFired()
     patcher.LowLevelHook(0x493D5C, [](Eax<int> unitID, Esi<CargoType> cargo, Ebx<int>& counter) {
       if (auto* pTruck = MapObject::GetInstance(unitID);  CargoType(pTruck->truckCargoType_) == cargo) {

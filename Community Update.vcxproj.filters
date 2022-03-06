@@ -159,9 +159,6 @@
     <ClInclude Include="Tethys\UI\Filter.h">
       <Filter>Tethys\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Tethys\API\TethysGame.h">
-      <Filter>Tethys\API</Filter>
-    </ClInclude>
     <ClInclude Include="Tethys\API\Trigger.h">
       <Filter>Tethys\API</Filter>
     </ClInclude>
@@ -308,6 +305,9 @@
     </ClInclude>
     <ClInclude Include="Patcher\imported\xbyak\xbyak_bin2hex.h">
       <Filter>Patcher\imported\xbyak</Filter>
+    </ClInclude>
+    <ClInclude Include="Tethys\API\Game.h">
+      <Filter>Tethys\API</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
