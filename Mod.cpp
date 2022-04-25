@@ -88,6 +88,7 @@ DLLAPI void InitMod(
   success &= SetTurretAnimationPatch(true);
   success &= SetTruckLoadPartialCargoPatch(true);
   success &= SetCreateDisasterFix(true);
+  success &= SetStickyfoamUpgradeFix(true);
 
   // Misc
   success &= SetForceMoraleFix(true);

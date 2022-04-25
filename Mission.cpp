@@ -214,7 +214,7 @@ bool SetMissionCallbackPatch(
 
     // Hook FuncReference::SetData() to allow trigger callback function of nullptr or "".
     patcher.Hook(0x4757D0, SetCapturedTrampoline, ThiscallFunctor(
-      [F = (ibool(__thiscall*)(ScBase*, char*, ibool))0](ScBase* pThis, char* pFuncName, ibool useLevelDLL) -> ibool {
+      [F = (ibool(THISCALL*)(ScBase*, char*, ibool))0](ScBase* pThis, char* pFuncName, ibool useLevelDLL) -> ibool {
         return ((pFuncName == nullptr) || (pFuncName[0] == '\0') || F(pThis, pFuncName, useLevelDLL));
       }));
 
@@ -317,7 +317,7 @@ bool SetMissionDebugNoInstantWinPatch(
 
 // =====================================================================================================================
 // Replacement member function for ScStubFactory::Create.
-static ScBase* __fastcall ScStubFactory_Create(
+static ScBase* FASTCALL ScStubFactory_Create(
   ScStubFactory*  pThis)
 {
   auto*const pAllocation = OP2Alloc(pThis->elementSizeInBytes_);

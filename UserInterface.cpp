@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <timeapi.h>
 #include <wincodec.h>
+#include <tlhelp32.h>
 
 #include "Patcher.h"
 #include "Util.h"
@@ -66,11 +67,11 @@ enum class PreserveAspect : int {
 
 // =====================================================================================================================
 static HBITMAP LoadGdiImageFromFile(
-  const          std::filesystem::path& path,
-  int            scaleWidth     = 0,
-  int            scaleHeight    = 0,
-  PreserveAspect preserveAspect = PreserveAspect::Disabled,
-  HDC            hDc            = NULL)
+  const std::filesystem::path& path,
+  int                          scaleWidth     = 0,
+  int                          scaleHeight    = 0,
+  PreserveAspect               preserveAspect = PreserveAspect::Disabled,
+  HDC                          hDc            = NULL)
 {
   HBITMAP hBitmapOut  = NULL;
   HRESULT hInitResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
@@ -230,11 +231,30 @@ static std::string FindResourceReplacement(
   }
 
   std::string result = "";
+
+#if 1  // ** TODO
   if (FindResourceA(g_hInst, &buf[0], pResType) != NULL) {
-    // ** TODO This should search in all loaded modules
     result    = buf;
     *phModule = g_hInst;
   }
+#else
+  // Search through all loaded modules for a replacement resource.
+  // ** TODO What is the search order? Should we reverse it?
+  if (HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);  hSnapshot != INVALID_HANDLE_VALUE) {
+    MODULEENTRY32 entry = { };
+    entry.dwSize = sizeof(entry);
+
+    for (auto x = Module32First(hSnapshot, &entry); x; x = Module32Next(hSnapshot, &entry)) {
+      if ((entry.dwSize > offsetof(MODULEENTRY32, hModule)) && FindResourceA(entry.hModule, &buf[0], pResType)) {
+        result    = buf;
+        *phModule = entry.hModule;
+        break;
+      }
+    }
+
+    CloseHandle(hSnapshot);
+  }
+#endif
 
   return result;
 }
@@ -420,13 +440,13 @@ bool SetUiResourceReplacePatch(
   if (enable) {
     // ** TODO Consider hooking the Win32 API imports instead?
     op2Patcher.Hook(IDlgWnd::Vtbl()->pfnDoModal, SetCapturedTrampoline, ThiscallFunctor(
-      [F = decltype(IDlgWnd::VtblType::pfnDoModal){}](IDlgWnd* pThis, const char* pTmpl, HMODULE hMod) {
+      [F = IDlgWnd::Vtbl()->pfnDoModal](IDlgWnd* pThis, const char* pTmpl, HMODULE hMod) {
         const  std::string newName = FindResourceReplacement(RT_DIALOG, pTmpl, &hMod);
         return F(pThis, (newName.empty() ? pTmpl : newName.data()), hMod);
       }));
 
     op2Patcher.Hook(IDlgWnd::Vtbl()->pfnDoModeless, SetCapturedTrampoline, ThiscallFunctor(
-      [F = decltype(IDlgWnd::VtblType::pfnDoModeless){}](IDlgWnd* pThis, const char* pTmpl, HMODULE hMod, HWND hWnd) {
+      [F = IDlgWnd::Vtbl()->pfnDoModeless](IDlgWnd* pThis, const char* pTmpl, HMODULE hMod, HWND hWnd) {
         const  std::string newName = FindResourceReplacement(RT_DIALOG, pTmpl, &hMod);
         return F(pThis, (newName.empty() ? pTmpl : newName.data()), hMod, hWnd);
       }));
@@ -448,7 +468,7 @@ bool SetUiResourceReplacePatch(
 
     // Hook LoadStringA() to replace string table resources (which are used by odasl for fonts and element colors).
     sysPatcher.Hook(&LoadStringA, SetCapturedTrampoline, StdcallFunctor(
-      [F = decltype(&LoadStringA){}](HMODULE hMod, UINT id, char* pBuffer, int size) -> int {
+      [F = &LoadStringA](HMODULE hMod, UINT id, char* pBuffer, int size) -> int {
         if (auto name = FindResourceReplacement(RT_STRING, MAKEINTRESOURCEA(id), &hMod);  name.empty() == false) {
           if (HRSRC hRsrc = FindResourceA(hMod, name.data(), RT_STRING);  hRsrc != NULL) {
             if (size == 0) {
@@ -512,7 +532,7 @@ bool SetUiResourceReplacePatch(
 }
 
 // =====================================================================================================================
-static int __fastcall MessageLog_AddMessage(
+static int FASTCALL MessageLog_AddMessage(
   MessageLog*  pThis,  int,
   uint32       pixelX,
   uint32       pixelY,
@@ -556,7 +576,7 @@ static int __fastcall MessageLog_AddMessage(
 }
 
 // =====================================================================================================================
-static int __fastcall CommunicationListData_GetString(
+static int FASTCALL CommunicationListData_GetString(
   void*   pThis,  int,
   int     index,
   char*   pBuffer,
@@ -568,7 +588,7 @@ static int __fastcall CommunicationListData_GetString(
 }
 
 // =====================================================================================================================
-static void __fastcall MessageLogJumpTo_OnClick(
+static void FASTCALL MessageLogJumpTo_OnClick(
   void*  pThis)
 {
   int index = g_messageLog.GetEntrySlotFromIndex<MaxNumMessagesLogged>(OP2Mem<0x567D30, int&>());
@@ -581,7 +601,7 @@ static void __fastcall MessageLogJumpTo_OnClick(
 }
 
 // =====================================================================================================================
-static void __fastcall CommunicationsReport_CenterViewOn(
+static void FASTCALL CommunicationsReport_CenterViewOn(
   void*  pThis,  int,
   int    index)
 {
@@ -594,7 +614,7 @@ static void __fastcall CommunicationsReport_CenterViewOn(
 }
 
 // =====================================================================================================================
-static void __fastcall CommunicationsReport_SetJumpButtonEnabled(
+static void FASTCALL CommunicationsReport_SetJumpButtonEnabled(
   void*  pThis,  int,
   int    index)
 {

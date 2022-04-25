@@ -34,6 +34,29 @@ static constexpr uint32 VehicleLimits[]   = { 400, 320, 230, 180, 154, 130 };
 static constexpr uint32 StructureLimits[] = { 950, 350, 200, 150, 100, 96  };
 
 // =====================================================================================================================
+// Returns the size of the map object array contained in the save file (pSavedGame must be positioned at its beginning).
+static int GetSavedGameUnitArrayLen(
+  StreamIO* pSavedGame,
+  int       headUnit,
+  int       tailUnit)
+{
+  // headUnit = pMapObjListBegin->pNext->index,  tailUnit = pMapObjListEnd->pPrev->index
+  int  numSavedUnits = headUnit;
+  bool success       = true;
+
+  if (tailUnit != 0) {
+    // Note: pMoArray starts at [1], thus we use (tailUnit - 1)
+    if (size_t oldPos = pSavedGame->Tell();  success = pSavedGame->Seek(oldPos + ((tailUnit - 1) * MapObjectSize))) {
+      AnyMapObj mo{};
+      success       = pSavedGame->Read(MapObjectSize, &mo) && pSavedGame->Seek(oldPos);
+      numSavedUnits = int(mo.object_.pNext_);  // Note that in save files, pNext/pPrev are replaced with indexes.
+    }
+  }
+
+  return success ? numSavedUnits : 0;
+}
+
+// =====================================================================================================================
 // Doubles the max unit limit from 1024 to 2048.
 // ** TODO IDs 2048+ could potentially be used for MapEntity, since only MapUnit IDs are limited to 11 bits
 bool SetUnitLimitPatch(
@@ -153,22 +176,9 @@ bool SetUnitLimitPatch(
     // In MapImpl::Load()
     patcher.LowLevelHook(0x436204,
       [](Ecx<StreamIO*> pSavedGame, Eax<AnyMapObj*> pMoArray, Esp<int&, 16> headUnit, Esp<int&, 24> tailUnit) {
-        // Find the size of the map object array contained in the save file.
-        // pMoArray starts at [1];  headUnit = pMapObjListBegin->pNext->index, tailUnit = pMapObjListEnd->pPrev->index
-        numSavedUnits = headUnit;
-        bool success  = true;
-
-        if (tailUnit != 0) {
-          const size_t oldPos = pSavedGame->Tell();
-          if (success = pSavedGame->Seek(oldPos + ((tailUnit - 1) * MapObjectSize));  success) {
-            AnyMapObj mo{};
-            success       = pSavedGame->Read(MapObjectSize, &mo) && pSavedGame->Seek(oldPos);
-            numSavedUnits = int(mo.object_.pNext_);  // Note that in save files, pNext/pPrev are replaced with indexes.
-          }
-        }
-
-        success =
-          success && (numSavedUnits <= MaxUnits) && pSavedGame->Read(((numSavedUnits - 1) * MapObjectSize), pMoArray);
+        numSavedUnits      = GetSavedGameUnitArrayLen(pSavedGame, headUnit, tailUnit);
+        const bool success = (numSavedUnits != 0) && (numSavedUnits <= MaxUnits) &&
+          pSavedGame->Read(((numSavedUnits - 1) * MapObjectSize), pMoArray);
 
         if (tailUnit != 0) {
           (int&)(pMoArray[tailUnit - 1].object_.pNext_) = MaxUnits;
@@ -866,6 +876,28 @@ bool SetCreateDisasterFix(
     patcher.LowLevelHook(0x478370, [](Eax<MapObject*> p) { return (p != nullptr) ? 0 : 0x47839D; });
     // In TethysGame::SetLightning()
     patcher.LowLevelHook(0x4783FF, [](Eax<MapObject*> p) { return (p != nullptr) ? 0 : 0x478414; });
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
+// =====================================================================================================================
+// Fix the Enhanced Foam Evaporation upgrade for Stickyfoam, so it makes enemy units stickyfoamed longer, not your own.
+bool SetStickyfoamUpgradeFix(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In Stickyfoam::DoDamage()
+    patcher.LowLevelHook(0x4A52E0, [](Edi<MapObj::Stickyfoam*> pThis, Ecx<int>& weaponCreator)
+      { weaponCreator = static_cast<int>(pThis->creatorNum_); });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 

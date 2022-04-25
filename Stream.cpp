@@ -1,6 +1,4 @@
 
-// ** TODO A lot of this should probably be moved into op2ext due to overlap with mod loader functionality.
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <vfw.h>
@@ -49,35 +47,8 @@ static bool g_searchForMission = false;
 static ThreadLocal<bool> g_tlsSkipOsFileRemap;  // ** TODO?
 
 // =====================================================================================================================
-// Disables checking for the Outpost 2 CD being inserted.
-bool SetNoCdPatch(
-  bool enable)
-{
-  static Patcher::PatchContext patcher;
-  bool success = true;
-
-  if (enable) {
-    // In ResManager::VerifyCD()
-    patcher.Write<uint8>(0x471900, 0xC3);  // 0x81
-    // In ResManager::Init()
-    patcher.Write<uint8>(0x47104D, 0xEB);  // 0x75
-    // In ResManager::InitCDDir()
-    patcher.Write<uint8>(0x471A17, 0xEB);  // 0x75
-
-    success = (patcher.GetStatus() == PatcherStatus::Ok);
-  }
-
-  if ((enable == false) || (success == false)) {
-    success &= (patcher.RevertAll() == PatcherStatus::Ok);
-  }
-
-  return success;
-}
-
-
-// =====================================================================================================================
 // Gets file type-specific subdirectories.
-static std::multimap<std::string, std::string>& GetAssetDirs() {
+static auto& GetAssetDirs() {
   static std::multimap<std::string, std::string> assetDirs = {
     { ".ax",    "libs"     },
     { ".dll",   "libs"     },
@@ -111,6 +82,34 @@ static std::multimap<std::string, std::string>& GetAssetDirs() {
 
   return assetDirs;
 }
+
+
+// =====================================================================================================================
+// Disables checking for the Outpost 2 CD being inserted.
+bool SetNoCdPatch(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // In ResManager::VerifyCD()
+    patcher.Write<uint8>(0x471900, 0xC3);  // 0x81
+    // In ResManager::Init()
+    patcher.Write<uint8>(0x47104D, 0xEB);  // 0x75
+    // In ResManager::InitCDDir()
+    patcher.Write<uint8>(0x471A17, 0xEB);  // 0x75
+
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}
+
 
 // =====================================================================================================================
 // Gets op2ext mod directories.
@@ -182,12 +181,11 @@ std::vector<std::filesystem::path> GetSearchPaths(
   };
 
   // Search 1) ini debug path if set.
-  {
-    char debugPath[MAX_PATH] = "";
-    g_configFile.GetString("DEBUG", "ART_PATH", &debugPath[0], MAX_PATH);
-    if (debugPath[0] != '\0') {
-      AddPath(debugPath);
-    }
+  static const char*const debugPath =
+    []{ static char p[MAX_PATH] = "";  g_configFile.GetString("DEBUG", "ART_PATH", &p[0], MAX_PATH);  return p; }();
+
+  if (debugPath[0] != '\0') {
+    AddPath(debugPath);
   }
 
   // Search OPU subdirectories under 2) map dir, 3) mod dirs, 4) base dir, then 5) OPU dir.
@@ -276,7 +274,7 @@ std::filesystem::path GetFilePath(
 
 // =====================================================================================================================
 // Replacement function for ResManager::GetFilePath().
-static ibool __fastcall GetFilePathHook(
+static ibool FASTCALL GetFilePathHook(
   ResManager*  pThis,  int,
   char*        pResName,
   char*        pOutputFilename)
@@ -377,7 +375,7 @@ static void* ShellAlloc(
 
 // =====================================================================================================================
 // Replacement function for PopulateMultiplayerMissionList().
-static int __fastcall PopulateMultiplayerMissionListHook(
+static int FASTCALL PopulateMultiplayerMissionListHook(
   HWND         hComboBoxWnd,
   int          maxPlayers,
   MissionType  maxMissionType,
@@ -404,7 +402,7 @@ static int __fastcall PopulateMultiplayerMissionListHook(
 
 // =====================================================================================================================
 // Replacement function for SinglePlayerGameDialog::PopulateMissionList().
-static void __fastcall PopulateSinglePlayerMissionListHook(
+static void FASTCALL PopulateSinglePlayerMissionListHook(
   IDlgWnd* pThis)
 {
   const HWND hListBoxWnd = GetDlgItem(pThis->hWnd_, 1076);
@@ -432,8 +430,8 @@ GameVersion GetSavedGameVersion(
   StreamIO* pSavedGame,
   bool      seekBack)
 {
-  static const StreamIO* pPrevious = nullptr;
-  static GameVersion previousVersion = { };
+  static const StreamIO* pPrevious       = nullptr;
+  static GameVersion     previousVersion = { };
 
   GameVersion version = { };
 
@@ -443,10 +441,10 @@ GameVersion GetSavedGameVersion(
   else if (const size_t oldPos = pSavedGame->Tell();  pSavedGame->Seek(0)) {
     if (char tag[25] = "";  pSavedGame->Read(sizeof(tag), &tag[0])) {
       if (strcmp("OUTPOST 2.00 SAVED GAME\032", &tag[0]) == 0) {
-        version = {1, 2, 7};
+        version = { 1, 2, 7 };
       }
       else if ((strncmp("OUTPOST2 ", &tag[0], 9) == 0) && (strncmp("-OPU SAVE", &tag[14], 9) == 0)) {
-        version = { ((tag[9] - '0') * 100), ((tag[11] - '0') * 10), (tag[13] - '0')};
+        version = { (tag[9] - '0'), (tag[11] - '0'), (tag[13] - '0') };
       }
     }
 
@@ -548,13 +546,20 @@ HMODULE WINAPI LoadLibraryAltSearchPath(
   const char* pFilename)
 {
   std::filesystem::path path = GetFilePath(pFilename, g_searchForMission);
+
   if (path.is_absolute()) {
     AddModuleSearchPaths({ path.parent_path() }, true);
   }
   else {
     path = pFilename;
   }
-  return LoadLibraryExW(path.wstring().data(), NULL, path.is_absolute() ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
+
+  std::string extension = path.has_extension() ? path.extension().string() : "";
+  std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+  const bool isPython = (extension == ".py") || (extension == ".pyc");
+
+  return isPython ? NULL :
+    LoadLibraryExW(path.wstring().data(), NULL, path.is_absolute() ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
 }
 
 // =====================================================================================================================
@@ -639,7 +644,7 @@ bool SetFileSearchPathPatch(
 
     // In TethysGame::PrepareGame()
     op2Patcher.HookCall(0x489433, SetCapturedTrampoline, ThiscallFunctor(
-      [F = (ibool(__thiscall*)(ResManager*, char*, char*))0](ResManager* pResManager, char* pResName, char* pOut) {
+      [F = (ibool(THISCALL*)(ResManager*, char*, char*))0](ResManager* pResManager, char* pResName, char* pOut) {
         g_searchForMission = true;
         const ibool result = F(pResManager, pResName, pOut);
         g_searchForMission = false;
@@ -675,7 +680,7 @@ bool SetFileSearchPathPatch(
 
     // In MissionManager::Deinit()
     op2Patcher.HookCall(0x402C2A, StdcallLambdaPtr([](HMODULE hModule) -> BOOL {
-      const BOOL result = FreeLibrary(hModule);
+      const BOOL result = (hModule == NULL) || FreeLibrary(hModule);
       if (preMissionPathEnv.empty() == false) {
         SetEnvironmentVariableW(PathVar, preMissionPathEnv.data());
         preMissionPathEnv.clear();
@@ -687,7 +692,7 @@ bool SetFileSearchPathPatch(
     // In MissionManager::Load(), ChecksumScript(), MultiplayerLobbyDialog::SetControlInfo(), ???_460770()
     for (const uintptr loc : { 0x402E4B, 0x45003C, 0x460B13, 0x46078C }) {
       op2Patcher.HookCall(loc, SetCapturedTrampoline, ThiscallFunctor(
-        [F = (ibool(__thiscall*)(ResManager*, char*, char*))0](ResManager* pResManager, char* pResName, char* pOut) {
+        [F = (ibool(THISCALL*)(ResManager*, char*, char*))0](ResManager* pResManager, char* pResName, char* pOut) {
           g_searchForMission = true;
           const ibool result = F(pResManager, pResName, pOut);
           g_searchForMission = false;
@@ -747,14 +752,14 @@ bool SetFileSearchPathPatch(
     };
 
     // Hook Win32 APIs CreateFileA/W, (CreateFile2,) (CreateFileTransactedA/W,) ...?
-    sysPatcher.Hook(&CreateFileA, SetCapturedTrampoline, StdcallFunctor([F = decltype(&CreateFileA){}](
+    sysPatcher.Hook(&CreateFileA, SetCapturedTrampoline, StdcallFunctor([F = &CreateFileA](
       const char* pPath, DWORD access, DWORD share, SECURITY_ATTRIBUTES* pAttr, DWORD disp, DWORD flags, HANDLE hTmpl
       ) -> HANDLE
     {
       return F(RemapPath(pPath).string().data(), access, share, pAttr, disp, flags, hTmpl);
     }));
 
-    sysPatcher.Hook(&CreateFileW, SetCapturedTrampoline, StdcallFunctor([F = decltype(&CreateFileW){}](
+    sysPatcher.Hook(&CreateFileW, SetCapturedTrampoline, StdcallFunctor([F = &CreateFileW](
       const wchar_t* pPath, DWORD access, DWORD share, SECURITY_ATTRIBUTES* pAttr, DWORD disp, DWORD flags, HANDLE hTmpl
       ) -> HANDLE
     {
