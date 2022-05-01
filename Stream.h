@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "Tethys/Common/Types.h"
+#include "Tethys/Game/TApp.h"
 
 #include "Util.h"
 
@@ -32,4 +32,4 @@ void AddModuleSearchPaths(const std::vector<std::filesystem::path>& paths, bool 
 void RemoveModuleSearchPaths(const std::vector<std::filesystem::path>& paths);
 
 /// Gets the version of a saved game file.
-GameVersion GetSavedGameVersion(Tethys::StreamIO* pStream, bool seekBack = true);
+Tethys::GameVersion GetSavedGameVersion(Tethys::StreamIO* pStream, bool seekBack = true);

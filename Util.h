@@ -3,6 +3,7 @@
 
 #include "Tethys/Common/Types.h"
 #include "Tethys/Common/Memory.h"
+#include "Tethys/Game/TApp.h"
 
 #include "Version.h"
 
@@ -18,24 +19,7 @@ namespace Tethys { class StreamIO; }
 inline HINSTANCE g_hInst = nullptr;  ///< HINSTANCE of this DLL.  DllMain must set this during DLL_PROCESS_ATTACH!
 
 
-union GameVersion {
-  constexpr GameVersion(int major = 0, int minor = 0, int stepping = 0)
-    : stepping(stepping), unused(0), minor(minor), major(major) { }
-  constexpr GameVersion(unsigned int version)
-    : stepping(version & 0xFF), unused(0), minor((version >> (8 * 2)) & 0xFF), major(version >> (8 * 3)) { }
-
-  constexpr operator unsigned int() const { return (major << (8 * 3)) | (minor << (8 * 2)) | stepping; }
-
-  struct {
-    unsigned char stepping;
-    unsigned char unused;
-    unsigned char minor;
-    unsigned char major;
-  };
-  unsigned int version;
-};
-
-constexpr GameVersion OP2Version = { OP2_MAJOR_VERSION, OP2_MINOR_VERSION, OP2_STEPPING_VERSION };
+constexpr Tethys::GameVersion OP2Version = { OP2_MAJOR_VERSION, OP2_MINOR_VERSION, OP2_STEPPING_VERSION };
 
 
 /// Returns true if the virtual machine hypervisor bit of cpuid is set.
