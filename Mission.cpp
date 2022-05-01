@@ -143,7 +143,7 @@ bool SetMissionCallbackPatch(
     patcher.LowLevelHook(0x4A4861, [](Edi<MapObj::EMP*> pThis, Ecx<MapObject*> pTarget, Eax<int> empDuration)
       { OnDamageUnit(pThis, pTarget, empDuration); });
     // In EMPBlast::DoEvent()
-    patcher.LowLevelHook(0x4141C2, [](Esi<MapObj::EMPBlast*> pThis, Ecx<MapObject*> pTarget, Eax<int> empDuration)
+    patcher.LowLevelHook(0x4141C2, [](Ebp<MapObj::EMPBlast*> pThis, Ecx<MapObject*> pTarget, Eax<int> empDuration)
       { OnDamageUnit(pThis, pTarget, empDuration + 32); });
     // In AcidCloud::DoEvent()
     patcher.LowLevelHook(0x4011E9, [](Edi<MapObj::AcidCloud*> pThis, Esi<MapObject*> pTarget, Ebx<int16> damage)
