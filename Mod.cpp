@@ -89,6 +89,7 @@ DLLAPI void InitMod(
   success &= SetTruckLoadPartialCargoPatch(true);
   success &= SetCreateDisasterFix(true);
   success &= SetStickyfoamUpgradeFix(true);
+  success &= SetTechUpgradeOverflowFix(true);
 
   // Misc
   success &= SetForceMoraleFix(true);

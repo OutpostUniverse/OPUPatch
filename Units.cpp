@@ -920,10 +920,13 @@ bool SetTechUpgradeOverflowFix(
   bool success = true;
 
   if (enable) {
-    // Skip writing to PerPlayerUnitStats::completedUpgradeTechIDs[i] when i >= array len
+    // Skip writing to PerPlayerUnitStats::completedUpgradeTechIDs[i] when i >= array len (or there's no improve desc)
     // In Research::GiveTechUpgrades()
     static constexpr size_t MaxSlots = std::extent_v<decltype(PerPlayerUnitStats::completedUpgradeTechIDs)>;
-    patcher.LowLevelHook(0x4739E7, [](Edx<int> slot) { return (slot < MaxSlots) ? 0 : 0x4739EB; });
+    patcher.LowLevelHook(0x4739E7, [](Edx<int> slot, Esi<int> techNum) {
+      const char* const pImproveDesc = g_research.ppTechInfos_[techNum]->pImproveDesc;
+      return ((slot < MaxSlots) && (pImproveDesc != nullptr) && (pImproveDesc[0] != '\0')) ? 0 : 0x4739EB;
+    });
     success = (patcher.GetStatus() == PatcherStatus::Ok);
   }
 
