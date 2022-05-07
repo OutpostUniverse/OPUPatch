@@ -31,6 +31,7 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
 * Fix a minor bug with the double unit limit patch where the last unit's ID was set to 1024 instead of 2048.
 * Fix the campaign mission menu dialog's width being too short and cutting off the title text.
 * Fix Vortex and Electrical Storm spawns crashing the game when the unit limit is exceeded.
+* Fix an issue where researching more than 2 techs that upgrade the same unit would corrupt random unit stats for the following player.
 
 ### Developer-related changes
 

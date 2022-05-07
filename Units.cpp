@@ -907,3 +907,29 @@ bool SetStickyfoamUpgradeFix(
 
   return success;
 }
+
+// =====================================================================================================================
+// Fix array overflow bug when there's more than 2 techs researched that upgrade the same unit, which would corrupt the
+// following player's unit stats.
+// ** TODO Fix other buffer overflow bugs in the tech parser code: unchecked read into the string/token buffer,
+//         unchecked read into the upgrades table, unchecked write copying from string table to MapObjectType names
+bool SetTechUpgradeOverflowFix(
+  bool enable)
+{
+  static Patcher::PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    // Skip writing to PerPlayerUnitStats::completedUpgradeTechIDs[i] when i >= array len
+    // In Research::GiveTechUpgrades()
+    static constexpr size_t MaxSlots = std::extent_v<decltype(PerPlayerUnitStats::completedUpgradeTechIDs)>;
+    patcher.LowLevelHook(0x4739E7, [](Edx<int> slot) { return (slot < MaxSlots) ? 0 : 0x4739EB; });
+    success = (patcher.GetStatus() == PatcherStatus::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= (patcher.RevertAll() == PatcherStatus::Ok);
+  }
+
+  return success;
+}

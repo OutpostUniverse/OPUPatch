@@ -34,7 +34,7 @@ bool SetUiHighlightFix(bool enable);
 bool SetIpWindowFocusPatch(bool enable);
 bool SetMiniMapFix(bool enable);
 bool SetLocalizationPatch(bool enable);
-bool SetFontPatch(const char* pNewFont);  // ** WIP
+bool SetFontPatch(const char* pNewFont);
 bool SetVehicleCargoDisplayPatch(bool enable);
 bool SetMissionListNamePatch(bool enable);
 bool SetSavantNotificationPatch(bool enable);
@@ -79,3 +79,4 @@ bool SetTurretAnimationPatch(bool enable);
 bool SetTruckLoadPartialCargoPatch(bool enable);
 bool SetCreateDisasterFix(bool enable);
 bool SetStickyfoamUpgradeFix(bool enable);
+bool SetTechUpgradeOverflowFix(bool enable);
