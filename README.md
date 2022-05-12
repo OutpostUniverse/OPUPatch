@@ -48,7 +48,7 @@ Whereas op2ext adds mod loader functionality to Outpost 2, OPUPatch implements b
   * `OnLoad`   => `OnLoadMission`
   * `OnUnload` => `OnUnloadMission`
   * `OnEnd`    => `OnEndMission`
-  * This is a breaking API change.  No backwards compatiblity is provided for the old names.
+  * The old names will continue to be backwards-compatible.
 * Fix the `OnDestroyUnit` mission API callback to be triggered when units self-destruct, when weapons fire expires, and when units are poofed.
 
 ## 1.4.1

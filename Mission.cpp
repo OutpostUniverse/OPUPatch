@@ -41,6 +41,15 @@ public:
 static ScStubListEx g_scStubListEx;
 #endif
 
+static FARPROC LookupCallback(MissionManager* pMgr, const char* pName)
+  { return GetProcAddress(pMgr->hModule_, pName); }
+
+template <typename... Ts>
+static FARPROC LookupCallback(MissionManager* pMgr, const char* pName, Ts... pFallbackNames) {
+  auto*const pCallback = GetProcAddress(pMgr->hModule_, pName);
+  return (pCallback != nullptr) ? pCallback : LookupCallback(pMgr, pFallbackNames...);
+}
+
 // =====================================================================================================================
 // Adds new callback entry points for mission DLLs.
 bool SetMissionCallbackPatch(
@@ -66,17 +75,17 @@ bool SetMissionCallbackPatch(
 
     // Insert OnLoadMission() hook and initialize callbacks in MissionManager::LoadScript()
     patcher.LowLevelHook(0x402C0B, [](Esi<MissionManager*> pThis) {
-      (FARPROC&)(callbacks.pfnOnLoad)         = GetProcAddress(pThis->hModule_, "OnLoadMission");
-      (FARPROC&)(callbacks.pfnOnUnload)       = GetProcAddress(pThis->hModule_, "OnUnloadMission");
-      (FARPROC&)(callbacks.pfnOnEnd)          = GetProcAddress(pThis->hModule_, "OnEndMission");
-      (FARPROC&)(callbacks.pfnOnSave)         = GetProcAddress(pThis->hModule_, "OnSaveGame");
-      (FARPROC&)(callbacks.pfnOnLoadSave)     = GetProcAddress(pThis->hModule_, "OnLoadSavedGame");
-      (FARPROC&)(callbacks.pfnOnChat)         = GetProcAddress(pThis->hModule_, "OnChat");
-      (FARPROC&)(callbacks.pfnOnCreateUnit)   = GetProcAddress(pThis->hModule_, "OnCreateUnit");
-      (FARPROC&)(callbacks.pfnOnDestroyUnit)  = GetProcAddress(pThis->hModule_, "OnDestroyUnit");
-      (FARPROC&)(callbacks.pfnOnDamageUnit)   = GetProcAddress(pThis->hModule_, "OnDamageUnit");
-      (FARPROC&)(callbacks.pfnOnTransferUnit) = GetProcAddress(pThis->hModule_, "OnTransferUnit");
-      (FARPROC&)(callbacks.pfnOnGameCommand)  = GetProcAddress(pThis->hModule_, "OnGameCommand");
+      (FARPROC&)(callbacks.pfnOnLoad)         = LookupCallback(pThis, "OnLoadMission",   "OnLoad");
+      (FARPROC&)(callbacks.pfnOnUnload)       = LookupCallback(pThis, "OnUnloadMission", "OnUnload");
+      (FARPROC&)(callbacks.pfnOnEnd)          = LookupCallback(pThis, "OnEndMission",    "OnEnd");
+      (FARPROC&)(callbacks.pfnOnSave)         = LookupCallback(pThis, "OnSaveGame");
+      (FARPROC&)(callbacks.pfnOnLoadSave)     = LookupCallback(pThis, "OnLoadSavedGame");
+      (FARPROC&)(callbacks.pfnOnChat)         = LookupCallback(pThis, "OnChat");
+      (FARPROC&)(callbacks.pfnOnCreateUnit)   = LookupCallback(pThis, "OnCreateUnit");
+      (FARPROC&)(callbacks.pfnOnDestroyUnit)  = LookupCallback(pThis, "OnDestroyUnit");
+      (FARPROC&)(callbacks.pfnOnDamageUnit)   = LookupCallback(pThis, "OnDamageUnit");
+      (FARPROC&)(callbacks.pfnOnTransferUnit) = LookupCallback(pThis, "OnTransferUnit");
+      (FARPROC&)(callbacks.pfnOnGameCommand)  = LookupCallback(pThis, "OnGameCommand");
 
       return ((callbacks.pfnOnLoad == nullptr) || callbacks.pfnOnLoad({ sizeof(OnLoadMissionArgs) })) ? 0 : 0x402B65;
     });
