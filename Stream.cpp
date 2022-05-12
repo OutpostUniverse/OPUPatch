@@ -945,7 +945,7 @@ bool SetChecksumPatch(
 bool SetCodecFix(
   bool enable)
 {
-  constexpr DWORD IndeoFourCC = mmioFOURCC('i', 'v', '4', '1');
+  static constexpr DWORD IndeoFourCC = mmioFOURCC('i', 'v', '4', '1');
 
   static bool useLocalIndeo = false;
          bool success       = true;
@@ -964,7 +964,7 @@ bool SetCodecFix(
         // Work around some issues that cause the Indeo codec to crash when registered as a function via ICInstall().
         auto IndeoDriverProc = [](DWORD_PTR dwDriverId, HDRVR hDrvr, UINT msg, LONG lParam1, LONG lParam2) {
           LRESULT result = 0;
-      
+
           // When registered as a function, the codec crashes if ICM_GETINFO is sent, so we handle that ourselves here.
           // This is also the first message sent, so we send the real codec DRV_LOAD and DRV_ENABLE messages as would
           // get sent otherwise (for some reason they aren't sent to function-based codecs).
@@ -988,7 +988,7 @@ bool SetCodecFix(
           else {
             result = pfnDriverProc(dwDriverId, hDrvr, msg, lParam1, lParam2);
           }
-      
+
           return result;
         };
 
