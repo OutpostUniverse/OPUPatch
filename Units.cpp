@@ -652,7 +652,7 @@ bool SetTurretAnimationPatch(
           (pThis->GetTypeID() != MapID::Lynx)    ? pWeaponType->SelectPantherGraphic(pThis, rotation)
                                                  : pWeaponType->SelectLynxGraphic(pThis, rotation);
 
-          const int rotationIndex           = (pThis->rotation_ + 8) / 16; // Round to nearest multiple of 16 (22.5 deg)
+          const int rotationIndex           = ((pThis->rotation_ + 8) / 16) % 16; // Round to nearest multiple of 16 (22.5 deg), wrapping 248..255 to 0
           const int animationIndex          = pThis->GetChassisAnimationIndex(rotationIndex);
           const FrameOptionalInfo frameInfo = SpriteManager::GetInstance()->GetFrameOptionalInfo(animationIndex, 0);
 
